@@ -16,9 +16,28 @@ const Discord = require("discord.js");
  * @param {Object} RM
  */
 async function runCommand(interaction, RM) {
-  // cmd stuff here
-  console.log(interaction);
-  interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
+  try {
+    // cmd stuff here
+    console.log(interaction);
+    interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
+  } catch (e) {
+    console.error(e);
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({
+        content:
+          "⚠️ There was an error while executing this command!" +
+          (global.app.config.showErrors == true ? "\n\n" + e.toString() : ""),
+        ephemeral: true,
+      });
+    } else {
+      await interaction.reply({
+        content:
+          "⚠️ There was an error while executing this command!" +
+          (global.app.config.showErrors == true ? "\n\n" + e.toString() : ""),
+        ephemeral: true,
+      });
+    }
+  }
 }
 
 function commandHelp() {

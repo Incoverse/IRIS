@@ -8,6 +8,10 @@
   global.dirName = __dirname;
   global.SlashCommandBuilder =
     require("@discordjs/builders").SlashCommandBuilder;
+  const JsonCParser = require("jsonc-parser");
+  app.config = JsonCParser.parse(
+    require("fs").readFileSync("./config.jsonc", { encoding: "utf-8" })
+  );
   global.mongoConnectionString = null;
   const chalk = require("chalk");
   const { Worker } = require("worker_threads");
@@ -109,22 +113,7 @@
           if (
             interaction.commandName == command.replace("cmd", "").toLowerCase()
           ) {
-            try {
-              requiredModules[command].runCommand(interaction, requiredModules);
-            } catch (error) {
-              console.error(error);
-              if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({
-                  content: "There was an error while executing this command!",
-                  ephemeral: true,
-                });
-              } else {
-                await interaction.reply({
-                  content: "There was an error while executing this command!",
-                  ephemeral: true,
-                });
-              }
-            }
+            requiredModules[command].runCommand(interaction, requiredModules);
           }
         }
       }
