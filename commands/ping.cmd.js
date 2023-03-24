@@ -4,7 +4,7 @@ const commandInfo = {
   usage: "[COMMAND] <required> [optional]", // [COMMAND] gets replaced with the command and correct prefix later
   category: "fun/music/mod/misc/economy",
   reqPermissions: [],
-  slashCommand: new global.SlashCommandBuilder()
+  slashCommand: new SlashCommandBuilder()
     .setName("ping")
     .setDescription("Pong! "),
 };
@@ -23,17 +23,41 @@ async function runCommand(interaction, RM) {
   } catch (e) {
     console.error(e);
     if (interaction.replied || interaction.deferred) {
+      await interaction.client.application.fetch();
+
       await interaction.followUp({
         content:
           "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true ? "\n\n" + e.toString() : ""),
+          (global.app.config.showErrors == true
+            ? "\n\n``" +
+              ([
+                ...Array.from(
+                  interaction.client.application.owner.members.keys()
+                ),
+                ...global.app.config.externalOwners,
+              ].includes(interaction.user.id)
+                ? e.stack.toString()
+                : e.toString()) +
+              "``"
+            : ""),
         ephemeral: true,
       });
     } else {
       await interaction.reply({
         content:
           "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true ? "\n\n" + e.toString() : ""),
+          (global.app.config.showErrors == true
+            ? "\n\n``" +
+              ([
+                ...Array.from(
+                  interaction.client.application.owner.members.keys()
+                ),
+                ...global.app.config.externalOwners,
+              ].includes(interaction.user.id)
+                ? e.stack.toString()
+                : e.toString()) +
+              "``"
+            : ""),
         ephemeral: true,
       });
     }

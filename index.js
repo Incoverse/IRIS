@@ -2,9 +2,11 @@
 (async () => {
   const app = {
     version: "1.0.0",
+    mainGuild: "1084667164843315230",
   };
   global.app = app;
   global.bannedUsers = [];
+  global.birthdays = [];
   global.dirName = __dirname;
   global.SlashCommandBuilder =
     require("@discordjs/builders").SlashCommandBuilder;
@@ -104,9 +106,37 @@
         }
       }
     });
+    const { MongoClient } = require("mongodb");
+
     client.on(Events.InteractionCreate, async (interaction) => {
-      console.log(interaction.commandName);
-      console.log(requiredModules);
+      const client = new MongoClient(global.mongoConnectionString);
+
+      try {
+        const database = client.db("IRIS");
+        const userdata = database.collection("userdata");
+        let a;
+        // Query for a movie that has the title 'Back to the Future'
+        const query = { id: interaction.user.id };
+        let userInfo = await userdata.findOne(query);
+        if (userInfo == null) {
+          userInfo = {
+            id: interaction.user.id,
+            discriminator: interaction.user.discriminator,
+            last_active: new Date().toISOString(),
+            timezones: [],
+            username: interaction.user.username,
+            approximatedTimezone: null,
+            birthday: null,
+          };
+          a = await userdata.insertOne(userInfo);
+        } else {
+          userInfo.last_active = new Date().toISOString();
+          await userdata.replaceOne({ id: interaction.user.id }, userInfo);
+        }
+      } finally {
+        // Ensures that the client will close when you finish/error
+        await client.close();
+      }
       if (!interaction.isChatInputCommand()) return;
       for (let command in requiredModules) {
         if (command.startsWith("cmd")) {
@@ -119,7 +149,7 @@
       }
     });
 
-    client.on("ready", async () => {
+    client.on(Events.ClientReady, async () => {
       const commands = [];
       // Grab all the command files from the commands directory you created earlier
       const commandsPath = path.join(__dirname, "commands");
@@ -184,7 +214,7 @@
         ],
         status: "online",
       });
-      const mainGuild = await client.guilds.fetch("1084667164843315230");
+      const mainGuild = await client.guilds.fetch(global.app.mainGuild);
       let users = [];
       await mainGuild.members
         .fetch()
@@ -234,7 +264,44 @@
           chalk.blue.bold(edition) +
           " edition!"
       );
+      console.log("Fetching people's birthdays..");
+      const clienttwo = new MongoClient(global.mongoConnectionString);
+
+      try {
+        const database = clienttwo.db("IRIS");
+        const userdata = database.collection("userdata");
+        const documents = await userdata.find().toArray();
+        for (let document of documents) {
+          let obj = {
+            id: document.id,
+            birthday: document.birthday,
+            timezone: document.approximatedTimezone,
+          };
+          if (document.birthday !== null) global.birthdays.push(obj);
+        }
+      } finally {
+        await clienttwo.close();
+      }
+      for (let i in requiredModules) {
+        if (i.startsWith("event")) {
+          if (requiredModules[i].eventType() === "runEvery") {
+            setInterval(async () => {
+              if (!requiredModules[i].running)
+                await requiredModules[i].runEvent(client, requiredModules);
+            }, requiredModules[i].getMS());
+          }
+        }
+      }
     });
+    function mode(arr) {
+      return arr
+        .sort(
+          (a, b) =>
+            arr.filter((v) => v === a).length -
+            arr.filter((v) => v === b).length
+        )
+        .pop();
+    }
 
     /* prettier-ignore */
     function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
