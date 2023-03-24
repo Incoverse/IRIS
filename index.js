@@ -130,8 +130,12 @@
           };
           a = await userdata.insertOne(userInfo);
         } else {
-          userInfo.last_active = new Date().toISOString();
-          await userdata.replaceOne({ id: interaction.user.id }, userInfo);
+          const updateDoc = {
+            $set: {
+              last_active: new Date().toISOString(),
+            },
+          };
+          console.log(await userdata.updateOne(query, updateDoc, {}));
         }
       } finally {
         // Ensures that the client will close when you finish/error
@@ -187,17 +191,9 @@
       }).setToken(process.env.TOKEN);
       (async () => {
         try {
-          console.log("Started refreshing application (/) commands.");
-
           await rest.put(Routes.applicationCommands(client.user.id), {
             body: commands,
           });
-
-          console.log(
-            "Successfully reloaded application (/) commands. " +
-              commands.length +
-              " commands loaded."
-          );
         } catch (error) {
           console.error(error);
         }
@@ -264,7 +260,6 @@
           chalk.blue.bold(edition) +
           " edition!"
       );
-      console.log("Fetching people's birthdays..");
       const clienttwo = new MongoClient(global.mongoConnectionString);
 
       try {
@@ -292,16 +287,14 @@
           }
         }
       }
+      console.log(
+        "All commands and events have been registered. " +
+          eventFiles.length +
+          " event(s), " +
+          commands.length +
+          " command(s)."
+      );
     });
-    function mode(arr) {
-      return arr
-        .sort(
-          (a, b) =>
-            arr.filter((v) => v === a).length -
-            arr.filter((v) => v === b).length
-        )
-        .pop();
-    }
 
     /* prettier-ignore */
     function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }

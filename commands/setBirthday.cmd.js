@@ -127,7 +127,6 @@ async function runCommand(interaction, RM) {
       const userdata = database.collection("userdata");
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: interaction.user.id };
-      let userInfo = await userdata.findOne(query);
       let copy = global.birthdays.filter(
         (obj) => obj.id !== interaction.user.id
       );
@@ -137,8 +136,15 @@ async function runCommand(interaction, RM) {
         id: interaction.user.id,
       });
       global.birthdays = copy;
-      userInfo.birthday = date;
-      await userdata.replaceOne(query, userInfo);
+      await userdata.updateOne(
+        query,
+        {
+          $set: {
+            birthday: date,
+          },
+        },
+        {}
+      );
     } finally {
       // Ensures that the client will close when you finish/error
       await client.close();

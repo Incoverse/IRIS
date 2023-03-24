@@ -31,8 +31,13 @@ async function runEvent(message, RM) {
       };
       a = await userdata.insertOne(userInfo);
     } else {
-      userInfo.last_active = new Date().toISOString();
-      await userdata.replaceOne({ id: message.author.id }, userInfo);
+      // await userdata.replaceOne({ id: message.author.id }, userInfo);
+      const updateDoc = {
+        $set: {
+          last_active: new Date().toISOString(),
+        },
+      };
+      console.log(await userdata.updateOne(query, updateDoc, {}));
     }
   } finally {
     // Ensures that the client will close when you finish/error
