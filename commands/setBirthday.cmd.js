@@ -101,7 +101,7 @@ async function runCommand(interaction, RM) {
       return;
     }
     if (
-      new Date().getUTCFullYear() - new Date(date).getUTCFullYear() <= 13 &&
+      new Date().getUTCFullYear() - new Date(date).getUTCFullYear() < 13 &&
       hasQuestionMarks == false
     ) {
       await interaction.reply({
