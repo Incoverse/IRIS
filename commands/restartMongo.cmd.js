@@ -32,22 +32,32 @@ async function runCommand(interaction, RM) {
             " system when we're expecting LINUX."
         );
       } else {
+        /* prettier-ignore */
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" has restarted MongoDB.");
+
         interaction.deferReply();
         await exec("sudo systemctl restart mongod");
         await delay(1500);
         try {
           await exec("sudo systemctl status mongod | grep 'active (running)' ");
         } catch (e) {
+          /* prettier-ignore */
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.red("MongoDB failed to start!"));
           interaction.editReply(
             "⚠️ MongoDB has been restarted, but is not running due to a failure."
           );
           return;
         }
+        /* prettier-ignore */
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.greenBright("MongoDB successfully started back up!"));
         interaction.editReply(
           ":white_check_mark: MongoDB has been restarted successfully."
         );
       }
     } else {
+      /* prettier-ignore */
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
+
       interaction.reply({
         content: "You do not have permission to run this command.",
         ephemeral: true,
@@ -59,38 +69,38 @@ async function runCommand(interaction, RM) {
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
         content:
-        "⚠️ There was an error while executing this command!" +
-        (global.app.config.showErrors == true
-          ? "\n\n``" +
-          ([
-            ...Array.from(
-              interaction.client.application.owner.members.keys()
-            ),
-            ...global.app.config.externalOwners,
-          ].includes(interaction.user.id)
-            ? e.stack.toString()
-            : e.toString()) +
-          "``"
-          : ""),
-      ephemeral: true,
+          "⚠️ There was an error while executing this command!" +
+          (global.app.config.showErrors == true
+            ? "\n\n``" +
+              ([
+                ...Array.from(
+                  interaction.client.application.owner.members.keys()
+                ),
+                ...global.app.config.externalOwners,
+              ].includes(interaction.user.id)
+                ? e.stack.toString()
+                : e.toString()) +
+              "``"
+            : ""),
+        ephemeral: true,
       });
     } else {
       await interaction.reply({
         content:
-        "⚠️ There was an error while executing this command!" +
-        (global.app.config.showErrors == true
-          ? "\n\n``" +
-          ([
-            ...Array.from(
-              interaction.client.application.owner.members.keys()
-            ),
-            ...global.app.config.externalOwners,
-          ].includes(interaction.user.id)
-            ? e.stack.toString()
-            : e.toString()) +
-          "``"
-          : ""),
-      ephemeral: true,
+          "⚠️ There was an error while executing this command!" +
+          (global.app.config.showErrors == true
+            ? "\n\n``" +
+              ([
+                ...Array.from(
+                  interaction.client.application.owner.members.keys()
+                ),
+                ...global.app.config.externalOwners,
+              ].includes(interaction.user.id)
+                ? e.stack.toString()
+                : e.toString()) +
+              "``"
+            : ""),
+        ephemeral: true,
       });
     }
   }
@@ -118,8 +128,12 @@ function getSlashCommandJSON() {
     return commandInfo.slashCommand.toJSON();
   else return null;
 }
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
+}
 module.exports = {
   runCommand,
+  returnFileName,
   commandHelp,
   commandUsage,
   commandCategory,

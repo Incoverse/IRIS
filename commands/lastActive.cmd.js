@@ -35,7 +35,7 @@ async function runCommand(interaction, RM) {
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: target.id };
       let userInfo = await userdata.findOne(query);
-      if (userInfo == null) {
+      if (userInfo == null || userInfo.last_active == null) {
         await interaction.editReply(
           "This user has never interacted with this server."
         );
@@ -209,8 +209,12 @@ function getSlashCommandJSON() {
     return commandInfo.slashCommand.toJSON();
   else return null;
 }
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
+}
 module.exports = {
   runCommand,
+  returnFileName,
   commandHelp,
   commandUsage,
   commandCategory,

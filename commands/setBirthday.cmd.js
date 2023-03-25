@@ -149,7 +149,8 @@ async function runCommand(interaction, RM) {
       // Ensures that the client will close when you finish/error
       await client.close();
     }
-
+    /* prettier-ignore */
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" set their birthday to: " + date);
     await interaction.editReply(
       "Your birthday is now set to ``" +
         DateFormatter.formatDate(
@@ -226,8 +227,12 @@ function getSlashCommandJSON() {
     return commandInfo.slashCommand.toJSON();
   else return null;
 }
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
+}
 module.exports = {
   runCommand,
+  returnFileName,
   commandHelp,
   commandUsage,
   commandCategory,

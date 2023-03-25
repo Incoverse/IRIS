@@ -7,6 +7,9 @@
   global.app = app;
   global.bannedUsers = [];
   global.birthdays = [];
+  global.newMembers = [];
+  const chalk = require("chalk");
+  global.chalk = chalk;
   global.dirName = __dirname;
   global.SlashCommandBuilder =
     require("@discordjs/builders").SlashCommandBuilder;
@@ -14,15 +17,13 @@
   app.config = JsonCParser.parse(
     require("fs").readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
+  global.app.debugLog = app.config.debugging ? console.log : () => {};
   global.mongoConnectionString = null;
-  const chalk = require("chalk");
-  const { Worker } = require("worker_threads");
   require("dotenv").config();
   try {
     const moment = require("moment");
     const {
       Client,
-      Collection,
       Events,
       GatewayIntentBits,
       REST,
@@ -32,6 +33,7 @@
     const Discord = require("discord.js");
     const fs = require("node:fs");
     const path = require("node:path");
+    const prettyms = (await import("pretty-ms")).default;
 
     if (process.env.TOKEN == null) {
       console.log(
@@ -127,6 +129,11 @@
             username: interaction.user.username,
             approximatedTimezone: null,
             birthday: null,
+            isNew:
+              new Date() -
+                (await interaction.guild.members.fetch(interaction.user.id))
+                  .joinedAt <
+              7 * 24 * 60 * 60 * 1000,
           };
           a = await userdata.insertOne(userInfo);
         } else {
@@ -163,6 +170,8 @@
 
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
+        /* prettier-ignore */
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Registering command: " +chalk.blueBright(file));
         const command = require(`./commands/${file}`);
         requiredModules[
           "cmd" +
@@ -216,26 +225,13 @@
         .fetch()
         .then(async (member) => member.forEach(async (m) => users.push(m.id)))
         .catch(console.error);
-      const createdAt = mainGuild.createdAt;
-      const today = new Date();
-      var msSinceCreation = today.getTime() - createdAt.getTime();
-      var daysSinceCreation = Math.round(msSinceCreation / (1000 * 3600 * 24));
 
       console.log(
         chalk.blueBright("------------------------\n") +
           chalk.redBright(mainGuild.name) +
           " has " +
           chalk.cyanBright(users.length) +
-          " members.\n"
-      );
-
-      console.log(
-        chalk.redBright(mainGuild.name) +
-          " was created on the " +
-          chalk.cyanBright(createdAt.toLocaleDateString()) +
-          ". That's " +
-          chalk.cyanBright(daysSinceCreation) +
-          " days ago!"
+          " members."
       );
       let edition = "COMMUNITY";
       console.log(
@@ -258,7 +254,8 @@
           chalk.blue.bold(client.user.tag) +
           " is ready and is running " +
           chalk.blue.bold(edition) +
-          " edition!"
+          " edition!\n" +
+          "------------------------"
       );
       const clienttwo = new MongoClient(global.mongoConnectionString);
 
@@ -273,22 +270,74 @@
             timezone: document.approximatedTimezone,
           };
           if (document.birthday !== null) global.birthdays.push(obj);
+          if (document.isNew) {
+            global.newMembers.push(document.id);
+          }
         }
       } finally {
         await clienttwo.close();
       }
+      const guild = await client.guilds.fetch(global.app.mainGuild);
+      let newMembersRole = null;
+      await guild.roles.fetch().then((roles) => {
+        roles.forEach((role) => {
+          if (role.name.toLowerCase().includes("new member")) {
+            newMembersRole = role;
+          }
+        });
+      });
+      if (newMembersRole !== null) {
+        newMembersRole.members.forEach((member) => {
+          global.newMembers.push(member.id);
+        });
+        global.newMembers = [...new Set(global.newMembers)];
+      }
+
       for (let i in requiredModules) {
         if (i.startsWith("event")) {
+          /* prettier-ignore */
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Registering '"+chalk.yellow(requiredModules[i].eventType())+("discordEvent"===requiredModules[i].eventType()?" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")":"")+("runEvery"===requiredModules[i].eventType()?" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose:!0}))+")":"")+"' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
           if (requiredModules[i].eventType() === "runEvery") {
+            if (requiredModules[i].runImmediately()) {
+              /* prettier-ignore */
+              global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.blue.bold("runImmediately")+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
+              await requiredModules[i].runEvent(client, requiredModules);
+            }
             setInterval(async () => {
-              if (!requiredModules[i].running)
+              if (!requiredModules[i].running) {
+                /* prettier-ignore */
+                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
                 await requiredModules[i].runEvent(client, requiredModules);
+              } else {
+                /* prettier-ignore */
+                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Not running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName())+" reason: Previous interation is still running.");
+              }
             }, requiredModules[i].getMS());
+          } else if (requiredModules[i].eventType() === "discordEvent") {
+            client.on(requiredModules[i].getListenerKey(), async (...args) => {
+              /* prettier-ignore */
+              global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
+              await requiredModules[i].runEvent(requiredModules, ...args);
+            });
+          } else if (requiredModules[i].eventType() === "onStart") {
+            global.app.debugLog(
+              chalk.white.bold(
+                "[" + moment().format("M/D/y HH:mm:ss") + "] [MAIN] "
+              ) +
+                "Running '" +
+                chalk.yellow(requiredModules[i].eventType()) +
+                "' event: " +
+                chalk.blueBright(requiredModules[i].returnFileName())
+            );
+            await requiredModules[i].runEvent(client, requiredModules);
           }
         }
       }
       console.log(
-        "All commands and events have been registered. " +
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [MAIN] "
+        ) +
+          "All commands and events have been registered. " +
           eventFiles.length +
           " event(s), " +
           commands.length +

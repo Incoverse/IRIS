@@ -1,6 +1,7 @@
-const commandInfo = {
+const eventInfo = {
   type: "runEvery",
   ms: 60000, //1m 1s, just to avoid accidentally calling a birthday twice
+  runImmediately: true,
 };
 let running = false;
 let Discord = require("discord.js");
@@ -26,7 +27,9 @@ async function runEvent(client, RM) {
     }
     const timeInTimezone = moment().tz(birthday.timezone).format("hh:mma");
     if (timeInTimezone == "12:00am") {
-      client.guilds.fetch(global.app.mainGuild).then((guild) => {
+      client.guilds.fetch(global.app.mainGuild).then(async (guild) => {
+        /* prettier-ignore */
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "It's " + global.chalk.yellow((await guild.members.fetch(birthday.id)).user.tag) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? global.chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+global.chalk.yellow(birthday.timezone)+" it's currently " + global.chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
         guild.channels.fetch().then((channels) => {
           channels.forEach(async (channel) => {
             if (channel.name.includes("general")) {
@@ -68,14 +71,22 @@ function isSameDay(date1, date2) {
   return day1 === day2 && month1 === month2;
 }
 function eventType() {
-  return commandInfo.type;
+  return eventInfo.type;
+}
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
 }
 function getMS() {
-  return commandInfo.ms;
+  return eventInfo.ms;
+}
+function runImmediately() {
+  return eventInfo.runImmediately;
 }
 module.exports = {
   runEvent,
+  returnFileName,
   eventType,
   getMS,
   running,
+  runImmediately,
 };

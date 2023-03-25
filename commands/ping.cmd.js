@@ -84,8 +84,12 @@ function getSlashCommandJSON() {
     return commandInfo.slashCommand.toJSON();
   else return null;
 }
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
+}
 module.exports = {
   runCommand,
+  returnFileName,
   commandHelp,
   commandUsage,
   commandCategory,

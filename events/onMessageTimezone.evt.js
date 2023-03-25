@@ -14,12 +14,18 @@ async function runEvent(message, RM) {
   const client = new MongoClient(global.mongoConnectionString);
   if (message.author.id == message.client.user.id) return;
   if (message.content.toLowerCase().includes("timezone")) {
+    /* prettier-ignore */
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Timezone message registered by " + global.chalk.yellow(message.author.tag)+".")
     let time = message.content
       .toLowerCase()
       .match(
         /([0-9]{1,2}:[0-9]{2}( |)(am|pm))|([0-9]{1,2}:[0-9]{2})|[0-9]{4}|[0-9]{1,2}( |)(am|pm)/gim
       );
-    if (!time) return;
+    if (!time) {
+      /* prettier-ignore*/
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +global.chalk.yellow(message.author.tag)+".")
+      return;
+    }
     time = time[0];
     let zones = [
       "Pacific/Pago_Pago", // -11
@@ -60,14 +66,18 @@ async function runEvent(message, RM) {
       "Pacific/Chatham", // +13:45
       "Pacific/Kiritimati", // +14
     ];
-    let type = "";
+    let timeFormat = "";
     if (time.match(/([0-9]{1,2}:[0-9]{2}( |)(am|pm))/gim))
-      type = "AMPM"; //* 12:11 pm, 1:00 am, 1:20pm
+      timeFormat = "AMPM"; //* 12:11 pm, 1:00 am, 1:20pm
     else if (time.match(/([0-9]{1,2}:[0-9]{2})/gim))
-      type = "24HCLOCK"; //* 23:59, 13:23, 02:43
-    else if (time.match(/[0-9]{4}/gim)) type = "MILITARY"; //* 1234, 2123. 2232
-    else if (time.match(/[0-9]{1,2}( |)(am|pm)/gim)) type = "AMPMSINGLE"; //* 9pm, 2 am, 3pm,
-    if (type == "AMPMSINGLE") {
+      timeFormat = "24HCLOCK"; //* 23:59, 13:23, 02:43
+    else if (time.match(/[0-9]{4}/gim))
+      timeFormat = "MILITARY"; //* 1234, 2123. 2232
+    else if (time.match(/[0-9]{1,2}( |)(am|pm)/gim)) timeFormat = "AMPMSINGLE"; //* 9pm, 2 am, 3pm,
+    /* prettier-ignore */
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time format was recognized as: " + global.chalk.yellow(timeFormat) + " in " + global.chalk.yellow(message.author.tag) + "'s timezone message.")
+
+    if (timeFormat == "AMPMSINGLE") {
       if (time.split(" ").length == 2) {
         let timeSplit = time.split(" ");
         time = (timeSplit[0] + ":00 " + timeSplit[1]).toLowerCase();
@@ -77,7 +87,7 @@ async function runEvent(message, RM) {
         timeCopy = timeCopy.join("").split(" ");
         time = (timeCopy[0] + ":00 " + timeCopy[1]).toLowerCase();
       }
-    } else if (type == "AMPM") {
+    } else if (timeFormat == "AMPM") {
       if (time.split(" ").length == 2) {
         time = time.toLowerCase();
       } else {
@@ -85,13 +95,18 @@ async function runEvent(message, RM) {
         timeCopy.splice(timeCopy.length - 2, 0, " ");
         time = timeCopy.join("").toLowerCase();
       }
-    } else if (type == "24HCLOCK") {
+    } else if (timeFormat == "24HCLOCK") {
       time = tConvert(time.trim());
-    } else if (type == "MILITARY") {
+    } else if (timeFormat == "MILITARY") {
       let timeSplit = time.trim().split("");
       time = tConvert(
         timeSplit[0] + timeSplit[1] + ":" + (timeSplit[2] + timeSplit[3])
       );
+    }
+    if (new Date("2 Jan 1970 " + time) == "Invalid Date") {
+      /* prettier-ignore */
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " in their timezone message is not valid.")
+      return;
     }
     let approximatedTimezone = null;
     let oneMinuteBefore = addRemoveTime(time, -1);
@@ -105,30 +120,17 @@ async function runEvent(message, RM) {
         approximatedTimezone = timezone;
       }
     }
+    if (!approximatedTimezone) {
+      /* prettier-ignore */
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " did not match any timezone")
+
+      return;
+    }
     //TODO: Use this later when testing DST
-    // offset = moment().tz(approximatedTimezone).utcOffset() / 60;
-    // stringOffset = "";
-    // if (offset !== 0) {
-    //   if (offset < 0) {
-    //     stringOffset += "-";
-    //   } else {
-    //     stringOffset += "+";
-    //   }
-    //   if (offset.toString().includes(".")) {
-    //     fullHourOffset = parseInt(Math.abs(offset));
-    //     minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
-    //     stringOffset += fullHourOffset + ":" + minuteOffset;
-    //   } else {
-    //     stringOffset += Math.abs(offset);
-    //   }
-    // }
-    // message.reply(
-    //   "From the information I have gathered, I estimate that your timezone is: ``" +
-    //     approximatedTimezone +
-    //     " (UTC" +
-    //     stringOffset +
-    //     ")``"
-    // );
+
+    /* prettier-ignore */
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " was matched to timezone: " + global.chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
+
     let approximatedTimezone2 = null;
     try {
       const database = client.db("IRIS");
@@ -137,42 +139,31 @@ async function runEvent(message, RM) {
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: message.author.id };
       let userInfo = await userdata.findOne(query);
-      if (userInfo == null) {
-        userInfo = {
-          id: message.author.id,
-          discriminator: message.author.discriminator,
-          last_active: new Date().toISOString(),
-          timezones: [approximatedTimezone],
-          username: message.author.username,
-          approximatedTimezone: approximatedTimezone,
-          birthday: null,
-        };
-        approximatedTimezone2 = approximatedTimezone;
-        a = await userdata.insertOne(userInfo);
-      } else {
-        let timezones = [...userInfo.timezones, approximatedTimezone];
-        if (timezones.length >= 5) timezones.shift();
-        approximatedTimezone2 = mode(timezones);
-        await userdata.updateOne(
-          query,
-          {
-            $set: {
-              approximatedTimezone: mode(timezones),
-            },
-            $push: {
-              timezones: approximatedTimezone,
-            },
+
+      let timezones = [...userInfo.timezones, approximatedTimezone];
+      if (timezones.length >= 5) timezones.shift();
+      let moded = mode(timezones);
+      /* prettier-ignore */
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(message.author.tag)+"'s timezone is now approximated to be "+global.chalk.yellow(moded+ " ("+getOffset(moded)+")"));
+      await userdata.updateOne(
+        query,
+        {
+          $set: {
+            approximatedTimezone: moded,
           },
-          {}
-        );
-        await userdata.updateOne(
-          { ...query, timezones: { $size: 5 } },
-          {
-            $pop: { timezones: -1 },
+          $push: {
+            timezones: approximatedTimezone,
           },
-          {}
-        );
-      }
+        },
+        {}
+      );
+      await userdata.updateOne(
+        { ...query, timezones: { $size: 5 } },
+        {
+          $pop: { timezones: -1 },
+        },
+        {}
+      );
     } finally {
       // Ensures that the client will close when you finish/error
       await client.close();
@@ -204,6 +195,25 @@ function mode(arr) {
     )
     .pop();
 }
+function getOffset(timezone) {
+  offset = moment().tz(timezone).utcOffset() / 60;
+  stringOffset = "";
+  if (offset !== 0) {
+    if (offset < 0) {
+      stringOffset += "-";
+    } else {
+      stringOffset += "+";
+    }
+    if (offset.toString().includes(".")) {
+      fullHourOffset = parseInt(Math.abs(offset));
+      minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
+      stringOffset += fullHourOffset + ":" + minuteOffset;
+    } else {
+      stringOffset += Math.abs(offset);
+    }
+  }
+  return "UTC" + stringOffset;
+}
 function tConvert(time) {
   // Check correct time format and split into components
   time = time.toString().match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [
@@ -222,7 +232,11 @@ function tConvert(time) {
 function eventType() {
   return commandInfo.type;
 }
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
+}
 module.exports = {
   runEvent,
+  returnFileName,
   eventType,
 };

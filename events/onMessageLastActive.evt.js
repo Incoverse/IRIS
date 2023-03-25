@@ -1,4 +1,4 @@
-const commandInfo = {
+const eventInfo = {
   type: "onMessage",
 };
 
@@ -18,36 +18,25 @@ async function runEvent(message, RM) {
     let a;
     // Query for a movie that has the title 'Back to the Future'
     const query = { id: message.author.id };
-    let userInfo = await userdata.findOne(query);
-    if (userInfo == null) {
-      userInfo = {
-        id: message.author.id,
-        discriminator: message.author.discriminator,
+    const updateDoc = {
+      $set: {
         last_active: new Date().toISOString(),
-        timezones: [],
-        username: message.author.username,
-        approximatedTimezone: null,
-        birthday: null,
-      };
-      a = await userdata.insertOne(userInfo);
-    } else {
-      // await userdata.replaceOne({ id: message.author.id }, userInfo);
-      const updateDoc = {
-        $set: {
-          last_active: new Date().toISOString(),
-        },
-      };
-      console.log(await userdata.updateOne(query, updateDoc, {}));
-    }
+      },
+    };
+    await userdata.updateOne(query, updateDoc, {});
   } finally {
     // Ensures that the client will close when you finish/error
     await client.close();
   }
 }
 function eventType() {
-  return commandInfo.type;
+  return eventInfo.type;
+}
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
 }
 module.exports = {
   runEvent,
+  returnFileName,
   eventType,
 };

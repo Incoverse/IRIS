@@ -33,6 +33,8 @@ async function runCommand(interaction, RM) {
             " system when we're expecting LINUX."
         );
       } else {
+        /* prettier-ignore */
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" replaced the MongoDB certificate.");
         interaction.deferReply();
         const beforeChange = await exec(
           "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
@@ -42,16 +44,20 @@ async function runCommand(interaction, RM) {
           "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
         );
         if (output.stdout == beforeChange.stdout) {
+          /* prettier-ignore */
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate not changed, reason: No new certificate is available. This certificate expires in: " + global.chalk.yellow(output.stdout));
           interaction.editReply(
             "No new certificate is available. This certificate expires in: ``" +
-              prettyms(
-                new Date(output.stdout.trim().split("=")[1]) - new Date()
+            prettyms(
+              new Date(output.stdout.trim().split("=")[1]) - new Date()
               ) +
               "`` (``" +
               output.stdout.trim().split("=")[1] +
               "``)"
-          );
-        } else {
+              );
+            } else {
+          /* prettier-ignore */
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate successfully replaced. Expires in: " + global.chalk.yellow(output.stdout));
           interaction.editReply(
             "The certificate has been successfully replaced. This certificate expires in: ``" +
               prettyms(
@@ -64,6 +70,8 @@ async function runCommand(interaction, RM) {
         }
       }
     } else {
+      /* prettier-ignore */
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
       interaction.reply({
         content: "You do not have permission to run this command.",
         ephemeral: true,
@@ -132,8 +140,12 @@ function getSlashCommandJSON() {
     return commandInfo.slashCommand.toJSON();
   else return null;
 }
+function returnFileName() {
+  return __filename.split("/")[__filename.split("/").length - 1];
+}
 module.exports = {
   runCommand,
+  returnFileName,
   commandHelp,
   commandUsage,
   commandCategory,

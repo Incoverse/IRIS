@@ -1,4 +1,5 @@
 {
     "externalOwners": ["514961805517258772"],
-    "showErrors": true
+    "showErrors": true,
+    "debugging": true
 }
