@@ -172,7 +172,7 @@ function timeAgo(dateParam) {
   const isThisYear = today.getUTCFullYear() === date.getUTCFullYear();
 
   if (seconds < 5) {
-    return "now";
+    return "just now";
   } else if (seconds < 60) {
     return `${seconds} seconds ago`;
   } else if (seconds < 90) {
