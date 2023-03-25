@@ -22,13 +22,6 @@ async function runEvent(RM, ...args) {
       }
     });
   });
-  // console.log(
-  //   __filename.split("/")[__filename.split("/").length - 1] +
-  //     " is now adding role '" +
-  //     newMembersRole.name +
-  //     "' to " +
-  //     args[0].user.tag
-  // );
   args[0].roles.add(newMembersRole);
   global.newMembers.push(args[0].id);
   const dbclient = new MongoClient(global.mongoConnectionString);

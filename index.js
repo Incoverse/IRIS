@@ -142,7 +142,7 @@
               last_active: new Date().toISOString(),
             },
           };
-          console.log(await userdata.updateOne(query, updateDoc, {}));
+          await userdata.updateOne(query, updateDoc, {})
         }
       } finally {
         // Ensures that the client will close when you finish/error

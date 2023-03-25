@@ -18,7 +18,6 @@ const Discord = require("discord.js");
 async function runCommand(interaction, RM) {
   try {
     // cmd stuff here
-    console.log(interaction);
     interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
   } catch (e) {
     console.error(e);

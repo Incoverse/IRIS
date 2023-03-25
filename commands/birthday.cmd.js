@@ -22,7 +22,6 @@ const { MongoClient } = require("mongodb");
  * @param {Object} RM
  */
 async function runCommand(interaction, RM) {
-  console.log(global.birthdays);
   let isHidden = false;
   try {
     if (
