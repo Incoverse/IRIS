@@ -27,7 +27,7 @@ async function runEvent(client, RM) {
     }
     const timeInTimezone = moment().tz(birthday.timezone).format("hh:mma");
     if (timeInTimezone == "12:00am") {
-      client.guilds.fetch(global.app.mainGuild).then(async (guild) => {
+      client.guilds.fetch(global.app.config.mainGuild).then(async (guild) => {
         /* prettier-ignore */
         global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "It's " + global.chalk.yellow((await guild.members.fetch(birthday.id)).user.tag) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? global.chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+global.chalk.yellow(birthday.timezone)+" it's currently " + global.chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
         guild.channels.fetch().then((channels) => {

@@ -3,6 +3,8 @@ const eventInfo = {
 };
 
 let Discord = require("discord.js");
+let moment = require("moment-timezone");
+
 const { MongoClient } = require("mongodb");
 /**
  *
@@ -14,7 +16,9 @@ async function runEvent(message, RM) {
   if (message.author.id == message.client.user.id) return;
   try {
     const database = client.db("IRIS");
-    const userdata = database.collection("userdata");
+    const userdata = database.collection(
+      global.app.config.development ? "userdata_dev" : "userdata"
+    );
     let a;
     // Query for a movie that has the title 'Back to the Future'
     const query = { id: message.author.id };

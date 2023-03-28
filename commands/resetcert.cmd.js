@@ -10,6 +10,7 @@ const commandInfo = {
     .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
 const { promisify } = require("util");
+const moment = require("moment-timezone")
 const exec = promisify(require("child_process").exec);
 /**
  *

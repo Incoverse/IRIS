@@ -134,7 +134,9 @@ async function runEvent(message, RM) {
     let approximatedTimezone2 = null;
     try {
       const database = client.db("IRIS");
-      const userdata = database.collection("userdata");
+      const userdata = database.collection(
+        global.app.config.development ? "userdata_dev" : "userdata"
+      );
       let a;
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: message.author.id };

@@ -1,5 +1,8 @@
 {
     "externalOwners": ["514961805517258772"],
     "showErrors": true,
-    "debugging": true
+    "debugging": true,
+    "mainGuild":"786013884216639509",
+    "development": false,
+    "developmentServer": "1084667164843315230"
 }

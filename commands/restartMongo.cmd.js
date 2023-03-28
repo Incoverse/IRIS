@@ -11,6 +11,8 @@ const commandInfo = {
 };
 const { promisify } = require("util");
 const exec = promisify(require("child_process").exec);
+const moment = require("moment-timezone")
+
 /**
  *
  * @param {Discord.CommandInteraction} interaction

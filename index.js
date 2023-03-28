@@ -2,7 +2,6 @@
 (async () => {
   const app = {
     version: "1.0.0",
-    mainGuild: "1084667164843315230",
   };
   global.app = app;
   global.bannedUsers = [];
@@ -19,6 +18,9 @@
   );
   global.app.debugLog = app.config.debugging ? console.log : () => {};
   global.mongoConnectionString = null;
+  if (global.app.config.development) {
+    global.app.config.mainGuild = global.app.config.developmentServer;
+  }
   require("dotenv").config();
   try {
     const moment = require("moment");
@@ -111,11 +113,13 @@
     const { MongoClient } = require("mongodb");
 
     client.on(Events.InteractionCreate, async (interaction) => {
+      if (interaction.guildId !== global.app.config.mainGuild) return;
       const client = new MongoClient(global.mongoConnectionString);
-
       try {
         const database = client.db("IRIS");
-        const userdata = database.collection("userdata");
+        const userdata = database.collection(
+          global.app.config.development ? "userdata_dev" : "userdata"
+        );
         let a;
         // Query for a movie that has the title 'Back to the Future'
         const query = { id: interaction.user.id };
@@ -142,7 +146,7 @@
               last_active: new Date().toISOString(),
             },
           };
-          await userdata.updateOne(query, updateDoc, {})
+          await userdata.updateOne(query, updateDoc, {});
         }
       } finally {
         // Ensures that the client will close when you finish/error
@@ -200,9 +204,17 @@
       }).setToken(process.env.TOKEN);
       (async () => {
         try {
-          await rest.put(Routes.applicationCommands(client.user.id), {
-            body: commands,
-          });
+          await rest.put(
+            Routes.applicationCommands(
+              client.user.id,
+              global.app.config.development
+                ? global.app.config.mainGuild
+                : undefined
+            ),
+            {
+              body: commands,
+            }
+          );
         } catch (error) {
           console.error(error);
         }
@@ -210,16 +222,17 @@
       console.log(
         chalk.white("[I] ") + chalk.green("Logged in!") + chalk.white(" [I]")
       );
-      client.user.setPresence({
-        activities: [
-          {
-            name: "you ◭ /help",
-            type: ActivityType.Watching,
-          },
-        ],
-        status: "online",
-      });
-      const mainGuild = await client.guilds.fetch(global.app.mainGuild);
+      if (!global.app.config.development)
+        client.user.setPresence({
+          activities: [
+            {
+              name: "you ◭ /help",
+              type: ActivityType.Watching,
+            },
+          ],
+          status: "online",
+        });
+      const mainGuild = await client.guilds.fetch(global.app.config.mainGuild);
       let users = [];
       await mainGuild.members
         .fetch()
@@ -233,7 +246,6 @@
           chalk.cyanBright(users.length) +
           " members."
       );
-      let edition = "COMMUNITY";
       console.log(
         "------------------------\n" +
           "Current time is: " +
@@ -253,7 +265,9 @@
           "------------------------\n" +
           chalk.blue.bold(client.user.tag) +
           " is ready and is running " +
-          chalk.blue.bold(edition) +
+          chalk.blue.bold(
+            global.app.config.development ? "DEVELOPMENT" : "COMMUNITY"
+          ) +
           " edition!\n" +
           "------------------------"
       );
@@ -261,7 +275,9 @@
 
       try {
         const database = clienttwo.db("IRIS");
-        const userdata = database.collection("userdata");
+        const userdata = database.collection(
+          global.app.config.development ? "userdata_dev" : "userdata"
+        );
         const documents = await userdata.find().toArray();
         for (let document of documents) {
           let obj = {
@@ -277,7 +293,7 @@
       } finally {
         await clienttwo.close();
       }
-      const guild = await client.guilds.fetch(global.app.mainGuild);
+      const guild = await client.guilds.fetch(global.app.config.mainGuild);
       let newMembersRole = null;
       await guild.roles.fetch().then((roles) => {
         roles.forEach((role) => {

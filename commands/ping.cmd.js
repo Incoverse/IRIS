@@ -9,6 +9,7 @@ const commandInfo = {
     .setDescription("Pong! "),
 };
 const Discord = require("discord.js");
+let moment = require("moment-timezone");
 
 /**
  *

@@ -4,6 +4,7 @@ const eventInfo = {
   runImmediately: true,
 };
 let running = false;
+let moment = require("moment-timezone");
 let Discord = require("discord.js");
 const { MongoClient } = require("mongodb");
 /**
@@ -14,7 +15,7 @@ const { MongoClient } = require("mongodb");
 async function runEvent(client, RM) {
   running = true;
   // -----------
-  const guild = await client.guilds.fetch(global.app.mainGuild);
+  const guild = await client.guilds.fetch(global.app.config.mainGuild);
   let updated = [];
   let newMembersRole = null;
   await guild.roles.fetch().then((roles) => {
@@ -40,7 +41,9 @@ async function runEvent(client, RM) {
       const client = new MongoClient(global.mongoConnectionString);
       try {
         const database = client.db("IRIS");
-        const userdata = database.collection("userdata");
+        const userdata = database.collection(
+          global.app.config.development ? "userdata_dev" : "userdata"
+        );
         for (let index in updated) {
           updated[index] = { id: updated[index] };
         }

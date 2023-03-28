@@ -17,6 +17,8 @@ const commandInfo = {
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
 const { MongoClient } = require("mongodb");
+let moment = require("moment-timezone");
+
 /**
  *
  * @param {Discord.CommandInteraction} interaction
@@ -30,7 +32,9 @@ async function runCommand(interaction, RM) {
 
     try {
       const database = client.db("IRIS");
-      const userdata = database.collection("userdata");
+      const userdata = database.collection(
+        global.app.config.development ? "userdata_dev" : "userdata"
+      );
       let a;
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: target.id };

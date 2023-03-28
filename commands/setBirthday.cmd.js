@@ -19,6 +19,8 @@ const commandInfo = {
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
 const { MongoClient } = require("mongodb");
+let moment = require("moment-timezone");
+
 /**
  *
  * @param {Discord.CommandInteraction} interaction
@@ -41,7 +43,9 @@ async function runCommand(interaction, RM) {
       });
       try {
         const database = client.db("IRIS");
-        const userdata = database.collection("userdata");
+        const userdata = database.collection(
+          global.app.config.development ? "userdata_dev" : "userdata"
+        );
         let a;
         // Query for a movie that has the title 'Back to the Future'
         const query = { id: interaction.user.id };
@@ -124,9 +128,12 @@ async function runCommand(interaction, RM) {
     await interaction.deferReply();
     try {
       const database = client.db("IRIS");
-      const userdata = database.collection("userdata");
+      const userdata = database.collection(
+        global.app.config.development ? "userdata_dev" : "userdata"
+      );
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: interaction.user.id };
+      const userInfo = await userdata.findOne(query);
       let copy = global.birthdays.filter(
         (obj) => obj.id !== interaction.user.id
       );

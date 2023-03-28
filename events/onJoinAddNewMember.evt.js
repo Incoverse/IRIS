@@ -12,8 +12,10 @@ const { MongoClient } = require("mongodb");
  */
 async function runEvent(RM, ...args) {
   if (args[0].user.bot) return;
+  if (args[0].guild.id !== global.app.config.mainGuild) return;
 
-  const guild = await args[0].client.guilds.fetch(global.app.mainGuild);
+
+  const guild = await args[0].client.guilds.fetch(global.app.config.mainGuild);
   let newMembersRole = null;
   await guild.roles.fetch().then(async (roles) => {
     roles.forEach((role) => {
@@ -27,7 +29,9 @@ async function runEvent(RM, ...args) {
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
     const database = dbclient.db("IRIS");
-    const userdata = database.collection("userdata");
+    const userdata = database.collection(
+      global.app.config.development ? "userdata_dev" : "userdata"
+    );
     userInfo = {
       id: args[0].id,
       discriminator: args[0].user.discriminator,

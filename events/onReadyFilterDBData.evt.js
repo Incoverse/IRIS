@@ -11,11 +11,13 @@ let moment = require("moment-timezone");
  * @param {*} RM
  */
 async function runEvent(client, RM) {
-  const guild = await client.guilds.fetch(global.app.mainGuild);
+  const guild = await client.guilds.fetch(global.app.config.mainGuild);
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
     const database = dbclient.db("IRIS");
-    const userdata = database.collection("userdata");
+    const userdata = database.collection(
+      global.app.config.development ? "userdata_dev" : "userdata"
+    );
     let userInfo = await userdata.find().toArray();
     let IDsToRemove = [];
     let memberIDs = [];
