@@ -21,34 +21,81 @@ async function runEvent(client, RM) {
       !isSameDay(
         new Date(birthday.birthday + " 12:00 am UTC"),
         moment(new Date()).tz(birthday.timezone)
+      ) &&
+      !isSameDay(
+        new Date(birthday.birthday + " 12:00 am UTC").setDate(
+          new Date(birthday.birthday + " 12:00 am UTC") + 1
+        ),
+        moment(new Date()).tz(birthday.timezone)
       )
     ) {
       continue;
     }
     const timeInTimezone = moment().tz(birthday.timezone).format("hh:mma");
+    let birthdayRole = null;
     if (timeInTimezone == "12:00am") {
-      client.guilds.fetch(global.app.config.mainGuild).then(async (guild) => {
-        /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "It's " + global.chalk.yellow((await guild.members.fetch(birthday.id)).user.tag) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? global.chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+global.chalk.yellow(birthday.timezone)+" it's currently " + global.chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
-        guild.channels.fetch().then((channels) => {
-          channels.forEach(async (channel) => {
-            if (channel.name.includes("general")) {
-              await channel.send(
-                "It's <@" +
-                  birthday.id +
-                  ">'s " +
-                  (birthday.birthday.split(/\W+/g)[0] !== "0000"
-                    ? getOrdinalNum(
-                        new Date().getUTCFullYear() -
-                          new Date(birthday.birthday).getUTCFullYear()
-                      ) + " "
-                    : "") +
-                  "birthday! Happy birthday!" // It's @USER's <ordinal num (17th,12th,etc.)> birthday! Happy birthday!
+      if (
+        isSameDay(
+          new Date(birthday.birthday + " 12:00 am UTC"),
+          moment(new Date()).tz(birthday.timezone)
+        )
+      ) {
+        client.guilds
+          .fetch(global.app.config.mainServer)
+          .then(async (guild) => {
+            await guild.roles.fetch().then((roles) => {
+              roles.forEach((role) => {
+                if (role.name.toLowerCase().includes("birthday")) {
+                  birthdayRole = role;
+                }
+              });
+            });
+            /* prettier-ignore */
+            global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "It's " + global.chalk.yellow((await guild.members.fetch(birthday.id)).user.tag) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? global.chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+global.chalk.yellow(birthday.timezone)+" it's currently " + global.chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
+            await (
+              await guild.members.fetch(birthday.id)
+            ).roles.add(birthdayRole);
+            guild.channels.fetch().then((channels) => {
+              channels.forEach(async (channel) => {
+                if (channel.name.includes("general")) {
+                  await channel.send(
+                    "It's <@" +
+                      birthday.id +
+                      ">'s " +
+                      (birthday.birthday.split(/\W+/g)[0] !== "0000"
+                        ? getOrdinalNum(
+                            new Date().getUTCFullYear() -
+                              new Date(birthday.birthday).getUTCFullYear()
+                          ) + " "
+                        : "") +
+                      "birthday! Happy birthday!" // It's @USER's <ordinal num (17th,12th,etc.)> birthday! Happy birthday!
+                  );
+                }
+              });
+            });
+          });
+      } else {
+        client.guilds
+          .fetch(global.app.config.mainServer)
+          .then(async (guild) => {
+            await guild.roles.fetch().then((roles) => {
+              roles.forEach((role) => {
+                if (role.name.toLowerCase().includes("birthday")) {
+                  birthdayRole = role;
+                }
+              });
+            });
+            if (
+              (await guild.members.fetch(birthday.id)).roles.cache.some(
+                (role) => role.id == birthdayRole.id
+              )
+            ) {
+              (await guild.members.fetch(birthday.id)).roles.remove(
+                birthdayRole
               );
             }
           });
-        });
-      });
+      }
     }
   }
   // -----------

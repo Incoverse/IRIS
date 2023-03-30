@@ -11,7 +11,7 @@ let moment = require("moment-timezone");
  * @param {*} RM
  */
 async function runEvent(client, RM) {
-  const guild = await client.guilds.fetch(global.app.config.mainGuild);
+  const guild = await client.guilds.fetch(global.app.config.mainServer);
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
     const database = dbclient.db("IRIS");

@@ -1,6 +1,5 @@
 const Discord = require("discord.js");
 const commandInfo = {
-  help: "Set your birthday.", // This is the general description of the command.
   usage: "[COMMAND] <required> [optional]", // [COMMAND] gets replaced with the command and correct prefix later
   category: "fun/music/mod/misc/economy",
   reqPermissions: [],
@@ -151,8 +150,13 @@ function getSlashCommandJSON() {
 function returnFileName() {
   return __filename.split("/")[__filename.split("/").length - 1];
 }
+function getHelp() {
+  return commandInfo.detailedHelp;
+}
+
 module.exports = {
   runCommand,
+  getHelp,
   returnFileName,
   commandHelp,
   commandUsage,

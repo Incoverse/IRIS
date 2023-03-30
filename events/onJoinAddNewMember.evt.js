@@ -12,10 +12,9 @@ const { MongoClient } = require("mongodb");
  */
 async function runEvent(RM, ...args) {
   if (args[0].user.bot) return;
-  if (args[0].guild.id !== global.app.config.mainGuild) return;
+  if (args[0].guild.id !== global.app.config.mainServer) return;
 
-
-  const guild = await args[0].client.guilds.fetch(global.app.config.mainGuild);
+  const guild = await args[0].client.guilds.fetch(global.app.config.mainServer);
   let newMembersRole = null;
   await guild.roles.fetch().then(async (roles) => {
     roles.forEach((role) => {

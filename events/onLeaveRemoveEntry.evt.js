@@ -12,7 +12,7 @@ const { MongoClient } = require("mongodb");
  */
 async function runEvent(RM, ...args) {
   if (args[0].user.bot) return;
-  if (args[0].guild.id !== global.app.config.mainGuild) return;
+  if (args[0].guild.id !== global.app.config.mainServer) return;
   const client = new MongoClient(global.mongoConnectionString);
   try {
     const database = client.db("IRIS");

@@ -19,7 +19,7 @@
   global.app.debugLog = app.config.debugging ? console.log : () => {};
   global.mongoConnectionString = null;
   if (global.app.config.development) {
-    global.app.config.mainGuild = global.app.config.developmentServer;
+    global.app.config.mainServer = global.app.config.developmentServer;
   }
   require("dotenv").config();
   try {
@@ -113,7 +113,7 @@
     const { MongoClient } = require("mongodb");
 
     client.on(Events.InteractionCreate, async (interaction) => {
-      if (interaction.guildId !== global.app.config.mainGuild) return;
+      if (interaction.guildId !== global.app.config.mainServer) return;
       const client = new MongoClient(global.mongoConnectionString);
       try {
         const database = client.db("IRIS");
@@ -205,12 +205,12 @@
       (async () => {
         try {
           await rest.put(
-            Routes.applicationCommands(
-              client.user.id,
-              global.app.config.development
-                ? global.app.config.mainGuild
-                : undefined
-            ),
+            global.app.config.development
+              ? Routes.applicationGuildCommands(
+                  client.user.id,
+                  global.app.config.mainServer
+                )
+              : Routes.applicationCommands(client.user.id),
             {
               body: commands,
             }
@@ -232,16 +232,18 @@
           ],
           status: "online",
         });
-      const mainGuild = await client.guilds.fetch(global.app.config.mainGuild);
+      const mainServer = await client.guilds.fetch(
+        global.app.config.mainServer
+      );
       let users = [];
-      await mainGuild.members
+      await mainServer.members
         .fetch()
         .then(async (member) => member.forEach(async (m) => users.push(m.id)))
         .catch(console.error);
 
       console.log(
         chalk.blueBright("------------------------\n") +
-          chalk.redBright(mainGuild.name) +
+          chalk.redBright(mainServer.name) +
           " has " +
           chalk.cyanBright(users.length) +
           " members."
@@ -272,7 +274,7 @@
           "------------------------"
       );
       const clienttwo = new MongoClient(global.mongoConnectionString);
-
+      Events.GuildMemberUpdate;
       try {
         const database = clienttwo.db("IRIS");
         const userdata = database.collection(
@@ -293,7 +295,7 @@
       } finally {
         await clienttwo.close();
       }
-      const guild = await client.guilds.fetch(global.app.config.mainGuild);
+      const guild = await client.guilds.fetch(global.app.config.mainServer);
       let newMembersRole = null;
       await guild.roles.fetch().then((roles) => {
         roles.forEach((role) => {

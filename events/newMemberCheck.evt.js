@@ -15,7 +15,7 @@ const { MongoClient } = require("mongodb");
 async function runEvent(client, RM) {
   running = true;
   // -----------
-  const guild = await client.guilds.fetch(global.app.config.mainGuild);
+  const guild = await client.guilds.fetch(global.app.config.mainServer);
   let updated = [];
   let newMembersRole = null;
   await guild.roles.fetch().then((roles) => {

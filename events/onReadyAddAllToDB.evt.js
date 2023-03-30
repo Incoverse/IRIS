@@ -11,7 +11,7 @@ let moment = require("moment-timezone");
  * @param {*} RM
  */
 async function runEvent(client, RM) {
-  const guild = await client.guilds.fetch(global.app.config.mainGuild);
+  const guild = await client.guilds.fetch(global.app.config.mainServer);
   const dbclient = new MongoClient(global.mongoConnectionString);
 
   try {
@@ -21,6 +21,7 @@ async function runEvent(client, RM) {
     );
     let a;
     let toBeAdded = [];
+    let updateUsernames = {};
     let allDocuments = await userdata.find().toArray();
     let newMembersRole = null;
     await guild.roles.fetch().then(async (roles) => {
@@ -46,6 +47,32 @@ async function runEvent(client, RM) {
                 new Date() - (await guild.members.fetch(member.id)).joinedAt <
                 7 * 24 * 60 * 60 * 1000,
             });
+          } else {
+            let userDoc = allDocuments.find((m) => m.id == member.id);
+            if (
+              userDoc.username !== member.user.username ||
+              userDoc.discriminator !== member.user.discriminator
+            ) {
+              global.app.debugLog(
+                global.chalk.white.bold(
+                  "[" +
+                    moment().format("M/D/y HH:mm:ss") +
+                    "] [" +
+                    returnFileName() +
+                    "] "
+                ) +
+                  global.chalk.yellow(
+                    userDoc.username + "#" + userDoc.discriminator
+                  ) +
+                  " changed their username/tag to " +
+                  global.chalk.yellow(member.user.tag) +
+                  "."
+              );
+              updateUsernames[member.id] = {
+                username: member.user.username,
+                discriminator: member.user.discriminator,
+              };
+            }
           }
         }
         if (
@@ -71,8 +98,13 @@ async function runEvent(client, RM) {
           " missing UserData document(s)."
       );
     }
+    if (Object.keys(updateUsernames).length > 0) {
+      for (let k of Object.keys(updateUsernames)) {
+        await userdata.updateOne({ id: k }, { $set: updateUsernames[k] });
+      }
+    }
   } finally {
-    dbclient.close();
+    await dbclient.close();
   }
 }
 

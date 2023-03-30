@@ -4,13 +4,14 @@ const commandInfo = {
   category: "fun/music/mod/misc/economy",
   reqPermissions: [],
   slashCommand: new Discord.SlashCommandBuilder()
-    .setName("resetcert")
-    .setDescription("Force a reset of the certificate for MongoDB.")
+    .setName("stop")
+    .setDescription("Force-stop IRIS.")
     .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
 const { promisify } = require("util");
-const moment = require("moment-timezone");
 const exec = promisify(require("child_process").exec);
+const moment = require("moment-timezone");
+
 /**
  *
  * @param {Discord.CommandInteraction} interaction
@@ -18,7 +19,6 @@ const exec = promisify(require("child_process").exec);
  */
 async function runCommand(interaction, RM) {
   try {
-    const prettyms = (await import("pretty-ms")).default;
     await interaction.client.application.fetch();
     if (
       [
@@ -34,44 +34,17 @@ async function runCommand(interaction, RM) {
         );
       } else {
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" replaced the MongoDB certificate.");
-        interaction.deferReply();
-        const beforeChange = await exec(
-          "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
-        );
-        await exec("sudo /root/resetcert.sh 0");
-        const output = await exec(
-          "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
-        );
-        if (output.stdout == beforeChange.stdout) {
-          /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate not changed, reason: No new certificate is available. This certificate expires in: " + global.chalk.yellow(output.stdout));
-          interaction.editReply(
-            "No new certificate is available. This certificate expires in: ``" +
-              prettyms(
-                new Date(output.stdout.trim().split("=")[1]) - new Date()
-              ) +
-              "`` (``" +
-              output.stdout.trim().split("=")[1] +
-              "``)"
-          );
-        } else {
-          /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate successfully replaced. Expires in: " + global.chalk.yellow(output.stdout));
-          interaction.editReply(
-            "The certificate has been successfully replaced. This certificate expires in: ``" +
-              prettyms(
-                new Date(output.stdout.trim().split("=")[1]) - new Date()
-              ) +
-              "`` (``" +
-              output.stdout.trim().split("=")[1] +
-              "``)"
-          );
-        }
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" has stopped IRIS.");
+
+        await interaction.reply({
+          content: "IRIS is now stopping...",
+        });
+        exec("sudo systemctl stop IRIS");
       }
     } else {
       /* prettier-ignore */
       global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
+
       interaction.reply({
         content: "You do not have permission to run this command.",
         ephemeral: true,
@@ -119,7 +92,9 @@ async function runCommand(interaction, RM) {
     }
   }
 }
-
+const delay = (delayInms) => {
+  return new Promise((resolve) => setTimeout(resolve, delayInms));
+};
 function commandHelp() {
   return commandInfo.help;
 }

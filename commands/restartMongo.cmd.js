@@ -1,6 +1,5 @@
 const Discord = require("discord.js");
 const commandInfo = {
-  help: "Force a restart of MongoDB.", // This is the general description of the command.
   usage: "[COMMAND] <required> [optional]", // [COMMAND] gets replaced with the command and correct prefix later
   category: "fun/music/mod/misc/economy",
   reqPermissions: [],
@@ -11,7 +10,7 @@ const commandInfo = {
 };
 const { promisify } = require("util");
 const exec = promisify(require("child_process").exec);
-const moment = require("moment-timezone")
+const moment = require("moment-timezone");
 
 /**
  *
@@ -133,8 +132,13 @@ function getSlashCommandJSON() {
 function returnFileName() {
   return __filename.split("/")[__filename.split("/").length - 1];
 }
+function getHelp() {
+  return commandInfo.detailedHelp;
+}
+
 module.exports = {
   runCommand,
+  getHelp,
   returnFileName,
   commandHelp,
   commandUsage,
