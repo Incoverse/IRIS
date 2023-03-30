@@ -70,7 +70,11 @@ async function runCommand(interaction, RM) {
             new Date(
               global.birthdays.find((el) => el.id == interaction.user.id).date
             ),
-            hasQuestionMarks ? `MMMM ????` : `MMMM ????, YYYY`
+            global.birthdays
+              .find((el) => el.id == interaction.user.id)
+              .date.includes("0000")
+              ? `MMMM ????`
+              : `MMMM ????, YYYY`
           ).replace("????", getOrdinalNum(new Date(date).getDate())) +
           "``",
         ephemeral: true,
