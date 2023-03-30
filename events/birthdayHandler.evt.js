@@ -23,8 +23,10 @@ async function runEvent(client, RM) {
         moment(new Date()).tz(birthday.timezone)
       ) &&
       !isSameDay(
-        new Date(birthday.birthday + " 12:00 am UTC").setDate(
-          new Date(birthday.birthday + " 12:00 am UTC").getDate() + 1
+        new Date(
+          new Date(birthday.birthday + " 12:00 am UTC").setDate(
+            new Date(birthday.birthday + " 12:00 am UTC").getDate() + 1
+          )
         ),
         moment(new Date()).tz(birthday.timezone)
       )
