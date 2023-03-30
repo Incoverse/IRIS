@@ -68,11 +68,13 @@ async function runCommand(interaction, RM) {
           "You already have set your birthday! Your birthday is set to: ``" +
           DateFormatter.formatDate(
             new Date(
-              global.birthdays.find((el) => el.id == interaction.user.id).date
+              global.birthdays.find(
+                (el) => el.id == interaction.user.id
+              ).birthday
             ),
             global.birthdays
               .find((el) => el.id == interaction.user.id)
-              .date.includes("0000")
+              .birthday.includes("0000")
               ? `MMMM ????`
               : `MMMM ????, YYYY`
           ).replace("????", getOrdinalNum(new Date(date).getDate())) +
