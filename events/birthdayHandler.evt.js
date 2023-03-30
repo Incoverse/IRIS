@@ -24,7 +24,7 @@ async function runEvent(client, RM) {
       ) &&
       !isSameDay(
         new Date(birthday.birthday + " 12:00 am UTC").setDate(
-          new Date(birthday.birthday + " 12:00 am UTC") + 1
+          new Date(birthday.birthday + " 12:00 am UTC").getDate() + 1
         ),
         moment(new Date()).tz(birthday.timezone)
       )
