@@ -4,8 +4,8 @@ const commandInfo = {
   category: "fun/music/mod/misc/economy",
   reqPermissions: [],
   slashCommand: new SlashCommandBuilder()
-    .setName("timezone")
-    .setDescription("Check what timezone IRIS has predicted that you're in."),
+    .setName("version")
+    .setDescription("Check which version IRIS is running."),
 };
 const Discord = require("discord.js");
 let moment = require("moment-timezone");
