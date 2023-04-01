@@ -15,6 +15,11 @@ async function runEvent(RM, ...args) {
   const newUser = args[1];
   const guild = await newUser.client.guilds.fetch(global.app.config.mainServer);
   if (!(await guild.members.fetch()).has(oldUser.id)) return;
+  if (
+    oldUser.username === newUser.username &&
+    oldUser.discriminator === newUser.discriminator
+  )
+    return; // User changed something else, which we don't care about
   global.app.debugLog(
     global.chalk.white.bold(
       "[" + moment().format("M/D/y HH:mm:ss") + "] [" + returnFileName() + "] "

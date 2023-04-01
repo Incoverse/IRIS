@@ -6,22 +6,26 @@
   global.app = app;
   global.bannedUsers = [];
   global.birthdays = [];
+  const { EventEmitter } = require("events");
+  global.communicationChannel = new EventEmitter();
   global.newMembers = [];
   const chalk = require("chalk");
   global.chalk = chalk;
   global.dirName = __dirname;
   global.SlashCommandBuilder =
     require("@discordjs/builders").SlashCommandBuilder;
+  require("dotenv").config();
   const JsonCParser = require("jsonc-parser");
   app.config = JsonCParser.parse(
     require("fs").readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
+  global.app.config.development =
+    process.env.DEVELOPMENT == "YES" ? true : false;
   global.app.debugLog = app.config.debugging ? console.log : () => {};
   global.mongoConnectionString = null;
   if (global.app.config.development) {
     global.app.config.mainServer = global.app.config.developmentServer;
   }
-  require("dotenv").config();
   try {
     const moment = require("moment");
     const {
