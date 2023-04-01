@@ -63,6 +63,9 @@ async function runCommand(interaction, RM) {
       );
     }
     if (global.birthdays.some((el) => el.id === interaction.user.id)) {
+      const openATicketChannel = (
+        await interaction.guild.channels.fetch()
+      ).find((channel) => channel.name.toLowerCase().includes("open-a-ticket"));
       await interaction.reply({
         content:
           "You already have set your birthday! Your birthday is set to: ``" +
@@ -78,7 +81,12 @@ async function runCommand(interaction, RM) {
               ? `MMMM ????`
               : `MMMM ????, YYYY`
           ).replace("????", getOrdinalNum(new Date(date).getDate())) +
-          "``",
+          "``." +
+          (openATicketChannel !== null
+            ? " If you have accidentally made a mistake when setting your birthday, please <#" +
+              openATicketChannel.id +
+              ">."
+            : ""),
         ephemeral: true,
       });
       return;

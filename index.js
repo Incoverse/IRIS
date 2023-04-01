@@ -1,7 +1,7 @@
 // //! -- This is the start of the IRIS journey -- !\\
 (async () => {
   const app = {
-    version: "1.0.0",
+    version: require("./package.json").version,
   };
   global.app = app;
   global.bannedUsers = [];
