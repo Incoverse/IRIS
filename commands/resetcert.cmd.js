@@ -36,13 +36,51 @@ async function runCommand(interaction, RM) {
         /* prettier-ignore */
         global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" replaced the MongoDB certificate.");
         interaction.deferReply();
-        const beforeChange = await exec(
-          "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
-        );
-        await exec("sudo /root/resetcert.sh 0");
-        const output = await exec(
-          "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
-        );
+        let beforeChange,
+          output = null;
+        try {
+          beforeChange = await exec(
+            "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
+          );
+          await exec("sudo /root/resetcert.sh 0");
+          output = await exec(
+            "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
+          );
+        } catch (e) {
+          await exec("sudo /root/resetcert.sh 0");
+          await sleep(1500);
+          let fullchainexists = require("fs").existsSync(
+            "/etc/ssl/IRIS/fullchain.pem"
+          );
+          let mongodpemexists = require("fs").existsSync(
+            "/etc/ssl/IRIS/mongod.pem"
+          );
+          if (fullchainexists && mongodpemexists) {
+            output = await exec(
+              "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
+            );
+            interaction.editReply(
+              "Something errored for a second, I have gotten back the files now, The certificate expires in: ``" +
+                prettyms(
+                  new Date(output.stdout.trim().split("=")[1]) - new Date()
+                ) +
+                "`` (``" +
+                output.stdout.trim().split("=")[1] +
+                "``)"
+            );
+            return;
+          } else {
+            interaction.editReply(
+              "Some files are missing!!\n" +
+                (fullchainexists
+                  ? "fullchain.pem exists"
+                  : "fullschain.pem missing!") +
+                (fullchainexists && mongodpemexists ? "\n" : "") +
+                (mongodpemexists ? "mongod.pem exists" : "mongod.pem missing!")
+            );
+            return;
+          }
+        }
         if (output.stdout == beforeChange.stdout) {
           /* prettier-ignore */
           global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate not changed, reason: No new certificate is available. This certificate expires in: " + global.chalk.yellow(output.stdout));
@@ -119,7 +157,9 @@ async function runCommand(interaction, RM) {
     }
   }
 }
-
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 function commandHelp() {
   return commandInfo.help;
 }
