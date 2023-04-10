@@ -43,6 +43,7 @@ async function runEvent(client, RM) {
               username: member.user.username,
               approximatedTimezone: null,
               birthday: null,
+              birthdayPassed: false,
               isNew:
                 new Date() - (await guild.members.fetch(member.id)).joinedAt <
                 7 * 24 * 60 * 60 * 1000,

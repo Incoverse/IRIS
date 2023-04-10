@@ -15,19 +15,61 @@ const { MongoClient } = require("mongodb");
 async function runEvent(client, RM) {
   running = true;
   // -----------
-  for (let birthday of global.birthdays) {
+  for (let birthday of JSON.parse(JSON.stringify(global.birthdays))) {
     if (birthday.timezone == null) birthday.timezone = "Europe/London";
+    if (birthday.passed) {
+      const dSB = howManyDaysSinceBirthday(
+        birthday.birthday,
+        birthday.timezone
+      );
+      if (dSB >= 2) {
+        //! Cannot timezone clip into new birthday
+        const dbclient = new MongoClient(global.mongoConnectionString);
+        try {
+          let db = dbclient.db("IRIS");
+          let userdata = db.collection(
+            global.app.config.development ? "userdata_dev" : "userdata"
+          );
+          await userdata.updateOne(
+            { id: birthday.id },
+            {
+              $set: {
+                birthdayPassed: false,
+              },
+            }
+          );
+          let bd = global.birthdays.find((bd) => bd.id === birthday.id);
+          bd.passed = false;
+          let copy = global.birthdays.filter((obj) => obj.id !== birthday.id);
+          copy.push(bd);
+          global.birthdays = copy;
+        } finally {
+          await dbclient.close();
+        }
+      }
+      if (dSB >= 1) {
+        client.guilds
+          .fetch(global.app.config.mainServer)
+          .then(async (guild) => {
+            await guild.roles.fetch().then((roles) => {
+              roles.every(async (role) => {
+                if (role.name.toLowerCase().includes("birthday")) {
+                  if (role.members.some((m) => m.id == birthday.id)) {
+                    await (
+                      await guild.members.fetch(birthday.id)
+                    ).roles.remove(role);
+                  }
+                  return false; //! stop .every()
+                }
+              });
+            });
+          });
+      }
+      continue;
+    }
     if (
       !isSameDay(
         new Date(birthday.birthday + " 12:00 am UTC"),
-        moment(new Date()).tz(birthday.timezone)
-      ) &&
-      !isSameDay(
-        new Date(
-          new Date(birthday.birthday + " 12:00 am UTC").setDate(
-            new Date(birthday.birthday + " 12:00 am UTC").getDate() + 1
-          )
-        ),
         moment(new Date()).tz(birthday.timezone)
       )
     ) {
@@ -58,7 +100,7 @@ async function runEvent(client, RM) {
               await guild.members.fetch(birthday.id)
             ).roles.add(birthdayRole);
             guild.channels.fetch().then((channels) => {
-              channels.forEach(async (channel) => {
+              channels.every(async (channel) => {
                 if (channel.name.includes("general")) {
                   await channel.send(
                     "It's <@" +
@@ -72,9 +114,34 @@ async function runEvent(client, RM) {
                         : "") +
                       "birthday! Happy birthday!" // It's @USER's <ordinal num (17th,12th,etc.)> birthday! Happy birthday!
                   );
+                  return false;
                 }
               });
             });
+            const dbclient = new MongoClient(global.mongoConnectionString);
+            try {
+              let db = dbclient.db("IRIS");
+              let userdata = db.collection(
+                global.app.config.development ? "userdata_dev" : "userdata"
+              );
+              await userdata.updateOne(
+                { id: birthday.id },
+                {
+                  $set: {
+                    birthdayPassed: true,
+                  },
+                }
+              );
+              let bd = global.birthdays.find((bd) => bd.id === birthday.id);
+              bd.passed = true;
+              let copy = global.birthdays.filter(
+                (obj) => obj.id !== birthday.id
+              );
+              copy.push(bd);
+              global.birthdays = copy;
+            } finally {
+              await dbclient.close();
+            }
           });
       } else {
         client.guilds
@@ -116,8 +183,15 @@ function isSameDay(date1, date2) {
   const month1 = date1.getUTCMonth();
   const day2 = date2.date();
   const month2 = date2.month();
-
   return day1 === day2 && month1 === month2;
+}
+function howManyDaysSinceBirthday(birthday, timezone) {
+  return Math.floor(
+    moment()
+      .tz(timezone)
+      .diff(moment(birthday).tz(timezone).year(moment().tz(timezone).year())) /
+      (24 * 60 * 60 * 1000)
+  );
 }
 function eventType() {
   return eventInfo.type;

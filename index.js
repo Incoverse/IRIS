@@ -137,6 +137,7 @@
             username: interaction.user.username,
             approximatedTimezone: null,
             birthday: null,
+            birthdayPassed: false,
             isNew:
               new Date() -
                 (await interaction.guild.members.fetch(interaction.user.id))
@@ -290,6 +291,7 @@
             id: document.id,
             birthday: document.birthday,
             timezone: document.approximatedTimezone,
+            passed: document.birthdayPassed,
           };
           if (document.birthday !== null) global.birthdays.push(obj);
           if (document.isNew) {

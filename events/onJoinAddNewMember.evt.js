@@ -39,6 +39,8 @@ async function runEvent(RM, ...args) {
       username: args[0].user.username,
       approximatedTimezone: null,
       birthday: null,
+      birthdayPassed: false,
+
       isNew: true,
     };
     await userdata.insertOne(userInfo);
