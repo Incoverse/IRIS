@@ -101,7 +101,7 @@ async function runEvent(client, RM) {
             ).roles.add(birthdayRole);
             guild.channels.fetch().then((channels) => {
               channels.every(async (channel) => {
-                if (channel.name.includes("general")) {
+                if (channel.name.includes("birthdays")) {
                   await channel.send(
                     "It's <@" +
                       birthday.id +
