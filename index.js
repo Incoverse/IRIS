@@ -70,7 +70,14 @@
         GatewayIntentBits.Guilds,
         GatewayIntentBits.MessageContent,
       ],
+	  partials: ["CHANNEL"]
     });
+	
+	const { Player } = require("discord-music-player");
+	const player = new Player(client, {
+		leaveOnEmpty: false, // This options are optional.
+	});
+client.player = player;
 
     global.mongoConnectionString =
       "mongodb://iris:" +
