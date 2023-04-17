@@ -15,7 +15,7 @@ const { MongoClient } = require("mongodb");
 async function runEvent(client, RM) {
   running = true;
   // -----------
-  console.log(global.birthdays)
+  // console.log(global.birthdays)
   for (let birthday of JSON.parse(JSON.stringify(global.birthdays))) {
     if (birthday.timezone == null) birthday.timezone = "Europe/London";
     if (birthday.passed) {

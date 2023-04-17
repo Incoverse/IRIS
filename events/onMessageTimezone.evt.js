@@ -131,7 +131,6 @@ async function runEvent(message, RM) {
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " was matched to timezone: " + global.chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
 
-    let approximatedTimezone2 = null;
     try {
       const database = client.db("IRIS");
       const userdata = database.collection(
@@ -166,21 +165,21 @@ async function runEvent(message, RM) {
         },
         {}
       );
-    } finally {
-      // Ensures that the client will close when you finish/error
-      await client.close();
-    }
-    if (
-      global.birthdays.some((birthday) => birthday.id === message.author.id)
+      if (
+        global.birthdays.some((birthday) => birthday.id === message.author.id)
     ) {
       let birthday = global.birthdays.find(
         (birthday) => birthday.id === message.author.id
       );
-      birthday.timezone = approximatedTimezone2;
+      birthday.timezone = moded;
       let copy = global.birthdays.filter((obj) => obj.id !== message.author.id);
       copy.push(birthday);
       global.birthdays = copy;
     }
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+  }
   }
 }
 function addRemoveTime(time, change) {
