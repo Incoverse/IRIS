@@ -23,7 +23,9 @@ async function runEvent(client, RM) {
         birthday.birthday,
         birthday.timezone
       );
+      console.log(dSB, birthday.id)
       if (dSB >= 1) {
+        console.log("TRIGGERED")
         const guild = await client.guilds.fetch(global.app.config.mainServer);
         const roles = await guild.roles.fetch();
         for (let role of roles) {
