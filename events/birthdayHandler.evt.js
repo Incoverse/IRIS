@@ -23,6 +23,18 @@ async function runEvent(client, RM) {
         birthday.birthday,
         birthday.timezone
       );
+      if (dSB >= 1) {
+        const guild = await client.guilds.fetch(global.app.config.mainServer);
+        const roles = await guild.roles.fetch();
+        for (let role of roles) {
+          if (role.name.toLowerCase().includes("birthday")) {
+            if (role.members.some((m) => m.id == birthday.id)) {
+              await (await guild.members.fetch(birthday.id)).roles.remove(role);
+            }
+            break
+          }
+        }
+      }
       if (dSB >= 2) {
         //! Cannot timezone clip into new birthday
         const dbclient = new MongoClient(global.mongoConnectionString);
@@ -48,24 +60,7 @@ async function runEvent(client, RM) {
           await dbclient.close();
         }
       }
-      if (dSB >= 1) {
-        client.guilds
-          .fetch(global.app.config.mainServer)
-          .then(async (guild) => {
-            await guild.roles.fetch().then((roles) => {
-              roles.every(async (role) => {
-                if (role.name.toLowerCase().includes("birthday")) {
-                  if (role.members.some((m) => m.id == birthday.id)) {
-                    await (
-                      await guild.members.fetch(birthday.id)
-                    ).roles.remove(role);
-                  }
-                  return false; //! stop .every()
-                }
-              });
-            });
-          });
-      }
+
       continue;
     }
     if (
