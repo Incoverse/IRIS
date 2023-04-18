@@ -1,4 +1,4 @@
-// //! -- This is the start of the IRIS journey -- !\\
+//! -- This is the start of the IRIS journey -- !\\
 (async () => {
   const app = {
     version: require("./package.json").version,
