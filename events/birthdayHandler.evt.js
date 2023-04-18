@@ -23,19 +23,23 @@ async function runEvent(client, RM) {
         birthday.birthday,
         birthday.timezone
       );
-      console.log(dSB, birthday.id);
       if (dSB >= 1) {
-        console.log("TRIGGERED");
-        const guild = await client.guilds.fetch(global.app.config.mainServer);
-        const roles = Object.fromEntries(await guild.roles.fetch());
-        for (let role of roles) {
-          if (role.name.toLowerCase().includes("birthday")) {
-            if (role.members.some((m) => m.id == birthday.id)) {
-              await (await guild.members.fetch(birthday.id)).roles.remove(role);
-            }
-            break;
-          }
-        }
+        client.guilds
+          .fetch(global.app.config.mainServer)
+          .then(async (guild) => {
+            await guild.roles.fetch().then((roles) => {
+              roles.every(async (role) => {
+                if (role.name.toLowerCase().includes("birthday")) {
+                  if (role.members.some((m) => m.id == birthday.id)) {
+                    await (
+                      await guild.members.fetch(birthday.id)
+                    ).roles.remove(role);
+                  }
+                  return false; //! stop .every()
+                }
+              });
+            });
+          });
       }
       if (dSB >= 2) {
         //! Cannot timezone clip into new birthday
