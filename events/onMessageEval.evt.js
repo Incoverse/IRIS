@@ -4,7 +4,7 @@ const eventInfo = {
 
 let Discord = require("discord.js");
 let moment = require("moment-timezone");
-
+const { Util, MessageEmbed } = require("discord.js")
 const { MongoClient } = require("mongodb");
 /**
  *
@@ -12,7 +12,7 @@ const { MongoClient } = require("mongodb");
  * @param {*} RM
  */
 async function runEvent(message, RM) {
-    if (message.guildId != global.app.config.mainServer) return
+  if (message.guildId != global.app.config.mainServer) return;
   if (message.content.startsWith(".IRIS-EVAL ")) {
     await message.client.application.fetch();
     if (
@@ -29,14 +29,6 @@ async function runEvent(message, RM) {
         // is used to 'stringify' the code in a safe way that
         // won't error out on objects with circular references
         // (like Collections, for example)
-        while (text.includes(message.client.token))
-        {
-            text = text.replace(message.client.token, "[REDACTED]");
-        }
-        while (text.includes(process.env.DBPASSWD))
-        {
-            text = text.replace(process.env.DBPASSWD, "[REDACTED]");
-        }
 
         if (typeof text !== "string")
           text = require("util").inspect(text, { depth: 1 });
@@ -46,31 +38,44 @@ async function runEvent(message, RM) {
           .replace(/`/g, "`" + String.fromCharCode(8203))
           .replace(/@/g, "@" + String.fromCharCode(8203));
 
+        while (text.includes(message.client.token)) {
+          text = text.replace(message.client.token, "[REDACTED]");
+        }
+        while (text.includes(process.env.DBPASSWD)) {
+          text = text.replace(process.env.DBPASSWD, "[REDACTED]");
+        }
+
         // Send off the cleaned up result
         return text;
       };
 
-      const startRegex = /```(\n|js\n)/
-      const endRegex = /(|\n)```$/
-      const input = message.content.replace(".IRIS-EVAL ","").replace(startRegex,"").replace(endRegex,"")
-      let msg = await message.channel.send("Running....")
+      const startRegex = /```(\n|js\n)/;
+      const endRegex = /(|\n)```$/;
+      const input = message.content
+        .replace(".IRIS-EVAL ", "")
+        .replace(startRegex, "")
+        .replace(endRegex, "");
+      let msg = await message.channel.send("Running....");
       let cleaned;
       try {
-
         // Evaluate (execute) our input
         const evaled = eval(input);
         // Put our eval result through the function
         // we defined above
         cleaned = await clean(evaled);
-  
-        // Reply in the channel with our result
-        msg.edit(`\`\`\`js\n${cleaned}\n\`\`\``);
-      } catch (err) {
-        // Reply in the channel with our error
-        msg.edit(`\`ERROR\` \`\`\`xl\n${cleaned}\n\`\`\``);
-      }
-      
 
+        // Reply in the channel with our result
+        const parts = cleaned.match(/(.|[\r\n]){1,1990}/g) ?? [];
+
+        msg.edit(`\`\`\`js\n${parts.shift()}\n\`\`\``);
+        for (let msg of parts) {
+          message.channel.send(`\`\`\`js\n${msg}\n\`\`\``, );
+        }
+      } catch (err) {
+        console.error(err);
+        // Reply in the channel with our error
+        msg.edit(`\`ERROR\` \`\`\`xl\n${err}\n\`\`\``);
+      }
     }
   }
 }
