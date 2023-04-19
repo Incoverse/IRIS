@@ -45,24 +45,16 @@ async function runEvent(RM, ...args) {
     };
     await userdata.insertOne(userInfo);
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ global.chalk.yellow(args[0].user.tag) + " has joined the server. A database entry has been created for them.")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ global.chalk.yellow(args[0].user.tag) + " has joined the server. A database entry has been created for them.")
   } finally {
     await dbclient.close();
   }
 }
-function eventType() {
-  return eventInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
-function getListenerKey() {
-  return eventInfo.listenerkey;
-}
 
 module.exports = {
   runEvent,
-  returnFileName,
-  eventType,
-  getListenerKey,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  eventType: () => eventInfo.type,
+  priority: () => 0,
+  getListenerKey: () => eventInfo.listenerkey,
 };

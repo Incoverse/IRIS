@@ -1,4 +1,4 @@
-const commandInfo = {
+const eventInfo = {
   type: "onMessage",
 };
 
@@ -12,10 +12,11 @@ let moment = require("moment-timezone");
  */
 async function runEvent(message, RM) {
   const client = new MongoClient(global.mongoConnectionString);
+  if (message.guildId != global.app.config.mainServer) return;
   if (message.author.id == message.client.user.id) return;
   if (message.content.toLowerCase().includes("timezone")) {
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Timezone message registered by " + global.chalk.yellow(message.author.tag)+".")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Timezone message registered by " + global.chalk.yellow(message.author.tag)+".")
     let time = message.content
       .toLowerCase()
       .match(
@@ -23,7 +24,7 @@ async function runEvent(message, RM) {
       );
     if (!time) {
       /* prettier-ignore*/
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +global.chalk.yellow(message.author.tag)+".")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +global.chalk.yellow(message.author.tag)+".")
       return;
     }
     time = time[0];
@@ -75,7 +76,7 @@ async function runEvent(message, RM) {
       timeFormat = "MILITARY"; //* 1234, 2123. 2232
     else if (time.match(/[0-9]{1,2}( |)(am|pm)/gim)) timeFormat = "AMPMSINGLE"; //* 9pm, 2 am, 3pm,
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time format was recognized as: " + global.chalk.yellow(timeFormat) + " in " + global.chalk.yellow(message.author.tag) + "'s timezone message.")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time format was recognized as: " + global.chalk.yellow(timeFormat) + " in " + global.chalk.yellow(message.author.tag) + "'s timezone message.")
 
     if (timeFormat == "AMPMSINGLE") {
       if (time.split(" ").length == 2) {
@@ -105,7 +106,7 @@ async function runEvent(message, RM) {
     }
     if (new Date("2 Jan 1970 " + time) == "Invalid Date") {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " in their timezone message is not valid.")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " in their timezone message is not valid.")
       return;
     }
     let approximatedTimezone = null;
@@ -122,14 +123,14 @@ async function runEvent(message, RM) {
     }
     if (!approximatedTimezone) {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " did not match any timezone")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " did not match any timezone")
 
       return;
     }
     //TODO: Use this later when testing DST
 
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " was matched to timezone: " + global.chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " was matched to timezone: " + global.chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
 
     try {
       const database = client.db("IRIS");
@@ -145,7 +146,7 @@ async function runEvent(message, RM) {
       if (timezones.length >= 5) timezones.shift();
       let moded = mode(timezones);
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(message.author.tag)+"'s timezone is now approximated to be "+global.chalk.yellow(moded+ " ("+getOffset(moded)+")"));
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(message.author.tag)+"'s timezone is now approximated to be "+global.chalk.yellow(moded+ " ("+getOffset(moded)+")"));
       await userdata.updateOne(
         query,
         {
@@ -167,19 +168,21 @@ async function runEvent(message, RM) {
       );
       if (
         global.birthdays.some((birthday) => birthday.id === message.author.id)
-    ) {
-      let birthday = global.birthdays.find(
-        (birthday) => birthday.id === message.author.id
-      );
-      birthday.timezone = moded;
-      let copy = global.birthdays.filter((obj) => obj.id !== message.author.id);
-      copy.push(birthday);
-      global.birthdays = copy;
+      ) {
+        let birthday = global.birthdays.find(
+          (birthday) => birthday.id === message.author.id
+        );
+        birthday.timezone = moded;
+        let copy = global.birthdays.filter(
+          (obj) => obj.id !== message.author.id
+        );
+        copy.push(birthday);
+        global.birthdays = copy;
+      }
+    } finally {
+      // Ensures that the client will close when you finish/error
+      await client.close();
     }
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
   }
 }
 function addRemoveTime(time, change) {
@@ -230,14 +233,9 @@ function tConvert(time) {
   return time.join(""); // return adjusted time or original string
 }
 
-function eventType() {
-  return commandInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
 module.exports = {
   runEvent,
-  returnFileName,
-  eventType,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  priority: () => 0,
+  eventType: () => eventInfo.type,
 };

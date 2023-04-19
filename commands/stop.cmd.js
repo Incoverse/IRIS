@@ -1,8 +1,6 @@
 const Discord = require("discord.js");
 const commandInfo = {
-  usage: "[COMMAND] <required> [optional]", // [COMMAND] gets replaced with the command and correct prefix later
   category: "fun/music/mod/misc/economy",
-  reqPermissions: [],
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("stop")
     .setDescription("Force-stop IRIS.")
@@ -34,7 +32,7 @@ async function runCommand(interaction, RM) {
         );
       } else {
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" has stopped IRIS.");
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" has stopped IRIS.");
 
         await interaction.reply({
           content: "IRIS is now stopping...",
@@ -43,7 +41,7 @@ async function runCommand(interaction, RM) {
       }
     } else {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
 
       interaction.reply({
         content: "You do not have permission to run this command.",
@@ -95,41 +93,10 @@ async function runCommand(interaction, RM) {
 const delay = (delayInms) => {
   return new Promise((resolve) => setTimeout(resolve, delayInms));
 };
-function commandHelp() {
-  return commandInfo.help;
-}
-function commandUsage() {
-  return commandInfo.usage;
-}
-function commandCategory() {
-  return commandInfo.category;
-}
-function getSlashCommand() {
-  return commandInfo.slashCommand;
-}
-function commandPermissions() {
-  return commandInfo.reqPermissions || null;
-}
-function getSlashCommandJSON() {
-  if (commandInfo.slashCommand.length !== null)
-    return commandInfo.slashCommand.toJSON();
-  else return null;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
-function getHelp() {
-  return commandInfo.detailedHelp;
-}
 
 module.exports = {
   runCommand,
-  getHelp,
-  returnFileName,
-  commandHelp,
-  commandUsage,
-  commandCategory,
-  getSlashCommand,
-  commandPermissions,
-  getSlashCommandJSON,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  commandCategory: () => commandInfo.category,
+  getSlashCommand: () => commandInfo.slashCommand,
 };

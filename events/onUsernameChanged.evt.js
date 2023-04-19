@@ -22,7 +22,11 @@ async function runEvent(RM, ...args) {
     return; // User changed something else, which we don't care about
   global.app.debugLog(
     global.chalk.white.bold(
-      "[" + moment().format("M/D/y HH:mm:ss") + "] [" + returnFileName() + "] "
+      "[" +
+        moment().format("M/D/y HH:mm:ss") +
+        "] [" +
+        module.exports.returnFileName() +
+        "] "
     ) +
       global.chalk.yellow(oldUser.tag) +
       " changed their username/tag to " +
@@ -53,19 +57,12 @@ async function runEvent(RM, ...args) {
     await dbclient.close();
   }
 }
-function eventType() {
-  return eventInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
-function getListenerKey() {
-  return eventInfo.listenerkey;
-}
 
 module.exports = {
   runEvent,
-  returnFileName,
-  eventType,
-  getListenerKey,
+
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  eventType: () => eventInfo.type,
+  priority: () => 0,
+  getListenerKey: () => eventInfo.listenerkey,
 };

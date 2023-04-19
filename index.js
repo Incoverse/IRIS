@@ -106,8 +106,17 @@
         chalk.white("[I]")
     );
     client.on(Events.MessageCreate, async (message) => {
-      for (let i in requiredModules) {
+      const prioritizedTable = {};
+      for (let i of Object.keys(requiredModules)) {
         if (i.startsWith("event")) {
+          const priority = requiredModules[i].priority() ?? 0;
+          const priorityKey = Number(priority).toString();
+          prioritizedTable[priorityKey] = prioritizedTable[priorityKey] ?? [];
+          prioritizedTable[priorityKey].push(i);
+        }
+      }
+      for (const prio of Object.keys(prioritizedTable).sort((a, b) => b - a)) {
+        for (let i of prioritizedTable[prio]) {
           if (requiredModules[i].eventType() === "onMessage") {
             requiredModules[i].runEvent(message, requiredModules);
           }
@@ -187,7 +196,7 @@
             command.getSlashCommand().name[0].toUpperCase() +
             command.getSlashCommand().name.slice(1)
         ] = command;
-        commands.push(command.getSlashCommandJSON());
+        commands.push(command.getSlashCommand().toJSON());
       }
 
       const eventsPath = path.join(__dirname, "events");
@@ -317,8 +326,18 @@
         global.newMembers = [...new Set(global.newMembers)];
       }
 
-      for (let i in requiredModules) {
+      const prioritizedTable = {};
+      for (let i of Object.keys(requiredModules)) {
         if (i.startsWith("event")) {
+          const priority = requiredModules[i].priority() ?? 0;
+          const priorityKey = Number(priority).toString();
+          prioritizedTable[priorityKey] = prioritizedTable[priorityKey] ?? [];
+          prioritizedTable[priorityKey].push(i);
+        }
+      }
+
+      for (const prio of Object.keys(prioritizedTable).sort((a, b) => b - a)) {
+        for (let i of prioritizedTable[prio]) {
           /* prettier-ignore */
           global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Registering '"+chalk.yellow(requiredModules[i].eventType())+("discordEvent"===requiredModules[i].eventType()?" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")":"")+("runEvery"===requiredModules[i].eventType()?" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose:!0}))+")":"")+"' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
           if (requiredModules[i].eventType() === "runEvery") {
@@ -334,7 +353,7 @@
                 await requiredModules[i].runEvent(client, requiredModules);
               } else {
                 /* prettier-ignore */
-                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Not running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName())+" reason: Previous interation is still running.");
+                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Not running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName())+" reason: Previous iteration is still running.");
               }
             }, requiredModules[i].getMS());
           } else if (requiredModules[i].eventType() === "discordEvent") {

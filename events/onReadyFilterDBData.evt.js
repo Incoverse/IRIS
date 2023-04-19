@@ -44,14 +44,10 @@ async function runEvent(client, RM) {
   }
 }
 
-function eventType() {
-  return eventInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
 module.exports = {
+  priority: () => 1,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  eventType: () => eventInfo.type,
+  priority: () => 10,
   runEvent,
-  returnFileName,
-  eventType,
 };

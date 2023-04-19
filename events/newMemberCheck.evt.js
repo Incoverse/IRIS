@@ -64,23 +64,12 @@ async function runEvent(client, RM) {
   // -----------
   running = false;
 }
-function eventType() {
-  return eventInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
-function getMS() {
-  return eventInfo.ms;
-}
-function runImmediately() {
-  return eventInfo.runImmediately;
-}
 module.exports = {
   runEvent,
-  returnFileName,
-  eventType,
-  getMS,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  eventType: () => eventInfo.type,
+  priority: () => 0,
+  getMS: () => eventInfo.ms,
   running,
-  runImmediately,
+  runImmediately: () => eventInfo.runImmediately,
 };

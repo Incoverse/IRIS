@@ -1,8 +1,6 @@
 const Discord = require("discord.js");
 const commandInfo = {
-  usage: "[COMMAND] <required> [optional]", // [COMMAND] gets replaced with the command and correct prefix later
   category: "fun/music/mod/misc/economy",
-  reqPermissions: [],
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("lastactive")
     .setDescription("Check when a user was last active.")
@@ -192,41 +190,10 @@ function timeAgo(dateParam) {
 
   return getFormattedDate(date); // 10. January 2017. at 10:20
 }
-function commandHelp() {
-  return commandInfo.help;
-}
-function commandUsage() {
-  return commandInfo.usage;
-}
-function commandCategory() {
-  return commandInfo.category;
-}
-function getSlashCommand() {
-  return commandInfo.slashCommand;
-}
-function commandPermissions() {
-  return commandInfo.reqPermissions || null;
-}
-function getSlashCommandJSON() {
-  if (commandInfo.slashCommand.length !== null)
-    return commandInfo.slashCommand.toJSON();
-  else return null;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
-function getHelp() {
-  return commandInfo.detailedHelp;
-}
 
 module.exports = {
   runCommand,
-  getHelp,
-  returnFileName,
-  commandHelp,
-  commandUsage,
-  commandCategory,
-  getSlashCommand,
-  commandPermissions,
-  getSlashCommandJSON,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  commandCategory: () => commandInfo.category,
+  getSlashCommand: () => commandInfo.slashCommand,
 };

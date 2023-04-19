@@ -59,7 +59,7 @@ async function runEvent(client, RM) {
                   "[" +
                     moment().format("M/D/y HH:mm:ss") +
                     "] [" +
-                    returnFileName() +
+                    module.exports.returnFileName() +
                     "] "
                 ) +
                   global.chalk.yellow(
@@ -91,7 +91,7 @@ async function runEvent(client, RM) {
           "[" +
             moment().format("M/D/y HH:mm:ss") +
             "] [" +
-            returnFileName() +
+            module.exports.returnFileName() +
             "] "
         ) +
           "Successfully added " +
@@ -109,14 +109,9 @@ async function runEvent(client, RM) {
   }
 }
 
-function eventType() {
-  return eventInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
 module.exports = {
   runEvent,
-  returnFileName,
-  eventType,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  eventType: () => eventInfo.type,
+  priority: () => 0,
 };

@@ -12,6 +12,7 @@ const { MongoClient } = require("mongodb");
  * @param {*} RM
  */
 async function runEvent(message, RM) {
+  if (message.guildId != global.app.config.mainServer) return;
   const client = new MongoClient(global.mongoConnectionString);
   if (message.author.id == message.client.user.id) return;
   try {
@@ -33,14 +34,10 @@ async function runEvent(message, RM) {
     await client.close();
   }
 }
-function eventType() {
-  return eventInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
 module.exports = {
   runEvent,
-  returnFileName,
-  eventType,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  eventType: () => eventInfo.type,
+
+  priority: () => 0,
 };

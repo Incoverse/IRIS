@@ -4,7 +4,7 @@ const eventInfo = {
 
 let Discord = require("discord.js");
 let moment = require("moment-timezone");
-const { Util, MessageEmbed } = require("discord.js")
+const { Util, MessageEmbed } = require("discord.js");
 const { MongoClient } = require("mongodb");
 /**
  *
@@ -69,7 +69,7 @@ async function runEvent(message, RM) {
 
         msg.edit(`\`\`\`js\n${parts.shift()}\n\`\`\``);
         for (let msg of parts) {
-          message.channel.send(`\`\`\`js\n${msg}\n\`\`\``, );
+          message.channel.send(`\`\`\`js\n${msg}\n\`\`\``);
         }
       } catch (err) {
         console.error(err);
@@ -79,14 +79,10 @@ async function runEvent(message, RM) {
     }
   }
 }
-function eventType() {
-  return eventInfo.type;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
+
 module.exports = {
   runEvent,
-  returnFileName,
-  eventType,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  eventType: () => eventInfo.type,
+  priority: () => 0,
 };

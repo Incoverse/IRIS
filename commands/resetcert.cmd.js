@@ -1,8 +1,6 @@
 const Discord = require("discord.js");
 const commandInfo = {
-  usage: "[COMMAND] <required> [optional]", // [COMMAND] gets replaced with the command and correct prefix later
   category: "fun/music/mod/misc/economy",
-  reqPermissions: [],
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("resetcert")
     .setDescription("Force a reset of the certificate for MongoDB.")
@@ -34,7 +32,7 @@ async function runCommand(interaction, RM) {
         );
       } else {
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" replaced the MongoDB certificate.");
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" replaced the MongoDB certificate.");
         interaction.deferReply();
         let beforeChange,
           output = null;
@@ -83,7 +81,7 @@ async function runCommand(interaction, RM) {
         }
         if (output.stdout == beforeChange.stdout) {
           /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate not changed, reason: No new certificate is available. This certificate expires in: " + global.chalk.yellow(output.stdout));
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Certificate not changed, reason: No new certificate is available. This certificate expires in: " + global.chalk.yellow(output.stdout));
           interaction.editReply(
             "No new certificate is available. This certificate expires in: ``" +
               prettyms(
@@ -95,7 +93,7 @@ async function runCommand(interaction, RM) {
           );
         } else {
           /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate successfully replaced. Expires in: " + global.chalk.yellow(output.stdout));
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Certificate successfully replaced. Expires in: " + global.chalk.yellow(output.stdout));
           interaction.editReply(
             "The certificate has been successfully replaced. This certificate expires in: ``" +
               prettyms(
@@ -109,7 +107,7 @@ async function runCommand(interaction, RM) {
       }
     } else {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
       interaction.reply({
         content: "You do not have permission to run this command.",
         ephemeral: true,
@@ -160,41 +158,10 @@ async function runCommand(interaction, RM) {
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-function commandHelp() {
-  return commandInfo.help;
-}
-function commandUsage() {
-  return commandInfo.usage;
-}
-function commandCategory() {
-  return commandInfo.category;
-}
-function getSlashCommand() {
-  return commandInfo.slashCommand;
-}
-function commandPermissions() {
-  return commandInfo.reqPermissions || null;
-}
-function getSlashCommandJSON() {
-  if (commandInfo.slashCommand.length !== null)
-    return commandInfo.slashCommand.toJSON();
-  else return null;
-}
-function returnFileName() {
-  return __filename.split("/")[__filename.split("/").length - 1];
-}
-function getHelp() {
-  return commandInfo.detailedHelp;
-}
 
 module.exports = {
   runCommand,
-  getHelp,
-  returnFileName,
-  commandHelp,
-  commandUsage,
-  commandCategory,
-  getSlashCommand,
-  commandPermissions,
-  getSlashCommandJSON,
+  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  commandCategory: () => commandInfo.category,
+  getSlashCommand: () => commandInfo.slashCommand,
 };
