@@ -36,7 +36,7 @@ async function runEvent(client, RM) {
         $or: IDsToRemove,
       });
       /* prettier-ignore */
-      global.app.debugLog(global.chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Successfully cleansed database of "+global.chalk.yellow(result.deletedCount)+" "+(result.deletedCount>1||result.deletedCount<1?"entries":"entry")+".");
+      global.app.debugLog(global.chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Successfully cleansed database of "+global.chalk.yellow(result.deletedCount)+" "+(result.deletedCount>1||result.deletedCount<1?"entries":"entry")+".");
     }
   } finally {
     // Ensures that the client will close when you finish/error
