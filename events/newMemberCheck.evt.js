@@ -32,7 +32,7 @@ async function runEvent(client, RM) {
           (item) => item !== memberID
         );
         /* prettier-ignore */
-        global.app.debugLog(global.chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Removing '"+newMembersRole.name+"' (role) from "+global.chalk.yellow(member.user.tag));
+        global.app.debugLog(global.chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Removing '"+newMembersRole.name+"' (role) from "+global.chalk.yellow(member.user.tag));
         member.roles.remove(newMembersRole);
         updated.push(memberID);
       }
