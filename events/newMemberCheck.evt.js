@@ -27,6 +27,7 @@ async function runEvent(client, RM) {
   });
   for (let memberID of JSON.parse(JSON.stringify(global.newMembers))) {
     await guild.members.fetch(memberID).then(async (member) => {
+      if (member.user.bot) return;
       if (new Date() - member.joinedAt >= 7 * 24 * 60 * 60 * 1000) {
         global.newMembers = global.newMembers.filter(
           (item) => item !== memberID

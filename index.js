@@ -219,12 +219,10 @@
       (async () => {
         try {
           await rest.put(
-            global.app.config.development
-              ? Routes.applicationGuildCommands(
-                  client.user.id,
-                  global.app.config.mainServer
-                )
-              : Routes.applicationCommands(client.user.id),
+            Routes.applicationGuildCommands(
+              client.user.id,
+              global.app.config.mainServer
+            ),
             {
               body: commands,
             }
@@ -288,7 +286,6 @@
           "------------------------"
       );
       const clienttwo = new MongoClient(global.mongoConnectionString);
-      Events.GuildMemberUpdate;
       try {
         const database = clienttwo.db("IRIS");
         const userdata = database.collection(

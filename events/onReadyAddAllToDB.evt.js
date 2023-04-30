@@ -77,8 +77,8 @@ async function runEvent(client, RM) {
           }
         }
         if (
-          new Date() - (await guild.members.fetch(member.id)).joinedAt <
-          7 * 24 * 60 * 60 * 1000
+          new Date() - member.joinedAt < 7 * 24 * 60 * 60 * 1000 &&
+          !member.user.bot
         ) {
           member.roles.add(newMembersRole);
           global.newMembers.push(member.id);
