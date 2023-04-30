@@ -129,7 +129,10 @@ function howManyDaysUntilBirthday(birthday, timezone) {
 
 module.exports = {
   runCommand,
-  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  returnFileName: () =>
+    __filename.split(process.platform == "linux" ? "/" : "\\")[
+      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+    ],
   commandCategory: () => commandInfo.category,
   getSlashCommand: () => commandInfo.slashCommand,
 };
