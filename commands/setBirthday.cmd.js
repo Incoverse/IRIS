@@ -103,7 +103,7 @@ async function runCommand(interaction, RM) {
       });
       return;
     }
-    const match = date.match(/[0-9]{4}\W[0-9]{2}\W[0-9]{2}/);
+    const match = date.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/);
     if (match) {
       date = match[0];
     } else {
@@ -137,7 +137,7 @@ async function runCommand(interaction, RM) {
     ) {
       await interaction.reply({
         content:
-          "You're too young! You need to be at least 13 years old. **Keep in mind that Discord ToS says that you have to be at least 13 to use their service.**",
+          "You're too young! You need to be at least 13 years old. **Keep in mind that Discord's ToS say that you have to be at least 13 to use their service.**",
         ephemeral: true,
       });
       return;

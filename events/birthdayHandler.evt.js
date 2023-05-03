@@ -1,6 +1,6 @@
 const eventInfo = {
   type: "runEvery",
-  ms: 60000, //1m 1s, just to avoid accidentally calling a birthday twice
+  ms: 60000,
   runImmediately: true,
 };
 let running = false;

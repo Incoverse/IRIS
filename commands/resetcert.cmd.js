@@ -72,7 +72,7 @@ async function runCommand(interaction, RM) {
               "Some files are missing!!\n" +
                 (fullchainexists
                   ? "fullchain.pem exists"
-                  : "fullschain.pem missing!") +
+                  : "fullchain.pem missing!") +
                 (fullchainexists && mongodpemexists ? "\n" : "") +
                 (mongodpemexists ? "mongod.pem exists" : "mongod.pem missing!")
             );
