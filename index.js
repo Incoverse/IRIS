@@ -19,10 +19,12 @@
   app.config = JsonCParser.parse(
     require("fs").readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
-  global.app.config.development =
-    process.env.DEVELOPMENT == "YES" ? true : false;
+  global.app.config.development = process.env.DEVELOPMENT == "YES";
   global.app.debugLog = app.config.debugging ? console.log : () => {};
   global.mongoConnectionString = null;
+  const mainFileName = __filename.split(
+    process.platform == "linux" ? "/" : "\\"
+  )[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
   if (global.app.config.development) {
     global.app.config.mainServer = global.app.config.developmentServer;
   }
@@ -80,27 +82,50 @@
     //!--------------------------
     console.clear();
     console.log(
-      chalk.white.bold("[" + moment().format("M/D/y HH:mm:ss") + "] [MAIN] ") +
+      chalk.white.bold(
+        "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] [" +
+          __filename.split(process.platform == "linux" ? "/" : "\\")[
+            __filename.split(process.platform == "linux" ? "/" : "\\").length -
+              1
+          ] +
+          "] "
+      ) +
         chalk.green("IRIS ") +
         chalk.bold.white("v" + app.version) +
         chalk.green(" is starting up!") +
         "\n" +
         chalk.white.bold(
-          "[" + moment().format("M/D/y HH:mm:ss") + "] [LOADER] "
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
         ) +
         chalk.yellow("Modules are loading up...")
     );
     console.log(
       chalk.white.bold(
-        "[" + moment().format("M/D/y HH:mm:ss") + "] [LOADER] "
+        "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] [" +
+          __filename.split(process.platform == "linux" ? "/" : "\\")[
+            __filename.split(process.platform == "linux" ? "/" : "\\").length -
+              1
+          ] +
+          "] "
       ) + chalk.green("Modules loaded! Adding to requiredModules....")
     );
     //!--------------------------
     const requiredModules = {};
     console.log(
-      chalk.blueBright("------------------------\n") +
-        chalk.green("Added!\n") +
-        chalk.blueBright("------------------------\n") +
+      chalk.white.bold(
+        "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] [" +
+          __filename.split(process.platform == "linux" ? "/" : "\\")[
+            __filename.split(process.platform == "linux" ? "/" : "\\").length -
+              1
+          ] +
+          "] "
+      ) +
         chalk.white("[I] ") +
         chalk.yellow("Logging in... ") +
         chalk.white("[I]")
@@ -179,6 +204,14 @@
     });
 
     client.on(Events.ClientReady, async () => {
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) +
+          chalk.white("[I] ") +
+          chalk.green("Logged in!") +
+          chalk.white(" [I]")
+      );
       const commands = [];
       // Grab all the command files from the commands directory you created earlier
       const commandsPath = path.join(__dirname, "commands");
@@ -189,7 +222,7 @@
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Registering command: " +chalk.blueBright(file));
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Registering command: " +chalk.blueBright(file));
         const command = require(`./commands/${file}`);
         requiredModules[
           "cmd" +
@@ -198,6 +231,11 @@
         ] = command;
         commands.push(command.getSlashCommand().toJSON());
       }
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) + "------------------------"
+      );
 
       const eventsPath = path.join(__dirname, "events");
       const eventFiles = fs
@@ -219,12 +257,10 @@
       (async () => {
         try {
           await rest.put(
-            global.app.config.development
-              ? Routes.applicationGuildCommands(
-                  client.user.id,
-                  global.app.config.mainServer
-                )
-              : Routes.applicationCommands(client.user.id),
+            Routes.applicationGuildCommands(
+              client.user.id,
+              global.app.config.mainServer
+            ),
             {
               body: commands,
             }
@@ -233,9 +269,6 @@
           console.error(error);
         }
       })();
-      console.log(
-        chalk.white("[I] ") + chalk.green("Logged in!") + chalk.white(" [I]")
-      );
       if (!global.app.config.development)
         client.user.setPresence({
           activities: [
@@ -255,40 +288,7 @@
         .then(async (member) => member.forEach(async (m) => users.push(m.id)))
         .catch(console.error);
 
-      console.log(
-        chalk.blueBright("------------------------\n") +
-          chalk.redBright(mainServer.name) +
-          " has " +
-          chalk.cyanBright(users.length) +
-          " members."
-      );
-      console.log(
-        "------------------------\n" +
-          "Current time is: " +
-          chalk.cyanBright(
-            DateFormatter.formatDate(
-              new Date(),
-              `MMMM ????, YYYY hh:mm:ss A`
-            ).replace("????", getOrdinalNum(new Date().getDate()))
-          ) +
-          "\n" +
-          "Discord.JS version: " +
-          chalk.yellow(Discord.version) +
-          "\n" +
-          "Current API Latency: " +
-          chalk.cyanBright(client.ws.ping) +
-          " ms\n" +
-          "------------------------\n" +
-          chalk.blue.bold(client.user.tag) +
-          " is ready and is running " +
-          chalk.blue.bold(
-            global.app.config.development ? "DEVELOPMENT" : "COMMUNITY"
-          ) +
-          " edition!\n" +
-          "------------------------"
-      );
       const clienttwo = new MongoClient(global.mongoConnectionString);
-      Events.GuildMemberUpdate;
       try {
         const database = clienttwo.db("IRIS");
         const userdata = database.collection(
@@ -304,7 +304,8 @@
           };
           if (document.birthday !== null) global.birthdays.push(obj);
           if (document.isNew) {
-            global.newMembers.push(document.id);
+            if (!global.newMembers.includes(document.id))
+              global.newMembers.push(document.id);
           }
         }
       } finally {
@@ -321,9 +322,9 @@
       });
       if (newMembersRole !== null) {
         newMembersRole.members.forEach((member) => {
-          global.newMembers.push(member.id);
+          if (!global.newMembers.includes(member.id))
+            global.newMembers.push(member.id);
         });
-        global.newMembers = [...new Set(global.newMembers)];
       }
 
       const prioritizedTable = {};
@@ -339,33 +340,40 @@
       for (const prio of Object.keys(prioritizedTable).sort((a, b) => b - a)) {
         for (let i of prioritizedTable[prio]) {
           /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Registering '"+chalk.yellow(requiredModules[i].eventType())+("discordEvent"===requiredModules[i].eventType()?" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")":"")+("runEvery"===requiredModules[i].eventType()?" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose:!0}))+")":"")+"' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Registering '"+chalk.yellow(requiredModules[i].eventType())+("discordEvent"===requiredModules[i].eventType()?" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")":"")+("runEvery"===requiredModules[i].eventType()?" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose:!0}))+")":"")+"' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
           if (requiredModules[i].eventType() === "runEvery") {
             if (requiredModules[i].runImmediately()) {
               /* prettier-ignore */
-              global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.blue.bold("runImmediately")+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
+              global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.blue.bold("runImmediately")+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
               await requiredModules[i].runEvent(client, requiredModules);
             }
             setInterval(async () => {
               if (!requiredModules[i].running) {
                 /* prettier-ignore */
-                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
+                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
                 await requiredModules[i].runEvent(client, requiredModules);
               } else {
                 /* prettier-ignore */
-                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Not running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName())+" reason: Previous iteration is still running.");
+                global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Not running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.yellow(prettyms(requiredModules[i].getMS(),{verbose: true}))+")' event: "+chalk.blueBright(requiredModules[i].returnFileName())+" reason: Previous iteration is still running.");
               }
             }, requiredModules[i].getMS());
           } else if (requiredModules[i].eventType() === "discordEvent") {
             client.on(requiredModules[i].getListenerKey(), async (...args) => {
               /* prettier-ignore */
-              global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] [MAIN] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
+              global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Running '"+chalk.yellow(requiredModules[i].eventType())+" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
               await requiredModules[i].runEvent(requiredModules, ...args);
             });
           } else if (requiredModules[i].eventType() === "onStart") {
             global.app.debugLog(
               chalk.white.bold(
-                "[" + moment().format("M/D/y HH:mm:ss") + "] [MAIN] "
+                "[" +
+                  moment().format("M/D/y HH:mm:ss") +
+                  "] [" +
+                  __filename.split(process.platform == "linux" ? "/" : "\\")[
+                    __filename.split(process.platform == "linux" ? "/" : "\\")
+                      .length - 1
+                  ] +
+                  "] "
               ) +
                 "Running '" +
                 chalk.yellow(requiredModules[i].eventType()) +
@@ -378,13 +386,80 @@
       }
       console.log(
         chalk.white.bold(
-          "[" + moment().format("M/D/y HH:mm:ss") + "] [MAIN] "
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
         ) +
           "All commands and events have been registered. " +
           eventFiles.length +
           " event(s), " +
           commands.length +
           " command(s)."
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) + "------------------------"
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) +
+          chalk.redBright(mainServer.name) +
+          " has " +
+          chalk.cyanBright(users.length) +
+          " members."
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) + "------------------------"
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) +
+          "Current date & time is: " +
+          chalk.cyanBright(
+            DateFormatter.formatDate(
+              new Date(),
+              `MMMM ????, YYYY @ hh:mm:ss A`
+            ).replace("????", getOrdinalNum(new Date().getDate()))
+          )
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) +
+          "Discord.JS version: " +
+          chalk.yellow(Discord.version)
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) +
+          "Current API Latency: " +
+          chalk.cyanBright(client.ws.ping) +
+          " ms"
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) + "------------------------"
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) +
+          chalk.blue.bold(client.user.tag) +
+          " is ready and is running " +
+          chalk.blue.bold(
+            global.app.config.development ? "DEVELOPMENT" : "COMMUNITY"
+          ) +
+          " edition!"
+      );
+      console.log(
+        chalk.white.bold(
+          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+        ) + "------------------------"
       );
     });
 

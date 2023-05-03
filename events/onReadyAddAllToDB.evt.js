@@ -77,11 +77,12 @@ async function runEvent(client, RM) {
           }
         }
         if (
-          new Date() - (await guild.members.fetch(member.id)).joinedAt <
-          7 * 24 * 60 * 60 * 1000
+          new Date() - member.joinedAt < 7 * 24 * 60 * 60 * 1000 &&
+          !member.user.bot
         ) {
           member.roles.add(newMembersRole);
-          global.newMembers.push(member.id);
+          if (!global.newMembers.includes(member.id))
+            global.newMembers.push(member.id);
         }
       });
     });
@@ -111,7 +112,10 @@ async function runEvent(client, RM) {
 
 module.exports = {
   runEvent,
-  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  returnFileName: () =>
+    __filename.split(process.platform == "linux" ? "/" : "\\")[
+      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+    ],
   eventType: () => eventInfo.type,
   priority: () => 0,
 };

@@ -72,7 +72,7 @@ async function runCommand(interaction, RM) {
               "Some files are missing!!\n" +
                 (fullchainexists
                   ? "fullchain.pem exists"
-                  : "fullschain.pem missing!") +
+                  : "fullchain.pem missing!") +
                 (fullchainexists && mongodpemexists ? "\n" : "") +
                 (mongodpemexists ? "mongod.pem exists" : "mongod.pem missing!")
             );
@@ -161,7 +161,10 @@ function sleep(ms) {
 
 module.exports = {
   runCommand,
-  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  returnFileName: () =>
+    __filename.split(process.platform == "linux" ? "/" : "\\")[
+      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+    ],
   commandCategory: () => commandInfo.category,
   getSlashCommand: () => commandInfo.slashCommand,
 };

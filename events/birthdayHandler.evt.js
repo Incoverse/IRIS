@@ -1,6 +1,6 @@
 const eventInfo = {
   type: "runEvery",
-  ms: 60000, //1m 1s, just to avoid accidentally calling a birthday twice
+  ms: 60000,
   runImmediately: true,
 };
 let running = false;
@@ -164,7 +164,10 @@ function howManyDaysSinceBirthday(birthday, timezone) {
 
 module.exports = {
   runEvent,
-  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  returnFileName: () =>
+    __filename.split(process.platform == "linux" ? "/" : "\\")[
+      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+    ],
   eventType: () => eventInfo.type,
   priority: () => 0,
   getMS: () => eventInfo.ms,

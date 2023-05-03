@@ -235,7 +235,10 @@ function tConvert(time) {
 
 module.exports = {
   runEvent,
-  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  returnFileName: () =>
+    __filename.split(process.platform == "linux" ? "/" : "\\")[
+      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+    ],
   priority: () => 0,
   eventType: () => eventInfo.type,
 };

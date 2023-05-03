@@ -24,7 +24,8 @@ async function runEvent(RM, ...args) {
     });
   });
   args[0].roles.add(newMembersRole);
-  global.newMembers.push(args[0].id);
+  if (!global.newMembers.includes(args[0].id))
+    global.newMembers.push(args[0].id);
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
     const database = dbclient.db("IRIS");
@@ -53,7 +54,10 @@ async function runEvent(RM, ...args) {
 
 module.exports = {
   runEvent,
-  returnFileName: () => __filename.split("/")[__filename.split("/").length - 1],
+  returnFileName: () =>
+    __filename.split(process.platform == "linux" ? "/" : "\\")[
+      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+    ],
   eventType: () => eventInfo.type,
   priority: () => 0,
   getListenerKey: () => eventInfo.listenerkey,
