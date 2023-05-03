@@ -24,7 +24,8 @@ async function runEvent(RM, ...args) {
     });
   });
   args[0].roles.add(newMembersRole);
-  global.newMembers.push(args[0].id);
+  if (!global.newMembers.includes(args[0].id))
+    global.newMembers.push(args[0].id);
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
     const database = dbclient.db("IRIS");

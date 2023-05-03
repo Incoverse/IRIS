@@ -19,8 +19,7 @@
   app.config = JsonCParser.parse(
     require("fs").readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
-  global.app.config.development =
-    process.env.DEVELOPMENT == "YES" ? true : false;
+  global.app.config.development = process.env.DEVELOPMENT == "YES";
   global.app.debugLog = app.config.debugging ? console.log : () => {};
   global.mongoConnectionString = null;
   const mainFileName = __filename.split(
@@ -305,7 +304,8 @@
           };
           if (document.birthday !== null) global.birthdays.push(obj);
           if (document.isNew) {
-            global.newMembers.push(document.id);
+            if (!global.newMembers.includes(document.id))
+              global.newMembers.push(document.id);
           }
         }
       } finally {
@@ -322,9 +322,9 @@
       });
       if (newMembersRole !== null) {
         newMembersRole.members.forEach((member) => {
-          global.newMembers.push(member.id);
+          if (!global.newMembers.includes(member.id))
+            global.newMembers.push(member.id);
         });
-        global.newMembers = [...new Set(global.newMembers)];
       }
 
       const prioritizedTable = {};

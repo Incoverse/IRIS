@@ -81,7 +81,8 @@ async function runEvent(client, RM) {
           !member.user.bot
         ) {
           member.roles.add(newMembersRole);
-          global.newMembers.push(member.id);
+          if (!global.newMembers.includes(member.id))
+            global.newMembers.push(member.id);
         }
       });
     });
