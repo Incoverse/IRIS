@@ -38,13 +38,8 @@ async function runEvent(message, RM) {
           .replace(/`/g, "`" + String.fromCharCode(8203))
           .replace(/@/g, "@" + String.fromCharCode(8203));
 
-        while (text.includes(message.client.token)) {
-          text = text.replace(message.client.token, "[REDACTED]");
-        }
-        while (text.includes(process.env.DBPASSWD)) {
-          text = text.replace(process.env.DBPASSWD, "[REDACTED]");
-        }
-
+        text = text.replaceAll(message.client.token, "[REDACTED]");
+        text = text.replaceAll(process.env.DBPASSWD, "[REDACTED]");
         // Send off the cleaned up result
         return text;
       };
