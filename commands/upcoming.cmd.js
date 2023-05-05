@@ -61,10 +61,7 @@ async function runCommand(interaction, RM) {
       .setTitle("Upcoming birthdays")
       .setColor("Default")
       .setFooter({
-        text:
-          "Days are calculated using the timezone that IRIS' server is in (" +
-          moment.tz.guess() +
-          ").",
+        text: "Days are calculated using the timezone that IRIS' server is in.",
         iconURL: "https://i.imgur.com/0kzdaXu.png",
       });
     for (let i = 0; i < 5; i++) {
