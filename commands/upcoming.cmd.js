@@ -59,7 +59,10 @@ async function runCommand(interaction, RM) {
     //Send the result in an embed, with each birthday being a field
     const embed = new Discord.EmbedBuilder()
       .setTitle("Upcoming birthdays")
-      .setColor("Default");
+      .setColor("Default")
+      .setFooter({
+        text: "Days are calculated using the timezone that IRIS' server is in.",
+      });
     for (let i = 0; i < 5; i++) {
       if (!upcomingBirthdaysArray[i]) break;
       let birthday = upcomingBirthdaysArray[i];
