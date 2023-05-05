@@ -17,21 +17,45 @@ let moment = require("moment-timezone");
  */
 async function runCommand(interaction, RM) {
   try {
+    // make a function that sorts the global.birthdays array (which is made up out of objects) by how long is left until that birthday from today. if the birthday has already passed this year, change the year to the next year. The users timezone is in birthday.timezone, if its null, make it "Europe/London". This is an example of a birthday object:
+    // {
+    //     id: '247068471144349696',
+    //     birthday: '2001-06-16',
+    //     timezone: 'Europe/Berlin',
+    //     passed: false
+    // }
+    // The "birthday" property can start with 0000- if the user didnt want to show their age
+    // Please use the 'moment' variable which is the 'moment-timezone' library
     function upcoming() {
-      let upcomingBirthdaysArray = [];
-      for (let birthday of global.birthdays) {
-        if (birthday.passed == true) continue;
-        upcomingBirthdaysArray.push(birthday);
+      const upcomingBirthdays = [];
+      for (let i = 0; i < global.birthdays.length; i++) {
+        let birthday = global.birthdays[i];
+        let daysLeft = howManyDaysUntilBirthday(
+          birthday.birthday,
+          birthday.timezone ?? "Europe/London",
+          true
+        );
+        if (daysLeft >= 0) upcomingBirthdays.push(birthday);
       }
-      upcomingBirthdaysArray.sort((a, b) => {
-        let aDate = moment.tz(a.birthday, a.timezone ?? "Europe/London");
-        let bDate = moment.tz(b.birthday, b.timezone ?? "Europe/London");
-        return aDate.diff(bDate);
+      upcomingBirthdays.sort((a, b) => {
+        let aDaysLeft = howManyDaysUntilBirthday(
+          a.birthday,
+          a.timezone ?? "Europe/London",
+          true
+        );
+        let bDaysLeft = howManyDaysUntilBirthday(
+          b.birthday,
+          b.timezone ?? "Europe/London",
+          true
+        );
+        if (aDaysLeft < bDaysLeft) return -1;
+        if (aDaysLeft > bDaysLeft) return 1;
+        return 0;
+        // return aDaysLeft - bDaysLeft < 0 ? -1 : 1;
       });
-      return upcomingBirthdaysArray;
+      return upcomingBirthdays;
     }
     let upcomingBirthdaysArray = upcoming();
-
     if (upcomingBirthdaysArray.length == 0) {
       await interaction.reply({
         content: "*No upcoming birthdays.*",
@@ -116,15 +140,25 @@ function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 &
 /* prettier-ignore */
 const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e, t) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e, t, r) { return e.replace(t, (function (e) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e) { return (e + 24) % 12 || 12 }, getAmPm: function (e) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e, t, r, g) { return e.replace(t, (function (e) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
 
-function howManyDaysUntilBirthday(birthday, timezone) {
-  return (
-    Math.floor(
-      moment
+function howManyDaysUntilBirthday(
+  birthday,
+  timezone = "Europe/London",
+  precise = false
+) {
+  return precise
+    ? (moment
         .tz(timezone)
         .diff(moment.tz(birthday, timezone).year(moment.tz(timezone).year())) /
-        (24 * 60 * 60 * 1000)
-    ) * -1
-  );
+        (24 * 60 * 60 * 1000)) *
+        -1
+    : Math.ceil(
+        moment
+          .tz(timezone)
+          .diff(
+            moment.tz(birthday, timezone).year(moment.tz(timezone).year())
+          ) /
+          (24 * 60 * 60 * 1000)
+      ) * -1;
 }
 
 module.exports = {
