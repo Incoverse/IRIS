@@ -32,22 +32,14 @@ async function runCommand(interaction, RM) {
         let birthday = global.birthdays[i];
         let daysLeft = howManyDaysUntilBirthday(
           birthday.birthday,
-          birthday.timezone ?? "Europe/London",
+          undefined,
           true
         );
         if (daysLeft >= 0) upcomingBirthdays.push(birthday);
       }
       upcomingBirthdays.sort((a, b) => {
-        let aDaysLeft = howManyDaysUntilBirthday(
-          a.birthday,
-          a.timezone ?? "Europe/London",
-          true
-        );
-        let bDaysLeft = howManyDaysUntilBirthday(
-          b.birthday,
-          b.timezone ?? "Europe/London",
-          true
-        );
+        let aDaysLeft = howManyDaysUntilBirthday(a.birthday, undefined, true);
+        let bDaysLeft = howManyDaysUntilBirthday(b.birthday, undefined, true);
         if (aDaysLeft < bDaysLeft) return -1;
         if (aDaysLeft > bDaysLeft) return 1;
         return 0;
@@ -77,10 +69,7 @@ async function runCommand(interaction, RM) {
       const user = await interaction.guild.members.fetch(birthday.id);
 
       // How many days is it left until users birthday? (keep in mind to use the timezone property)
-      let daysLeft = howManyDaysUntilBirthday(
-        birthday.birthday,
-        birthday.timezone ?? "Europe/London"
-      );
+      let daysLeft = howManyDaysUntilBirthday(birthday.birthday);
       embed.addFields({
         name: `${user.user.tag} ${user.nickname ? `(${user.nickname})` : ""}`,
         value: `${DateFormatter.formatDate(
@@ -142,7 +131,7 @@ const DateFormatter = { monthNames: ["January", "February", "March", "April", "M
 
 function howManyDaysUntilBirthday(
   birthday,
-  timezone = "Europe/London",
+  timezone = moment.tz.guess(),
   precise = false
 ) {
   return precise
@@ -151,7 +140,7 @@ function howManyDaysUntilBirthday(
         .diff(moment.tz(birthday, timezone).year(moment.tz(timezone).year())) /
         (24 * 60 * 60 * 1000)) *
         -1
-    : Math.ceil(
+    : Math.floor(
         moment
           .tz(timezone)
           .diff(
