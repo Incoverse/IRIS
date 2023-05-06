@@ -273,7 +273,7 @@
         client.user.setPresence({
           activities: [
             {
-              name: "you ◭ /help",
+              name: "you",
               type: ActivityType.Watching,
             },
           ],

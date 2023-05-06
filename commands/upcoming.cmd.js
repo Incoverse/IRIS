@@ -4,7 +4,10 @@ const commandInfo = {
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("upcoming")
     .setDescription("Get the next 5 upcoming birthdays.")
-    .setDMPermission(false),
+    .setDMPermission(false)
+    .addBooleanOption((option) =>
+      option.setName("timezones").setDescription("Show peoples timezones.")
+    ),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
 const { MongoClient } = require("mongodb");
@@ -62,7 +65,7 @@ async function runCommand(interaction, RM) {
       .setColor("Default")
       .setFooter({
         text: "Days are calculated using the timezone that IRIS' server is in.",
-        iconURL: "https://i.imgur.com/0kzdaXu.png",
+        iconURL: "https://i.imgur.com/QRoFlvu.png",
       });
     for (let i = 0; i < 5; i++) {
       if (!upcomingBirthdaysArray[i]) break;
@@ -75,7 +78,11 @@ async function runCommand(interaction, RM) {
       // How many days is it left until users birthday? (keep in mind to use the timezone property)
       let daysLeft = howManyDaysUntilBirthday(birthday.birthday);
       embed.addFields({
-        name: `${user.user.tag} ${user.nickname ? `(${user.nickname})` : ""}`,
+        name:
+          `${user.user.tag}${user.nickname ? ` (${user.nickname})` : ""}` +
+          (interaction.options.get("timezones")?.value == true
+            ? ` - ${birthday.timezone ?? "Europe/London"}`
+            : ""),
         value: `${DateFormatter.formatDate(
           new Date(birthday.birthday),
           `MMMM ????`

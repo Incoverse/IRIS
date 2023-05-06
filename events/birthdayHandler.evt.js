@@ -90,14 +90,17 @@ async function runEvent(client, RM) {
         });
         /* prettier-ignore */
         global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "It's " + global.chalk.yellow((await guild.members.fetch(birthday.id)).user.tag) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? global.chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+global.chalk.yellow(birthday.timezone)+" it's currently " + global.chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
-        await (await guild.members.fetch(birthday.id)).roles.add(birthdayRole);
+        const user = await guild.members.fetch(birthday.id);
+        await user.roles.add(birthdayRole);
         guild.channels.fetch().then((channels) => {
           channels.every(async (channel) => {
             if (channel.name.includes("birthdays")) {
               await channel.send(
                 "It's <@" +
                   birthday.id +
-                  ">'s " +
+                  ">'" +
+                  (user.displayName.toLowerCase().endsWith("s") ? "" : "s") +
+                  " " +
                   (birthday.birthday.split(/\W+/g)[0] !== "0000"
                     ? getOrdinalNum(
                         new Date().getUTCFullYear() -
