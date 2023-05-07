@@ -45,7 +45,6 @@ async function runEvent(client, RM) {
 }
 
 module.exports = {
-  priority: () => 1,
   returnFileName: () =>
     __filename.split(process.platform == "linux" ? "/" : "\\")[
       __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
