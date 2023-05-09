@@ -1,4 +1,10 @@
-const Discord = require("discord.js");
+import Discord, { Team } from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+import { MongoClient } from "mongodb";
+
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
@@ -13,15 +19,8 @@ const commandInfo = {
     .setDMPermission(false),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
-const { MongoClient } = require("mongodb");
-let moment = require("moment-timezone");
 
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
   try {
     await interaction.deferReply();
     const target = interaction.options.getUser("user");
@@ -32,7 +31,6 @@ async function runCommand(interaction, RM) {
       const userdata = database.collection(
         global.app.config.development ? "userdata_dev" : "userdata"
       );
-      let a;
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: target.id };
       let userInfo = await userdata.findOne(query);
@@ -67,7 +65,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -85,7 +83,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -113,19 +111,12 @@ const MONTH_NAMES = [
   "December",
 ];
 
-/**
- *
- * @param {Date} date
- * @param {*} prefomattedDate
- * @param {*} hideYear
- * @returns
- */
-function getFormattedDate(date, prefomattedDate = false, hideYear = false) {
+function getFormattedDate(date: Date, prefomattedDate: any = false, hideYear: any = false) {
   const day = date.getUTCDate();
   const month = MONTH_NAMES[date.getUTCMonth()];
   const year = date.getUTCFullYear();
   let hours = date.getUTCHours();
-  let minutes = date.getUTCMinutes();
+  let minutes:any = date.getUTCMinutes();
   const ampm = true;
   if (minutes < 10) {
     // Adding leading zero to minutes
@@ -165,8 +156,8 @@ function timeAgo(dateParam) {
   const date = typeof dateParam === "object" ? dateParam : new Date(dateParam);
   const DAY_IN_MS = 86400000; // 24 * 60 * 60 * 1000
   const today = new Date();
-  const yesterday = new Date(today - DAY_IN_MS);
-  const seconds = Math.round((today - date) / 1000);
+  const yesterday = new Date(today.getTime() - DAY_IN_MS);
+  const seconds = Math.round((today.getTime() - date) / 1000);
   const minutes = Math.round(seconds / 60);
   const isToday = today.toDateString() === date.toDateString();
   const isYesterday = yesterday.toDateString() === date.toDateString();
@@ -191,12 +182,6 @@ function timeAgo(dateParam) {
   return getFormattedDate(date); // 10. January 2017. at 10:20
 }
 
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

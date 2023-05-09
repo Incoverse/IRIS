@@ -1,19 +1,19 @@
-const { SlashCommandBuilder } = require("discord.js");
+import Discord, {Team} from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+import moment from "moment-timezone";
+import { MongoClient } from "mongodb";
+
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
-  slashCommand: new SlashCommandBuilder()
+  slashCommand: new Discord.SlashCommandBuilder()
     .setName("timezone")
     .setDescription("Check what timezone IRIS has predicted that you're in."),
 };
-const Discord = require("discord.js");
-let moment = require("moment-timezone");
-const { MongoClient } = require("mongodb");
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
+
   try {
     await interaction.deferReply({
       ephemeral: true,
@@ -59,7 +59,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -77,7 +77,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -91,8 +91,8 @@ async function runCommand(interaction, RM) {
   }
 }
 function getOffset(timezone) {
-  offset = moment().tz(timezone).utcOffset() / 60;
-  stringOffset = "";
+  let offset = moment().tz(timezone).utcOffset() / 60;
+  let stringOffset = "";
   if (offset !== 0) {
     if (offset < 0) {
       stringOffset += "-";
@@ -100,8 +100,8 @@ function getOffset(timezone) {
       stringOffset += "+";
     }
     if (offset.toString().includes(".")) {
-      fullHourOffset = parseInt(Math.abs(offset));
-      minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
+      let fullHourOffset = Math.abs(offset)
+      let minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
       stringOffset += fullHourOffset + ":" + minuteOffset;
     } else {
       stringOffset += Math.abs(offset);
@@ -110,12 +110,6 @@ function getOffset(timezone) {
   return "UTC" + stringOffset;
 }
 
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

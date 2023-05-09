@@ -1,15 +1,21 @@
 {
   "name": "iris",
-  "version": "1.5.7",
+  "version": "1.6",
   "description": "IRIS (Intelligent Response Interface System) is a Discord bot created by and for the Chaos Crew Community.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "cleanup": "rm -rf ./dist",
+    "compile": "npm run cleanup && npm run build",
+    "start": "node ./dist/index.js",
+    "CnR": "npm run cleanup && npm run build && npm run start"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/InimicalPart/IRIS.git"
   },
+  "type": "module",
   "keywords": [
     "discordjs",
     "discord-bot",
@@ -23,7 +29,7 @@
   },
   "homepage": "https://github.com/InimicalPart/IRIS#readme",
   "dependencies": {
-    "chalk": "^4.1.2",
+    "chalk": "^5.2.0",
     "discord.js": "^14.8.0",
     "dotenv": "^16.0.3",
     "jsonc-parser": "^3.2.0",
@@ -31,5 +37,8 @@
     "moment-timezone": "^0.5.41",
     "mongodb": "5.1",
     "pretty-ms": "^8.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~4.7.0"
   }
 }

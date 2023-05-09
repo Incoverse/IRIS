@@ -1,4 +1,11 @@
-const Discord = require("discord.js");
+import Discord, { Team } from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+import { MongoClient } from "mongodb";
+import moment from "moment-timezone";
+import chalk from "chalk";
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
@@ -15,17 +22,11 @@ const commandInfo = {
     .setDMPermission(false),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
-const { MongoClient } = require("mongodb");
-let moment = require("moment-timezone");
 
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
+
   try {
-    let date = interaction.options.get("date").value;
+    let date: string = interaction.options.get("date").value.toString();
     const client = new MongoClient(global.mongoConnectionString);
     if (date == "none") {
       if (!global.birthdays.some((el) => el.id === interaction.user.id)) {
@@ -114,7 +115,7 @@ async function runCommand(interaction, RM) {
       });
       return;
     }
-    if (new Date(date) == "Invalid Date") {
+    if (new Date(date).toString() == "Invalid Date") {
       await interaction.reply({
         content: "Invalid date! Please provide the date in a YYYY-MM-DD format",
         ephemeral: true,
@@ -184,7 +185,7 @@ async function runCommand(interaction, RM) {
       await client.close();
     }
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" set their birthday to: " + date);
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.tag)+" set their birthday to: " + date);
     await interaction.editReply(
       "Your birthday is now set to ``" +
         DateFormatter.formatDate(
@@ -205,7 +206,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -223,7 +224,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -241,12 +242,6 @@ function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 &
 /* prettier-ignore */
 const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e, t) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e, t, r) { return e.replace(t, (function (e) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e) { return (e + 24) % 12 || 12 }, getAmPm: function (e) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e, t, r, g) { return e.replace(t, (function (e) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
 
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

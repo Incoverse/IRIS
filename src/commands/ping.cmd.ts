@@ -1,27 +1,20 @@
-const { SlashCommandBuilder } = require("discord.js");
+import Discord, { Team } from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
-  slashCommand: new SlashCommandBuilder()
-    .setName("version")
-    .setDescription("Check which version IRIS is running."),
+  slashCommand: new Discord.SlashCommandBuilder()
+    .setName("ping")
+    .setDescription("Pong! "),
 };
-const Discord = require("discord.js");
-let moment = require("moment-timezone");
-const { MongoClient } = require("mongodb");
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+
+export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
   try {
-    interaction.reply({
-      content:
-        "IRIS is currently running ``v" +
-        require(require("path").join(global.dirName, "package.json")).version +
-        "``",
-      ephemeral: true,
-    });
+    // cmd stuff here
+    interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
   } catch (e) {
     console.error(e);
     await interaction.client.application.fetch();
@@ -33,7 +26,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -51,7 +44,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -64,12 +57,7 @@ async function runCommand(interaction, RM) {
     }
   }
 }
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

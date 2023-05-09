@@ -1,4 +1,15 @@
-const Discord = require("discord.js");
+import Discord, { Team } from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+import chalk from "chalk";
+import {existsSync} from "fs";
+import { promisify } from "util";
+import {exec} from "child_process";
+import moment from "moment-timezone";
+import prettyMilliseconds from "pretty-ms";
+
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
@@ -6,21 +17,14 @@ const commandInfo = {
     .setDescription("Force a reset of the certificate for MongoDB.")
     .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
-const { promisify } = require("util");
-const moment = require("moment-timezone");
-const exec = promisify(require("child_process").exec);
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+const execPromise = promisify(exec);
+export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
+
   try {
-    const prettyms = (await import("pretty-ms")).default;
     await interaction.client.application.fetch();
     if (
       [
-        ...Array.from(interaction.client.application.owner.members.keys()),
+        ...Array.from(                (interaction.client.application.owner as Team).members.keys()),
         ...global.app.config.externalOwners,
       ].includes(interaction.user.id)
     ) {
@@ -32,35 +36,35 @@ async function runCommand(interaction, RM) {
         );
       } else {
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" replaced the MongoDB certificate.");
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.tag)+" replaced the MongoDB certificate.");
         interaction.deferReply();
         let beforeChange,
           output = null;
         try {
-          beforeChange = await exec(
+          beforeChange = await execPromise(
             "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
           );
-          await exec("sudo /root/resetcert.sh 0");
-          output = await exec(
+          await execPromise("sudo /root/resetcert.sh 0");
+          output = await execPromise(
             "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
           );
         } catch (e) {
-          await exec("sudo /root/resetcert.sh 0");
+          await execPromise("sudo /root/resetcert.sh 0");
           await sleep(1500);
-          let fullchainexists = require("fs").existsSync(
+          let fullchainexists = existsSync(
             "/etc/ssl/IRIS/fullchain.pem"
           );
-          let mongodpemexists = require("fs").existsSync(
+          let mongodpemexists = existsSync(
             "/etc/ssl/IRIS/mongod.pem"
           );
           if (fullchainexists && mongodpemexists) {
-            output = await exec(
+            output = await execPromise(
               "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
             );
             interaction.editReply(
               "Something errored for a second, I have gotten back the files now, The certificate expires in: ``" +
-                prettyms(
-                  new Date(output.stdout.trim().split("=")[1]) - new Date()
+                prettyMilliseconds(
+                  new Date(output.stdout.trim().split("=")[1]).getTime() - new Date().getTime()
                 ) +
                 "`` (``" +
                 output.stdout.trim().split("=")[1] +
@@ -81,11 +85,11 @@ async function runCommand(interaction, RM) {
         }
         if (output.stdout == beforeChange.stdout) {
           /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Certificate not changed, reason: No new certificate is available. This certificate expires in: " + global.chalk.yellow(output.stdout));
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate not changed, reason: No new certificate is available. This certificate expires in: " + chalk.yellow(output.stdout));
           interaction.editReply(
             "No new certificate is available. This certificate expires in: ``" +
-              prettyms(
-                new Date(output.stdout.trim().split("=")[1]) - new Date()
+              prettyMilliseconds(
+                new Date(output.stdout.trim().split("=")[1]).getTime() - new Date().getTime()
               ) +
               "`` (``" +
               output.stdout.trim().split("=")[1] +
@@ -93,11 +97,11 @@ async function runCommand(interaction, RM) {
           );
         } else {
           /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Certificate successfully replaced. Expires in: " + global.chalk.yellow(output.stdout));
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Certificate successfully replaced. Expires in: " + chalk.yellow(output.stdout));
           interaction.editReply(
             "The certificate has been successfully replaced. This certificate expires in: ``" +
-              prettyms(
-                new Date(output.stdout.trim().split("=")[1]) - new Date()
+              prettyMilliseconds(
+                new Date(output.stdout.trim().split("=")[1]).getTime() - new Date().getTime()
               ) +
               "`` (``" +
               output.stdout.trim().split("=")[1] +
@@ -107,7 +111,7 @@ async function runCommand(interaction, RM) {
       }
     } else {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.tag)+" failed permission check.");
       interaction.reply({
         content: "You do not have permission to run this command.",
         ephemeral: true,
@@ -124,7 +128,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -142,7 +146,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -159,12 +163,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

@@ -1,4 +1,14 @@
-const Discord = require("discord.js");
+import Discord, { Team } from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+import chalk from "chalk";
+import { promisify } from "util";
+import {exec} from "child_process";
+const execPromise = promisify(exec);
+import moment from "moment-timezone";
+
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
@@ -6,21 +16,14 @@ const commandInfo = {
     .setDescription("Force a restart of MongoDB.")
     .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
-const { promisify } = require("util");
-const exec = promisify(require("child_process").exec);
-const moment = require("moment-timezone");
 
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
+
   try {
     await interaction.client.application.fetch();
     if (
       [
-        ...Array.from(interaction.client.application.owner.members.keys()),
+        ...Array.from(                (interaction.client.application.owner as Team).members.keys()),
         ...global.app.config.externalOwners,
       ].includes(interaction.user.id)
     ) {
@@ -32,30 +35,30 @@ async function runCommand(interaction, RM) {
         );
       } else {
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" has restarted MongoDB.");
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.tag)+" has restarted MongoDB.");
 
         interaction.deferReply();
-        await exec("sudo systemctl restart mongod");
+        await execPromise("sudo systemctl restart mongod");
         await delay(1500);
         try {
-          await exec("sudo systemctl status mongod | grep 'active (running)' ");
+          await execPromise("sudo systemctl status mongod | grep 'active (running)' ");
         } catch (e) {
           /* prettier-ignore */
-          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.red("MongoDB failed to start!"));
+          global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.red("MongoDB failed to start!"));
           interaction.editReply(
             "⚠️ MongoDB has been restarted, but is not running due to a failure."
           );
           return;
         }
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.greenBright("MongoDB successfully started back up!"));
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.greenBright("MongoDB successfully started back up!"));
         interaction.editReply(
           ":white_check_mark: MongoDB has been restarted successfully."
         );
       }
     } else {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(interaction.user.tag)+" failed permission check.");
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.tag)+" failed permission check.");
 
       interaction.reply({
         content: "You do not have permission to run this command.",
@@ -73,7 +76,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -91,7 +94,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -108,12 +111,6 @@ const delay = (delayInms) => {
   return new Promise((resolve) => setTimeout(resolve, delayInms));
 };
 
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

@@ -1,27 +1,25 @@
+import Discord, { Team } from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+
 const eventInfo = {
   type: "onMessage",
 };
 
-let Discord = require("discord.js");
-let moment = require("moment-timezone");
-const { Util, MessageEmbed } = require("discord.js");
-const { MongoClient } = require("mongodb");
-/**
- *
- * @param {Discord.Message} message
- * @param {*} RM
- */
-async function runEvent(message, RM) {
+
+const __filename = fileURLToPath(import.meta.url);
+declare const global: IRISGlobal;
+export async function runEvent(message: Discord.Message, RM: object) {
   if (message.guildId != global.app.config.mainServer) return;
   if (message.content.startsWith(".IRIS-EVAL ")) {
     await message.client.application.fetch();
     if (
       [
-        ...Array.from(message.client.application.owner.members.keys()),
+        ...Array.from((message.client.application.owner as Team).members.keys()),
         ...global.app.config.externalOwners,
       ].includes(message.author.id)
     ) {
-      const clean = async (text) => {
+      const clean = async (text: string) => {
         // If our input is a promise, await it before continuing
         if (text && text.constructor.name == "Promise") text = await text;
 
@@ -75,12 +73,9 @@ async function runEvent(message, RM) {
   }
 }
 
-module.exports = {
-  runEvent,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  eventType: () => eventInfo.type,
-  priority: () => 0,
-};
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
+export const eventType = () => eventInfo.type;
+export const priority = () => 0;

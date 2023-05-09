@@ -1,4 +1,10 @@
-const Discord = require("discord.js");
+import Discord, { Team } from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+import moment from "moment-timezone";
+
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
@@ -10,15 +16,9 @@ const commandInfo = {
     ),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
 };
-const { MongoClient } = require("mongodb");
-let moment = require("moment-timezone");
 
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
+
   try {
     // make a function that sorts the global.birthdays array (which is made up out of objects) by how long is left until that birthday from today. if the birthday has already passed this year, change the year to the next year. The users timezone is in birthday.timezone, if its null, make it "Europe/London". This is an example of a birthday object:
     // {
@@ -29,7 +29,7 @@ async function runCommand(interaction, RM) {
     // }
     // The "birthday" property can start with 0000- if the user didnt want to show their age
     // Please use the 'moment' variable which is the 'moment-timezone' library
-    function upcoming() {
+    const upcoming = () => {
       const upcomingBirthdays = [];
       for (let i = 0; i < global.birthdays.length; i++) {
         let birthday = global.birthdays[i];
@@ -104,7 +104,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -122,7 +122,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -161,12 +161,6 @@ function howManyDaysUntilBirthday(
       ) * -1;
 }
 
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

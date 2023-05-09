@@ -1,30 +1,31 @@
+import Discord from "discord.js";
+import { MongoClient } from "mongodb";
+import moment from "moment-timezone";
+import chalk from "chalk";
+import { IRISGlobal } from "../interfaces/global.js";
+import { fileURLToPath } from "url";
+
 const eventInfo = {
   type: "onMessage",
 };
 
-let Discord = require("discord.js");
-const { MongoClient } = require("mongodb");
-let moment = require("moment-timezone");
-/**
- *
- * @param {Discord.Message} message
- * @param {*} RM
- */
-async function runEvent(message, RM) {
+const __filename = fileURLToPath(import.meta.url);
+declare const global: IRISGlobal;
+export async function runEvent(message: Discord.Message, RM: object) {
   const client = new MongoClient(global.mongoConnectionString);
   if (message.guildId != global.app.config.mainServer) return;
   if (message.author.id == message.client.user.id) return;
   if (message.content.toLowerCase().includes("timezone")) {
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Timezone message registered by " + global.chalk.yellow(message.author.tag)+".")
-    let time = message.content
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Timezone message registered by " + chalk.yellow(message.author.tag)+".")
+    let time: any = message.content
       .toLowerCase()
       .match(
         /([0-9]{1,2}:[0-9]{2}( |)(am|pm))|([0-9]{1,2}:[0-9]{2})|[0-9]{4}|[0-9]{1,2}( |)(am|pm)/gim
       );
     if (!time) {
       /* prettier-ignore*/
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +global.chalk.yellow(message.author.tag)+".")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +chalk.yellow(message.author.tag)+".")
       return;
     }
     time = time[0];
@@ -76,7 +77,7 @@ async function runEvent(message, RM) {
       timeFormat = "MILITARY"; //* 1234, 2123. 2232
     else if (time.match(/[0-9]{1,2}( |)(am|pm)/gim)) timeFormat = "AMPMSINGLE"; //* 9pm, 2 am, 3pm,
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time format was recognized as: " + global.chalk.yellow(timeFormat) + " in " + global.chalk.yellow(message.author.tag) + "'s timezone message.")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time format was recognized as: " + chalk.yellow(timeFormat) + " in " + chalk.yellow(message.author.tag) + "'s timezone message.")
 
     if (timeFormat == "AMPMSINGLE") {
       if (time.split(" ").length == 2) {
@@ -104,9 +105,9 @@ async function runEvent(message, RM) {
         timeSplit[0] + timeSplit[1] + ":" + (timeSplit[2] + timeSplit[3])
       );
     }
-    if (new Date("2 Jan 1970 " + time) == "Invalid Date") {
+    if (new Date("2 Jan 1970 " + time).toString() == "Invalid Date") {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " in their timezone message is not valid.")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " in their timezone message is not valid.")
       return;
     }
     let approximatedTimezone = null;
@@ -123,14 +124,14 @@ async function runEvent(message, RM) {
     }
     if (!approximatedTimezone) {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " did not match any timezone")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " did not match any timezone")
 
       return;
     }
     //TODO: Use this later when testing DST
 
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "Time provided by " +global.chalk.yellow(message.author.tag) + " was matched to timezone: " + global.chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " was matched to timezone: " + chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
 
     try {
       const database = client.db("IRIS");
@@ -146,7 +147,7 @@ async function runEvent(message, RM) {
       if (timezones.length >= 5) timezones.shift();
       let moded = mode(timezones);
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+global.chalk.yellow(message.author.tag)+"'s timezone is now approximated to be "+global.chalk.yellow(moded+ " ("+getOffset(moded)+")"));
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(message.author.tag)+"'s timezone is now approximated to be "+chalk.yellow(moded+ " ("+getOffset(moded)+")"));
       await userdata.updateOne(
         query,
         {
@@ -200,8 +201,8 @@ function mode(arr) {
     .pop();
 }
 function getOffset(timezone) {
-  offset = moment().tz(timezone).utcOffset() / 60;
-  stringOffset = "";
+  let offset = moment().tz(timezone).utcOffset() / 60;
+  let stringOffset = "";
   if (offset !== 0) {
     if (offset < 0) {
       stringOffset += "-";
@@ -209,8 +210,8 @@ function getOffset(timezone) {
       stringOffset += "+";
     }
     if (offset.toString().includes(".")) {
-      fullHourOffset = parseInt(Math.abs(offset));
-      minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
+      let fullHourOffset = Math.abs(offset)
+      let minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
       stringOffset += fullHourOffset + ":" + minuteOffset;
     } else {
       stringOffset += Math.abs(offset);
@@ -218,7 +219,7 @@ function getOffset(timezone) {
   }
   return "UTC" + stringOffset;
 }
-function tConvert(time) {
+function tConvert(time: any ) {
   // Check correct time format and split into components
   time = time.toString().match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [
     time,
@@ -233,12 +234,6 @@ function tConvert(time) {
   return time.join(""); // return adjusted time or original string
 }
 
-module.exports = {
-  runEvent,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  priority: () => 0,
-  eventType: () => eventInfo.type,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const eventType = () => eventInfo.type;
+export const priority = () => 0;

@@ -1,22 +1,28 @@
-const { SlashCommandBuilder } = require("discord.js");
+import { IRISGlobal } from "../interfaces/global.js";
+import Discord, { Team } from "discord.js";
+import { fileURLToPath } from "url";
+import { readFileSync } from "fs";
+declare const global: IRISGlobal;
+const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
-  slashCommand: new SlashCommandBuilder()
-    .setName("ping")
-    .setDescription("Pong! "),
+  slashCommand: new Discord.SlashCommandBuilder()
+    .setName("version")
+    .setDescription("Check which version IRIS is running."),
 };
-const Discord = require("discord.js");
-let moment = require("moment-timezone");
-
-/**
- *
- * @param {Discord.CommandInteraction} interaction
- * @param {Object} RM
- */
-async function runCommand(interaction, RM) {
+export async function runCommand(
+  interaction: Discord.CommandInteraction,
+  RM: object
+) {
   try {
-    // cmd stuff here
-    interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
+    interaction.reply({
+      content:
+        "IRIS is currently running ``v" +
+        JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
+          .version +
+        "``",
+      ephemeral: true,
+    });
   } catch (e) {
     console.error(e);
     await interaction.client.application.fetch();
@@ -28,7 +34,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -46,7 +52,7 @@ async function runCommand(interaction, RM) {
             ? "\n\n``" +
               ([
                 ...Array.from(
-                  interaction.client.application.owner.members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -59,13 +65,6 @@ async function runCommand(interaction, RM) {
     }
   }
 }
-
-module.exports = {
-  runCommand,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  commandCategory: () => commandInfo.category,
-  getSlashCommand: () => commandInfo.slashCommand,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const getSlashCommand = () => commandInfo.slashCommand;
+export const commandCategory = () => commandInfo.category;

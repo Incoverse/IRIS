@@ -1,17 +1,15 @@
+import { MongoClient } from "mongodb";
+import Discord from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js"
+import { fileURLToPath } from "url";
+
 const eventInfo = {
   type: "onMessage",
 };
 
-let Discord = require("discord.js");
-let moment = require("moment-timezone");
-
-const { MongoClient } = require("mongodb");
-/**
- *
- * @param {Discord.Message} message
- * @param {*} RM
- */
-async function runEvent(message, RM) {
+const __filename = fileURLToPath(import.meta.url);
+declare const global: IRISGlobal;
+export async function runEvent(message: Discord.Message, RM: object) {
   if (message.guildId != global.app.config.mainServer) return;
   const client = new MongoClient(global.mongoConnectionString);
   if (message.author.id == message.client.user.id) return;
@@ -34,13 +32,7 @@ async function runEvent(message, RM) {
     await client.close();
   }
 }
-module.exports = {
-  runEvent,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  eventType: () => eventInfo.type,
 
-  priority: () => 0,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const eventType = () => eventInfo.type;
+export const priority = () => 0;

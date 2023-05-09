@@ -1,18 +1,20 @@
+import Discord from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import moment from "moment-timezone";
+import { MongoClient } from "mongodb";
+import chalk from "chalk";
+import { fileURLToPath } from "url";
+
 const eventInfo = {
   type: "runEvery",
   ms: 60000,
   runImmediately: true,
 };
-let running = false;
-let Discord = require("discord.js");
-let moment = require("moment-timezone");
-const { MongoClient } = require("mongodb");
-/**
- *
- * @param {Discord.Client} client
- * @param {*} RM
- */
-async function runEvent(client, RM) {
+
+const __filename = fileURLToPath(import.meta.url);
+declare const global: IRISGlobal;
+export let running = false;
+export async function runEvent(client: Discord.Client, RM: object) {
   running = true;
   // -----------
   // console.log(global.birthdays)
@@ -89,12 +91,12 @@ async function runEvent(client, RM) {
           });
         });
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ "It's " + global.chalk.yellow((await guild.members.fetch(birthday.id)).user.tag) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? global.chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+global.chalk.yellow(birthday.timezone)+" it's currently " + global.chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "It's " + chalk.yellow((await guild.members.fetch(birthday.id)).user.tag) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+chalk.yellow(birthday.timezone)+" it's currently " + chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
         const user = await guild.members.fetch(birthday.id);
         await user.roles.add(birthdayRole);
         guild.channels.fetch().then((channels) => {
           channels.every(async (channel) => {
-            if (channel.name.includes("birthdays")) {
+            if (channel.name.includes("birthdays") && channel.type == Discord.ChannelType.GuildText) {
               await channel.send(
                 "It's <@" +
                   birthday.id +
@@ -142,21 +144,16 @@ async function runEvent(client, RM) {
   running = false;
 }
 /* prettier-ignore */
-function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
-/**
- *
- * @param {Date} date1
- * @param {moment.Moment} date2
- * @returns
- */
-function isSameDay(date1, date2) {
+function getOrdinalNum(n:number) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
+
+function isSameDay(date1: moment.Moment, date2: moment.Moment) {
   const day1 = date1.date();
   const month1 = date1.month();
   const day2 = date2.date();
   const month2 = date2.month();
   return day1 === day2 && month1 === month2;
 }
-function howManyDaysSinceBirthday(birthday, timezone) {
+function howManyDaysSinceBirthday(birthday: string, timezone: string) {
   return Math.floor(
     moment
       .tz(timezone)
@@ -165,15 +162,8 @@ function howManyDaysSinceBirthday(birthday, timezone) {
   );
 }
 
-module.exports = {
-  runEvent,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  eventType: () => eventInfo.type,
-  priority: () => 0,
-  getMS: () => eventInfo.ms,
-  running,
-  runImmediately: () => eventInfo.runImmediately,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const eventType = () => eventInfo.type;
+export const priority = () => 0;
+export const getMS = () => eventInfo.ms;
+export const runImmediately = () => eventInfo.runImmediately;

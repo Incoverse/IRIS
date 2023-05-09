@@ -1,16 +1,18 @@
-let Discord = require("discord.js");
+import Discord from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import moment from "moment-timezone";
+import { MongoClient } from "mongodb";
+import chalk from "chalk";
+import { fileURLToPath } from "url";
+
 const eventInfo = {
   type: "discordEvent",
   listenerkey: Discord.Events.GuildMemberAdd,
 };
-let moment = require("moment-timezone");
-const { MongoClient } = require("mongodb");
-/**
- *a
- * @param {Array<Discord.GuildMember>} args
- * @param {*} RM
- */
-async function runEvent(RM, ...args) {
+
+const __filename = fileURLToPath(import.meta.url);
+declare const global: IRISGlobal;
+export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) {
   if (args[0].user.bot) return;
   if (args[0].guild.id !== global.app.config.mainServer) return;
 
@@ -32,7 +34,7 @@ async function runEvent(RM, ...args) {
     const userdata = database.collection(
       global.app.config.development ? "userdata_dev" : "userdata"
     );
-    userInfo = {
+    let userInfo = {
       id: args[0].id,
       discriminator: args[0].user.discriminator,
       last_active: new Date().toISOString(),
@@ -46,19 +48,13 @@ async function runEvent(RM, ...args) {
     };
     await userdata.insertOne(userInfo);
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+ global.chalk.yellow(args[0].user.tag) + " has joined the server. A database entry has been created for them.")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.tag) + " has joined the server. A database entry has been created for them.")
   } finally {
     await dbclient.close();
   }
 }
 
-module.exports = {
-  runEvent,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  eventType: () => eventInfo.type,
-  priority: () => 0,
-  getListenerKey: () => eventInfo.listenerkey,
-};
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const eventType = () => eventInfo.type;
+export const priority = () => 0;
+export const getListenerKey = () => eventInfo.listenerkey;

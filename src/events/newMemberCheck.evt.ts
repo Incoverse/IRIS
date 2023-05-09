@@ -3,16 +3,19 @@ const eventInfo = {
   ms: 12 * 60 * 60 * 1000, //12h
   runImmediately: true,
 };
-let running = false;
-let moment = require("moment-timezone");
-let Discord = require("discord.js");
-const { MongoClient } = require("mongodb");
-/**
- *
- * @param {Discord.Client} client
- * @param {*} RM
- */
-async function runEvent(client, RM) {
+
+import moment from "moment-timezone";
+import Discord from "discord.js";
+import { IRISGlobal } from "../interfaces/global.js";
+import { MongoClient } from "mongodb";
+import chalk from "chalk";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+
+export let running = false;
+declare const global: IRISGlobal;
+
+export async function runEvent(client: Discord.Client, RM: object) {
   running = true;
   // -----------
   const guild = await client.guilds.fetch(global.app.config.mainServer);
@@ -28,12 +31,12 @@ async function runEvent(client, RM) {
   for (let memberID of JSON.parse(JSON.stringify(global.newMembers))) {
     await guild.members.fetch(memberID).then(async (member) => {
       if (member.user.bot) return;
-      if (new Date() - member.joinedAt >= 7 * 24 * 60 * 60 * 1000) {
+      if (new Date().getTime() - member.joinedAt.getTime() >= 7 * 24 * 60 * 60 * 1000) {
         global.newMembers = global.newMembers.filter(
           (item) => item !== memberID
         );
         /* prettier-ignore */
-        global.app.debugLog(global.chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+module.exports.returnFileName()+"] ")+"Removing '"+newMembersRole.name+"' (role) from "+global.chalk.yellow(member.user.tag));
+        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Removing '"+newMembersRole.name+"' (role) from "+chalk.yellow(member.user.tag));
         member.roles.remove(newMembersRole);
         updated.push(memberID);
       }
@@ -65,15 +68,9 @@ async function runEvent(client, RM) {
   // -----------
   running = false;
 }
-module.exports = {
-  runEvent,
-  returnFileName: () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ],
-  eventType: () => eventInfo.type,
-  priority: () => 0,
-  getMS: () => eventInfo.ms,
-  running,
-  runImmediately: () => eventInfo.runImmediately,
-};
+
+export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const eventType = () => eventInfo.type;
+export const priority = () => 0;
+export const getMS = () => eventInfo.ms;
+export const runImmediately = () => eventInfo.runImmediately;
