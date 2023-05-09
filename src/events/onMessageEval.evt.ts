@@ -1,7 +1,7 @@
 import Discord, { Team } from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
-
+import { inspect } from "util";
 const eventInfo = {
   type: "onMessage",
 };
@@ -29,7 +29,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
         // (like Collections, for example)
 
         if (typeof text !== "string")
-          text = require("util").inspect(text, { depth: 1 });
+          text = inspect(text, { depth: 1 });
 
         // Replace symbols with character code alternatives
         text = text
