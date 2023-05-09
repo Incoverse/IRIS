@@ -20,21 +20,18 @@ export async function runCommand(
   RM: object
 ) {
   try {
-    const getAllFiles = function(dirPath: PathLike, arrayOfFiles: string[]) {
-    const files = readdirSync(dirPath)
-
-  arrayOfFiles = arrayOfFiles || []
-
-  files.forEach(function(file) {
-    if (statSync(dirPath + "/" + file).isDirectory()) {
-      arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles)
-    } else {
-      arrayOfFiles.push(join(dirPath.toString(), "/", file))
-    }
-  })
-
-  return arrayOfFiles
-}
+    const getAllFiles = function (dirPath: PathLike, arrayOfFiles: string[]) {
+      const files = readdirSync(dirPath);
+      arrayOfFiles = arrayOfFiles || [];
+      files.forEach(function (file) {
+        if (statSync(dirPath + "/" + file).isDirectory()) {
+          arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles);
+        } else {
+          arrayOfFiles.push(join(dirPath.toString(), "/", file));
+        }
+      });
+      return arrayOfFiles;
+    };
 
     let totalLines: number = 0;
     let totalCharacters: number = 0;
@@ -42,8 +39,10 @@ export async function runCommand(
       .setTitle("IRIS' Statistics")
       .setColor("Random");
 
-
-      const files: Array<string> = getAllFiles(join(__dirname, "..", "..", "src"), []).filter(f=>f.endsWith(".ts"))
+    const files: Array<string> = getAllFiles(
+      join(__dirname, "..", "..", "src"),
+      []
+    ).filter((f) => f.endsWith(".ts"));
     for (let path of files) {
       // Read all files, and get the line count, and add it to the total
       totalLines += readFileSync(path).toString().split("\n").length;
@@ -142,4 +141,3 @@ export const returnFileName = () =>
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
-

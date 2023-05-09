@@ -23,7 +23,7 @@ import { EventEmitter } from "events";
 import JsonCParser from "jsonc-parser";
 import { readFileSync, readdirSync } from "fs";
 import dotenv from "dotenv";
-import moment from "moment";
+import moment from "moment-timezone";
 import { MongoClient } from "mongodb";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
