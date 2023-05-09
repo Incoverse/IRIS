@@ -30,8 +30,6 @@ import { dirname, join } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-console.log(__dirname)
-
 dotenv.config();
 declare const global: IRISGlobal;
 //! -- This is the start of the IRIS journey -- !\\
