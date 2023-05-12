@@ -15,7 +15,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
   const client = new MongoClient(global.mongoConnectionString);
   if (message.guildId != global.app.config.mainServer) return;
   if (message.author.id == message.client.user.id) return;
-  if (message.content.toLowerCase().includes("timezone")) {
+  if (message.content.toLowerCase().includes("timezone") || message.content.toLowerCase().includes("time zone")) {
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Timezone message registered by " + chalk.yellow(message.author.tag)+".")
     let time: any = message.content
