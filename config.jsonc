@@ -3,5 +3,24 @@
     "showErrors": true,
     "debugging": true,
     "mainServer": "786013884216639509",
-    "developmentServer": "931616832668958748"
+    "developmentServer": "931616832668958748",
+
+    "permissions" : { // permissions for commands
+        "admin": {
+            "main": ["engineer", "moderators", "support team"],
+            "development": ["administrator", "moderator", "support team"]
+        }
+    },
+
+    "defaultEntry" : {
+        "id": "",
+        "discriminator": "",
+        "last_active": null,
+        "timezones": [],
+        "username": "",
+        "approximatedTimezone": null,
+        "birthday":null,
+        "birthdayPassed": false,
+        "isNew": false
+      }
 }

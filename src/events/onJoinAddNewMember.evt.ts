@@ -1,3 +1,20 @@
+/*
+  * Copyright (c) 2023 Inimi | InimicalPart | InCo
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import Discord from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import moment from "moment-timezone";
@@ -34,19 +51,14 @@ export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) 
     const userdata = database.collection(
       global.app.config.development ? "userdata_dev" : "userdata"
     );
-    let userInfo = {
+    const entry = {...global.app.config.defaultEntry, ...{
       id: args[0].id,
       discriminator: args[0].user.discriminator,
       last_active: new Date().toISOString(),
-      timezones: [],
       username: args[0].user.username,
-      approximatedTimezone: null,
-      birthday: null,
-      birthdayPassed: false,
-
       isNew: true,
-    };
-    await userdata.insertOne(userInfo);
+    }}
+    await userdata.insertOne(entry);
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.tag) + " has joined the server. A database entry has been created for them.")
   } finally {

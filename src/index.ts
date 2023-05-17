@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import {
   Collection,
   CommandInteraction,
@@ -32,12 +49,16 @@ const __dirname = dirname(__filename);
 
 dotenv.config();
 declare const global: IRISGlobal;
+//! ------------------------------------------- !\\
 //! -- This is the start of the IRIS journey -- !\\
+//! ------------------------------------------- !\\
+console.log(global.mongoConnectionString);
+
 (async () => {
   const config = JsonCParser.parse(
     readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
-  
+
   const app: AppInterface = {
     version: JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
       .version,
@@ -94,7 +115,7 @@ declare const global: IRISGlobal;
     });
 
     //!--------------------------
-    console.clear();
+    // console.clear();
     console.log(
       chalk.white.bold(
         "[" +
@@ -108,13 +129,13 @@ declare const global: IRISGlobal;
       ) +
         chalk.green("IRIS ") +
         chalk.bold.white("v" + app.version) +
-        chalk.green(" is starting up!") 
+        chalk.green(" is starting up!")
     );
-      console.log(
-        chalk.white.bold(
-          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
-        ) + "------------------------"
-      );
+    console.log(
+      chalk.white.bold(
+        "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+      ) + "------------------------"
+    );
 
     //!--------------------------
     const requiredModules: { [key: string]: any } = {};
@@ -156,10 +177,10 @@ declare const global: IRISGlobal;
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
       if (interaction.guild == null)
-        return await interaction.reply(
-          ":x: This command can only be used in a server."
+      return await interaction.reply(
+        ":x: This command can only be used in a server."
         );
-      if (interaction.guildId !== global.app.config.mainServer) return;
+        if (interaction.guildId !== global.app.config.mainServer) return;
       const client = new MongoClient(global.mongoConnectionString);
       try {
         const database = client.db("IRIS");
@@ -168,34 +189,35 @@ declare const global: IRISGlobal;
         );
         // Query for a movie that has the title 'Back to the Future'
         const query = { id: interaction.user.id };
-        let userInfo: any = await userdata.findOne(query);
-        const user = await interaction.guild.members.fetch(interaction.user.id);
-        if (userInfo == null) {
-          userInfo = {
-            id: interaction.user.id,
-            discriminator: interaction.user.discriminator,
-            last_active: new Date().toISOString(),
-            timezones: [],
-            username: interaction.user.username,
-            approximatedTimezone: null,
-            birthday: null,
-            birthdayPassed: false,
-            isNew:
-              new Date().getTime() - (user.joinedAt?.getTime() ?? 0) <
-              7 * 24 * 60 * 60 * 1000,
-          };
-          await userdata.insertOne(userInfo);
-        } else {
-          const updateDoc = {
-            $set: {
+        userdata.findOne(query).then((result) => {
+          const user = interaction.member;
+          if (result == null) {
+            const entry = {...global.app.config.defaultEntry, ...{
+              id: interaction.user.id,
+              discriminator: interaction.user.discriminator,
               last_active: new Date().toISOString(),
-            },
-          };
-          await userdata.updateOne(query, updateDoc, {});
-        }
-      } finally {
+              username: interaction.user.username,
+              isNew:
+                new Date().getTime() - (user.joinedAt?.getTime() ?? 0) <
+                7 * 24 * 60 * 60 * 1000,
+            }}
+            userdata.insertOne(entry).then(() => {
+              client.close();
+            });
+          } else {
+            const updateDoc = {
+              $set: {
+                last_active: new Date().toISOString(),
+              },
+            };
+            userdata.updateOne(query, updateDoc, {}).then(() => {
+              client.close();
+            });
+          }
+        });
+      } catch {
         // Ensures that the client will close when you finish/error
-        await client.close();
+        client.close();
       }
       if (!interaction.isChatInputCommand()) return;
       for (let command in requiredModules) {
@@ -218,7 +240,7 @@ declare const global: IRISGlobal;
           chalk.green("Logged in!") +
           chalk.white(" [I]")
       );
-            console.log(
+      console.log(
         chalk.white.bold(
           "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
         ) + "------------------------"
