@@ -125,7 +125,7 @@ const commandInfo = {
         .addSubcommand((subcommand) =>
           subcommand
             .setName("get")
-            .setDescription("Delete a user's entry from the database")
+            .setDescription("Get a user's entry from the database")
             .addUserOption((option) =>
               option
                 .setName("user")
