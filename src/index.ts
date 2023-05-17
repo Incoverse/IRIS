@@ -52,7 +52,6 @@ declare const global: IRISGlobal;
 //! ------------------------------------------- !\\
 //! -- This is the start of the IRIS journey -- !\\
 //! ------------------------------------------- !\\
-console.log(global.mongoConnectionString);
 
 (async () => {
   const config = JsonCParser.parse(
@@ -115,7 +114,7 @@ console.log(global.mongoConnectionString);
     });
 
     //!--------------------------
-    // console.clear();
+    console.clear();
     console.log(
       chalk.white.bold(
         "[" +
