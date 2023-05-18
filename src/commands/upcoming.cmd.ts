@@ -18,7 +18,7 @@
 import Discord, { Team } from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
-import moment from "moment-timezone";
+import moment, { updateLocale } from "moment-timezone";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -55,7 +55,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
           undefined,
           true
         );
-        if (daysLeft >= 0) upcomingBirthdays.push(birthday);
+        if (daysLeft >= 0 && !birthday.passed) upcomingBirthdays.push(birthday);
       }
       upcomingBirthdays.sort((a, b) => {
         let aDaysLeft = howManyDaysUntilBirthday(a.birthday, undefined, true);
