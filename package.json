@@ -36,10 +36,12 @@
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.41",
     "mongodb": "5.1",
-    "pretty-ms": "^8.0.0"
+    "pretty-ms": "^8.0.0",
+    "uuid4": "^2.0.3"
   },
   "devDependencies": {
     "@types/mongodb": "^4.0.7",
+    "@types/uuid4": "^2.0.0",
     "typescript": "~4.7.0"
   }
 }

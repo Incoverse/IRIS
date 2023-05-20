@@ -69,6 +69,7 @@ declare const global: IRISGlobal;
   global.birthdays = [];
   global.communicationChannel = new EventEmitter();
   global.newMembers = [];
+  global.games = {}
   global.dirName = __dirname;
   global.app.config.development = process.env.DEVELOPMENT == "YES";
   global.mongoConnectionString =
