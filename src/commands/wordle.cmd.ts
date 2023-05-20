@@ -310,6 +310,9 @@ export async function runCommand(
           global.games.wordle.currentlyPlaying[interaction.user.id].guesses
             .length == 6
         ) {
+          endTime =Date.now() -
+          global.games.wordle.currentlyPlaying[interaction.user.id]
+            .startTime
           await wordle.currentlyPlaying[interaction.user.id].boardMessage.edit({
             content:
               "**" +
