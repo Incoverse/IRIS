@@ -32,7 +32,7 @@ const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("wordle")
-    .setDescription("Wordle demo.")
+    .setDescription("Play a game of wordle!")
     .addSubcommand((subcommand) =>
       subcommand
         .setName("guess")
@@ -387,7 +387,7 @@ endTime
         true
       ) == "stats"
     ) {
-      interaction.deferReply({
+      await interaction.deferReply({
         ephemeral: true,
       });
       //Generate an embed that will contain the following: Games played, games won, longest streak, current streak, average time (average from last12 and then prettify with prettyMilliseconds), average guesses. Add emojis before the name and use fields.

@@ -325,7 +325,7 @@ declare const global: IRISGlobal;
         client.user.setPresence({
           activities: [
             {
-              name: "you",
+              name: "you ◭ /wordle",
               type: ActivityType.Watching,
             },
           ],
