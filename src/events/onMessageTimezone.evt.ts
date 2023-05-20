@@ -29,7 +29,6 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export async function runEvent(message: Discord.Message, RM: object) {
-  const client = new MongoClient(global.mongoConnectionString);
   if (message.guildId != global.app.config.mainServer) return;
   if (message.author.id == message.client.user.id) return;
   if (message.content.toLowerCase().includes("timezone") || message.content.toLowerCase().includes("time zone")) {
@@ -39,8 +38,8 @@ export async function runEvent(message: Discord.Message, RM: object) {
       .toLowerCase()
       .match(
         /([0-9]{1,2}:[0-9]{2}( |)(am|pm))|([0-9]{1,2}:[0-9]{2})|[0-9]{4}|[0-9]{1,2}( |)(am|pm)/gim
-      );
-    if (!time) {
+        );
+        if (!time) {
       /* prettier-ignore*/
       global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +chalk.yellow(message.author.tag)+".")
       return;
@@ -149,7 +148,8 @@ export async function runEvent(message: Discord.Message, RM: object) {
 
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " was matched to timezone: " + chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
-
+    
+    const client = new MongoClient(global.mongoConnectionString);
     try {
       const database = client.db("IRIS");
       const userdata = database.collection(

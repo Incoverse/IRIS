@@ -69,6 +69,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
                     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Successfully cleansed database of "+chalk.yellow(result.deletedCount)+" "+(result.deletedCount>1||result.deletedCount<1?"entries":"entry")+".");
                     dbclient.close();
                   });
+              } else {
+                dbclient.close()
               }
             });
           });

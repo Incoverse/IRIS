@@ -43,6 +43,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
       );
       const userinfo = await userdata.findOne({ id: interaction.user.id });
       if (!userinfo.approximatedTimezone) {
+        client.close();
         await interaction.editReply({
           content:
             "IRIS has not predicted a timezone for you. Each time you type a message like 'timezone 12:34 am', IRIS will predict your timezone by checking which timezone matches the time that you provided.",

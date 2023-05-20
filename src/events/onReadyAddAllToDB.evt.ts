@@ -130,6 +130,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
               );
             }
             Promise.all(promises).then(() => dbclient.close());
+          } else {
+    dbclient.close();
+
           }
         });
       });

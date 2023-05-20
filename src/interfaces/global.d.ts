@@ -33,4 +33,11 @@ interface IRISGlobal extends NodeJS.Global {
   dirName: string;
   SlashCommandBuilder: SlashCommandBuilder;
   mongoConnectionString: string;
+  resources: {
+    wordle: {
+      validGuesses: Array<string>;
+      validWords: Array<string>;
+    }
+
+  }
 }

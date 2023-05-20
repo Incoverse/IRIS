@@ -203,13 +203,6 @@ export async function runCommand(
           interaction.options as CommandInteractionOptionResolver
         ).getUser("user", true);
 
-        const client = new MongoClient(global.mongoConnectionString);
-
-        const collection = client
-          .db("IRIS")
-          .collection(
-            global.app.config.development ? "userdata_dev" : "userdata"
-          );
         if (user.bot) {
           await interaction.reply({
             content:
@@ -218,6 +211,13 @@ export async function runCommand(
           });
           return;
         }
+        const client = new MongoClient(global.mongoConnectionString);
+
+        const collection = client
+          .db("IRIS")
+          .collection(
+            global.app.config.development ? "userdata_dev" : "userdata"
+          );
         const result = await collection.findOne({ id: user.id });
         client.close();
         if (result == null) {
@@ -264,6 +264,7 @@ export async function runCommand(
         // Check if the user already has an entry in the database
         const result = await collection.findOne({ id: user.id });
         if (result != null) {
+          client.close()
           await interaction.reply({
             content: "This user already has an entry in the database!",
             ephemeral: true,
@@ -419,6 +420,7 @@ export async function runCommand(
                 .indexOf(timezone.toLowerCase())
             ];
           if (!timezone) {
+            client.close()
             await interaction.reply({
               content:
                 "This timezone is invalid! Please use the format: Region/City. You can find all valid timezones here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List",

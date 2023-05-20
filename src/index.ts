@@ -75,6 +75,20 @@ declare const global: IRISGlobal;
     "mongodb://iris:" +
     process.env.DBPASSWD +
     "@extension.inimicalpart.com:27017/?authMechanism=DEFAULT&tls=true";
+  global.resources = {
+    wordle: {
+      validGuesses: (
+        await fetch(app.config.resources.wordle.validGuesses).then((res) =>
+          res.text()
+        )
+      ).split("\n"),
+      validWords: (
+        await fetch(app.config.resources.wordle.validWords).then((res) =>
+          res.text()
+        )
+      ).split("\n"),
+    },
+  };
   const mainFileName = __filename.split(
     process.platform == "linux" ? "/" : "\\"
   )[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
@@ -176,10 +190,10 @@ declare const global: IRISGlobal;
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
       if (interaction.guild == null)
-      return await interaction.reply(
-        ":x: This command can only be used in a server."
+        return await interaction.reply(
+          ":x: This command can only be used in a server."
         );
-        if (interaction.guildId !== global.app.config.mainServer) return;
+      if (interaction.guildId !== global.app.config.mainServer) return;
       const client = new MongoClient(global.mongoConnectionString);
       try {
         const database = client.db("IRIS");
@@ -191,15 +205,18 @@ declare const global: IRISGlobal;
         userdata.findOne(query).then((result) => {
           const user = interaction.member;
           if (result == null) {
-            const entry = {...global.app.config.defaultEntry, ...{
-              id: interaction.user.id,
-              discriminator: interaction.user.discriminator,
-              last_active: new Date().toISOString(),
-              username: interaction.user.username,
-              isNew:
-                new Date().getTime() - (user.joinedAt?.getTime() ?? 0) <
-                7 * 24 * 60 * 60 * 1000,
-            }}
+            const entry = {
+              ...global.app.config.defaultEntry,
+              ...{
+                id: interaction.user.id,
+                discriminator: interaction.user.discriminator,
+                last_active: new Date().toISOString(),
+                username: interaction.user.username,
+                isNew:
+                  new Date().getTime() - (user.joinedAt?.getTime() ?? 0) <
+                  7 * 24 * 60 * 60 * 1000,
+              },
+            };
             userdata.insertOne(entry).then(() => {
               client.close();
             });

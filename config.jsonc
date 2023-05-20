@@ -21,6 +21,14 @@
         "approximatedTimezone": null,
         "birthday":null,
         "birthdayPassed": false,
-        "isNew": false
-      }
+        "isNew": false,
+        "gameData": {}
+    },
+
+    "resources": {
+        "wordle": {
+            "validGuesses": "https://gist.githubusercontent.com/cfreshman/cdcdf777450c5b5301e439061d29694c/raw/b8375870720504ecf89c1970ea4532454f12de94/wordle-allowed-guesses.txt",
+            "validWords": "https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/1792f853e1cd0249f7588c724e00d46dbc4894eb/wordle-answers-alphabetical.txt"
+        }
+    }
 }

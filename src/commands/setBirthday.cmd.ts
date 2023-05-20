@@ -47,6 +47,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
     const client = new MongoClient(global.mongoConnectionString);
     if (date == "none") {
       if (!global.birthdays.some((el) => el.id === interaction.user.id)) {
+        client.close();
         await interaction.reply({
           content: "You don't have a birthday set!",
           ephemeral: true,
@@ -105,6 +106,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
             : ""),
         ephemeral: true,
       });
+      client.close();
       return;
     }
 
@@ -119,6 +121,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
         content: "Invalid date! Please provide the date in a YYYY-MM-DD format",
         ephemeral: true,
       });
+      client.close();
       return;
     }
     const match = date.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/);
@@ -130,6 +133,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
         content: "Invalid date! Please provide the date in a YYYY-MM-DD format",
         ephemeral: true,
       });
+      client.close();
       return;
     }
     if (new Date(date).toString() == "Invalid Date") {
@@ -137,6 +141,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
         content: "Invalid date! Please provide the date in a YYYY-MM-DD format",
         ephemeral: true,
       });
+      client.close();
       return;
     }
     if (
@@ -147,6 +152,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
         content: "Invalid date!",
         ephemeral: true,
       });
+      client.close();
       return;
     }
     if (
@@ -158,6 +164,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
           "You're too young! You need to be at least 13 years old. **Keep in mind that Discord's ToS say that you have to be at least 13 to use their service.**",
         ephemeral: true,
       });
+      client.close();
       return;
     }
     if (new Date() < new Date(date)) {
@@ -167,6 +174,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
           "The date you have provided is in the future! Please provide your birthday (When you were born, not your upcoming birthday).",
         ephemeral: true,
       });
+      client.close();
       return;
     }
 
@@ -194,8 +202,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
           $set: {
             birthday: date,
           },
-        },
-        {}
+        }
       );
     } finally {
       // Ensures that the client will close when you finish/error

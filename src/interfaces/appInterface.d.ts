@@ -47,6 +47,13 @@ interface AppInterface {
       birthdayPassed: boolean;
       isNew: boolean;
     };
+
+    resources: {
+      wordle: {
+        validGuesses: string; // URL to a text file with valid guesses
+        validWords: string; // URL to a text file with valid words (answers)
+      };
+    };
   };
   debugLog: Function;
 }

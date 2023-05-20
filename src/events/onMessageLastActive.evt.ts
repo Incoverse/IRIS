@@ -28,8 +28,8 @@ const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export async function runEvent(message: Discord.Message, RM: object) {
   if (message.guildId != global.app.config.mainServer) return;
-  const client = new MongoClient(global.mongoConnectionString);
   if (message.author.id == message.client.user.id) return;
+  const client = new MongoClient(global.mongoConnectionString);
   try {
     const database = client.db("IRIS");
     const userdata = database.collection(
