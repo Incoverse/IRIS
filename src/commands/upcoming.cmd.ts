@@ -25,13 +25,16 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-    .setName("upcoming")
-    .setDescription("Get the next 5 upcoming birthdays.")
-    .setDMPermission(false)
-    .addBooleanOption((option) =>
-      option.setName("timezones").setDescription("Show peoples timezones.")
-    ),
+  .setName("upcoming")
+  .setDescription("Get the next 5 upcoming birthdays.")
+  .setDMPermission(false)
+  .addBooleanOption((option) =>
+  option.setName("timezones").setDescription("Show peoples timezones.")
+  ),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
+  settings: {
+    devOnly: false
+  },
 };
 
 export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
@@ -181,3 +184,4 @@ function howManyDaysUntilBirthday(
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
+export const commandSettings = () => commandInfo.settings;

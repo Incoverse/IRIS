@@ -48,8 +48,11 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-    .setName("uno")
+  .setName("uno")
     .setDescription("UNOOOO!"),
+  settings: {
+    devOnly: true,
+  },
 };
 
 export async function runCommand(
@@ -2244,3 +2247,4 @@ export const returnFileName = () =>
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
+export const commandSettings = () => commandInfo.settings;

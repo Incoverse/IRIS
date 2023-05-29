@@ -26,8 +26,11 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-    .setName("timezone")
-    .setDescription("Check what timezone IRIS has predicted that you're in."),
+  .setName("timezone")
+  .setDescription("Check what timezone IRIS has predicted that you're in."),
+  settings: {
+    devOnly: false
+  },
 };
 export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
 
@@ -131,3 +134,4 @@ function getOffset(timezone) {
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
+export const commandSettings = () => commandInfo.settings;

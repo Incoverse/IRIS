@@ -26,6 +26,9 @@ const eventInfo = {
   type: "runEvery",
   ms: 60000,
   runImmediately: true,
+  settings: {
+    devOnly: false
+  }
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -181,6 +184,7 @@ function howManyDaysSinceBirthday(birthday: string, timezone: string) {
 
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
 export const eventType = () => eventInfo.type;
+export const eventSettings  = () => eventInfo.settings;
 export const priority = () => 0;
 export const getMS = () => eventInfo.ms;
 export const runImmediately = () => eventInfo.runImmediately;

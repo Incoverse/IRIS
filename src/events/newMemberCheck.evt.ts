@@ -19,6 +19,9 @@ const eventInfo = {
   type: "runEvery",
   ms: 12 * 60 * 60 * 1000, //12h
   runImmediately: true,
+  settings: {
+    devOnly: false
+  }
 };
 
 import moment from "moment-timezone";
@@ -88,6 +91,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
 
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
 export const eventType = () => eventInfo.type;
+export const eventSettings  = () => eventInfo.settings;
 export const priority = () => 0;
 export const getMS = () => eventInfo.ms;
 export const runImmediately = () => eventInfo.runImmediately;

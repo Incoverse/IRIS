@@ -24,6 +24,9 @@ import { fileURLToPath } from "url";
 
 const eventInfo = {
   type: "onStart",
+ settings: {
+    devOnly: false
+  },
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,4 +89,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const eventType = () => eventInfo.type;
+export const eventSettings  = () => eventInfo.settings;
 export const priority = () => 10;

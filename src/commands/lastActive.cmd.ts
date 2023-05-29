@@ -28,13 +28,16 @@ const commandInfo = {
     .setName("lastactive")
     .setDescription("Check when a user was last active.")
     .addUserOption((option) =>
-      option
-        .setName("user")
-        .setDescription("The user you want to check")
+    option
+    .setName("user")
+    .setDescription("The user you want to check")
         .setRequired(true)
-    )
-    .setDMPermission(false),
-  // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
+        )
+        .setDMPermission(false),
+        // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
+        settings: {
+          devOnly: false
+        },
 };
 
 export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
@@ -202,3 +205,4 @@ function timeAgo(dateParam) {
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
+export const commandSettings = () => commandInfo.settings;

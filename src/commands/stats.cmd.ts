@@ -28,8 +28,11 @@ const __dirname = dirname(__filename);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-    .setName("stats")
-    .setDescription("Get IRIS' statistics!"),
+  .setName("stats")
+  .setDescription("Get IRIS' statistics!"),
+  settings: {
+    devOnly: false
+  },
 };
 
 export async function runCommand(
@@ -158,3 +161,4 @@ export const returnFileName = () =>
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
+export const commandSettings = () => commandInfo.settings;

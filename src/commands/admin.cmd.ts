@@ -34,7 +34,7 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-    .setName("admin")
+  .setName("admin")
     .setDescription("Admin Commands")
     .addSubcommandGroup((subcommandGroup) =>
       subcommandGroup
@@ -104,7 +104,7 @@ const commandInfo = {
         )
         .addSubcommand((subcommand) =>
           subcommand.setName("stop").setDescription("Force-stop IRIS.")
-        )
+          )
     )
 
     .addSubcommandGroup((subcommandGroup) =>
@@ -120,8 +120,8 @@ const commandInfo = {
                 .setName("user")
                 .setDescription("The user whose entry you want to delete")
                 .setRequired(true)
-            )
-        )
+                )
+                )
         .addSubcommand((subcommand) =>
           subcommand
             .setName("get")
@@ -139,9 +139,9 @@ const commandInfo = {
             .setDescription("Create a new entry in the database")
             .addUserOption((option) =>
               option
-                .setName("user")
-                .setDescription("The user whose entry you want to create")
-                .setRequired(true)
+              .setName("user")
+              .setDescription("The user whose entry you want to create")
+              .setRequired(true)
             )
             .addStringOption((option) =>
               option
@@ -159,10 +159,13 @@ const commandInfo = {
     )
 
     .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-};
-const execPromise = promisify(exec);
-export async function runCommand(
-  interaction: Discord.CommandInteraction,
+    settings: {
+      devOnly: false
+    },
+  };
+  const execPromise = promisify(exec);
+  export async function runCommand(
+    interaction: Discord.CommandInteraction,
   RM: object
 ) {
   try {
@@ -779,3 +782,4 @@ export const returnFileName = () =>
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
+export const commandSettings = () => commandInfo.settings;

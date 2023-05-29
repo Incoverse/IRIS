@@ -24,15 +24,18 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-    .setName("birthday")
-    .setDescription("Get your/someones birthday.")
-    .addUserOption((option) =>
-      option
-        .setName("user")
-        .setDescription("Select the user you want to get the birthday of")
-    )
-    .setDMPermission(false),
+  .setName("birthday")
+  .setDescription("Get your/someones birthday.")
+  .addUserOption((option) =>
+  option
+  .setName("user")
+  .setDescription("Select the user you want to get the birthday of")
+  )
+  .setDMPermission(false),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
+  settings: {
+    devOnly: false
+  },
 };
 export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
   let isHidden = false;
@@ -142,3 +145,4 @@ const DateFormatter = { monthNames: ["January", "February", "March", "April", "M
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
+export const commandSettings = () => commandInfo.settings;

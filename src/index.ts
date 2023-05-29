@@ -272,9 +272,10 @@ declare const global: IRISGlobal;
 
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
+        const command: IRISCommand = await import(`./commands/${file}`);
+        if (!global.app.config.development && command.commandSettings().devOnly) continue;
         /* prettier-ignore */
         global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Registering command: " +chalk.blueBright(file));
-        const command = await import(`./commands/${file}`);
         requiredModules[
           "cmd" +
             command.getSlashCommand().name[0].toUpperCase() +
@@ -296,7 +297,9 @@ declare const global: IRISGlobal;
 
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of eventFiles) {
-        const event = await import(`./events/${file}`);
+        const event: IRISEvent = await import(`./events/${file}`);
+        if (!global.app.config.development && event.eventSettings().devOnly)
+          continue;
         requiredModules[
           "event" +
             file.replace(".evt.js", "")[0].toUpperCase() +

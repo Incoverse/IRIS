@@ -21,6 +21,9 @@ import { fileURLToPath } from "url";
 import { inspect } from "util";
 const eventInfo = {
   type: "onMessage",
+  settings: {
+     devOnly: false
+   },
 };
 
 
@@ -95,4 +98,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const eventType = () => eventInfo.type;
+export const eventSettings  = () => eventInfo.settings;
 export const priority = () => 0;
