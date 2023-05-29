@@ -196,16 +196,17 @@ export async function runCommand(
         startTime: Date.now(),
         lastEphemeralMessage: null,
       };
-      const message = await interaction.reply({
+      const message = await interaction.channel.send({
         content:
-          "**" +
-          (interaction.member as GuildMember).displayName +
-          "**" +
+          "<@" +
+          (interaction.member as GuildMember).id +
+          ">" +
           ((interaction.member as GuildMember).displayName.endsWith("s")
             ? "'"
             : "'s") +
           " daily wordle game\n" +
           generateBoard(undefined, true, true),
+          allowedMentions: { parse: [] },
       });
 
       wordle.currentlyPlaying[interaction.user.id].boardMessage =
@@ -246,7 +247,7 @@ export async function runCommand(
         try {
           global.games.wordle.currentlyPlaying[
             interaction.user.id
-          ].lastEphemeralMessage.delete();
+          ].lastEphemeralMessage.delete().catch(() => {});
         } catch {}
         const msg = await interaction.reply({
           content: "Your guess must be 5 letters long!",
@@ -265,7 +266,7 @@ export async function runCommand(
         try {
           global.games.wordle.currentlyPlaying[
             interaction.user.id
-          ].lastEphemeralMessage.delete();
+          ].lastEphemeralMessage.delete().catch(()=>{});
         } catch {}
         const msg = await interaction.reply({
           content: "You have already guessed that word!",
@@ -285,7 +286,7 @@ export async function runCommand(
         try {
           global.games.wordle.currentlyPlaying[
             interaction.user.id
-          ].lastEphemeralMessage.delete();
+          ].lastEphemeralMessage.delete().catch(()=>{});
         } catch {}
         const msg = await interaction.reply({
           content: "That is not a valid word!",
@@ -303,7 +304,7 @@ export async function runCommand(
       try {
         global.games.wordle.currentlyPlaying[
           interaction.user.id
-        ].lastEphemeralMessage.delete();
+        ].lastEphemeralMessage.delete().catch(()=>{});
       } catch {}
       if (wordle.word !== guess) {
         if (

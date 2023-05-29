@@ -144,8 +144,6 @@ export async function runEvent(message: Discord.Message, RM: object) {
 
       return;
     }
-    //TODO: Use this later when testing DST
-
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " was matched to timezone: " + chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
     

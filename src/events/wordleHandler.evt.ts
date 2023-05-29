@@ -35,21 +35,19 @@ export async function runEvent(client: Discord.Client, RM: object) {
   let wordle = global?.games?.wordle;
   if (!wordle) {
     const dbclient = new MongoClient(global.mongoConnectionString);
-    // Fetch the current wordle by going to db.IRIS.gamedata (or db.IRIS.gamedata_dev if in development mode) and finding the document that has "type" set to "wordle"
     const database = dbclient.db("IRIS");
     const gamedata = database.collection(
       global.app.config.development ? "gamedata_dev" : "gamedata"
     );
     const game = await gamedata.findOne({ type: "wordle" });
+    dbclient.close();
     game.data.currentlyPlaying = {};
     wordle = game.data;
     global.games.wordle = wordle;
-    await dbclient.close();
   }
   // First check if the wordle is expired, and if it is, make a new one
   if (new Date(wordle.expires).getTime() < new Date().getTime()) {
     const dbclient = new MongoClient(global.mongoConnectionString);
-    // Fetch the current wordle by going to db.IRIS.gamedata (or db.IRIS.gamedata_dev if in development mode) and finding the document that has "type" set to "wordle"
     const database = dbclient.db("IRIS");
     const gamedata = database.collection(
       global.app.config.development ? "gamedata_dev" : "gamedata"
@@ -69,7 +67,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
       currentlyPlaying: {},
     };
     const oldWordle = wordle;
-    global.games.wordle = data;
+    global.games.wordle = {...data};
+    delete data.currentlyPlaying;
     await gamedata.updateOne(
       { type: "wordle" },
       {
@@ -97,11 +96,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
         ")"
     );
 
-    // I want to make a streak system. All wordles have IDs and I'm gonna make it so that the users data entry in the database will contain the wordle ID if they solve it.
-    // But I want to make it so that if people didn't solve the wordle (because it expired) then their streak will be reset.
-    // So I'm gonna make it so that if the wordle expires, then the streak will be reset for everyone that doesnt have the previous wordle ID in their data entry
-
-    // Get all users
     const userdata = database.collection(
       global.app.config.development ? "userdata_dev" : "userdata"
     );
