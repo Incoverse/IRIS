@@ -38,7 +38,7 @@ import prettyMilliseconds from "pretty-ms";
 import chalk from "chalk";
 import { EventEmitter } from "events";
 import JsonCParser from "jsonc-parser";
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync, readdirSync, existsSync, writeFileSync } from "fs";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { MongoClient } from "mongodb";
@@ -57,10 +57,26 @@ declare const global: IRISGlobal;
   const config = JsonCParser.parse(
     readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
-
+  if (!existsSync("./local_config.json")) {
+    writeFileSync(
+      "./local_config.json",
+      JSON.stringify(
+        {
+          "presence": {
+            "text": "you",
+            "type": ActivityType.Watching
+          },
+          "disabledCommands": [],
+          "disabledEvents": []
+        }
+      )
+    )
+  }
+  const localConfig = JSON.parse(readFileSync("./local_config.json", { encoding: "utf-8" }));
   const app: AppInterface = {
     version: JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
       .version,
+    localConfig: localConfig,
     config: config,
     debugLog: config.debugging ? console.log : () => {},
   };
@@ -324,16 +340,19 @@ declare const global: IRISGlobal;
           console.error(error);
         }
       })();
-      if (!global.app.config.development)
+      if (!global.app.config.development) {
+
+        if (!global.app.localConfig.presence.type && !global.app.localConfig.presence.text) return;
         client.user.setPresence({
           activities: [
             {
-              name: "you ◭ /wordle",
-              type: ActivityType.Watching,
+              name: global.app.localConfig.presence.text,
+              type: global.app.localConfig.presence.type,
             },
           ],
           status: "online",
         });
+      }
       const mainServer = await client.guilds.fetch(
         global.app.config.mainServer
       );

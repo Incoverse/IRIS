@@ -15,11 +15,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { UserResolvable, GuildResolvable } from "discord.js";
+import {
+  UserResolvable,
+  GuildResolvable,
+  Presence,
+  PresenceStatus,
+  ActivityType,
+} from "discord.js";
 import { ObjectId } from "mongodb";
 
 interface AppInterface {
   version: string;
+  localConfig: {
+    presence: {
+      text: string;
+      type:
+        | ActivityType.Playing
+        | ActivityType.Streaming
+        | ActivityType.Listening
+        | ActivityType.Watching
+        | ActivityType.Competing;
+    };
+    disabledCommands: Array<string>;
+    disabledEvents: Array<string>;
+  };
   config: {
     externalOwners: Array<string>;
     showErrors: boolean;
