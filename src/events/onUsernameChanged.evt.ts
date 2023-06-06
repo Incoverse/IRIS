@@ -91,6 +91,11 @@ export async function runEvent(RM: object, ...args: Array<Discord.User>) {
         { id: oldUser.id },
         {
           $set: data,
+          ...(
+            newUser.discriminator == "0" || !newUser.discriminator ?
+            { $unset: { discriminator: "" } } :
+            {}
+          )
         }
       );
     }
