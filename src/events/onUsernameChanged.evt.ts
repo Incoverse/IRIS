@@ -42,19 +42,36 @@ export async function runEvent(RM: object, ...args: Array<Discord.User>) {
     oldUser.discriminator === newUser.discriminator
   )
     return; // User changed something else, which we don't care about
-  global.app.debugLog(
-    chalk.white.bold(
-      "[" +
-        moment().format("M/D/y HH:mm:ss") +
-        "] [" +
-        returnFileName() +
-        "] "
-    ) +
-      chalk.yellow(oldUser.tag) +
-      " changed their username/tag to " +
-      chalk.yellow(newUser.tag) +
-      "."
-  );
+
+    if (oldUser.discriminator !== "0" && newUser.discriminator === "0") {
+      global.app.debugLog(
+        chalk.white.bold(
+          "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] [" +
+            returnFileName() +
+            "] "
+        ) +
+          chalk.yellow(oldUser.tag) +
+          " is now using the new username system. Username: " +
+          chalk.yellow(newUser.username) +
+          "."
+      );
+    } else {
+      global.app.debugLog(
+        chalk.white.bold(
+          "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] [" +
+            returnFileName() +
+            "] "
+        ) +
+          chalk.yellow(oldUser.discriminator == "0" || !oldUser.discriminator  ? oldUser.username : oldUser.tag) +
+          " changed their username to " +
+          chalk.yellow(newUser.discriminator == "0" || !newUser.discriminator ? newUser.username : newUser.tag) +
+          "."
+      );
+    }
 
   const dbclient = new MongoClient(global.mongoConnectionString);
 
@@ -64,14 +81,16 @@ export async function runEvent(RM: object, ...args: Array<Discord.User>) {
       global.app.config.development ? "userdata_dev" : "userdata"
     );
     const userInfo = await userdata.findOne({ id: oldUser.id });
+    const data = {
+      username: newUser.username,
+    }
+    if (newUser.discriminator !== "0" && newUser.discriminator)
+      data["discriminator"] = newUser.discriminator;
     if (userInfo) {
       await userdata.updateOne(
         { id: oldUser.id },
         {
-          $set: {
-            username: newUser.username,
-            discriminator: newUser.discriminator,
-          },
+          $set: data,
         }
       );
     }

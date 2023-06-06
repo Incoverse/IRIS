@@ -63,12 +63,14 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 if (!allDocuments.some((m) => m.id == member.id)) {
                   const entry = {...global.app.config.defaultEntry, ...{
                     id: member.id,
-                    discriminator: member.user.discriminator,
                     username: member.user.username,
                     isNew:
                       new Date().getTime() - member.joinedAt.getTime() <
                       7 * 24 * 60 * 60 * 1000,
                   }}
+                  if (member.user.discriminator !== "0" && member.user.discriminator) {
+                    entry.discriminator = member.user.discriminator;
+                  }
                   toBeAdded.push(entry);
                 } else {
                   let userDoc = allDocuments.find((m) => m.id == member.id);
@@ -85,16 +87,19 @@ export async function runEvent(client: Discord.Client, RM: object) {
                           "] "
                       ) +
                         chalk.yellow(
-                          userDoc.username + "#" + userDoc.discriminator
+                          !userDoc.discriminator ? userDoc.username : userDoc.username + "#" + userDoc.discriminator
                         ) +
-                        " changed their username/tag to " +
-                        chalk.yellow(member.user.tag) +
+                        " changed their username to " +
+                        chalk.yellow(member.user.discriminator !== "0" && member.user.discriminator ? member.user.tag : member.user.username) +
                         "."
                     );
                     updateUsernames[member.id] = {
                       username: member.user.username,
-                      discriminator: member.user.discriminator,
                     };
+                    if (member.user.discriminator !== "0" && member.user.discriminator) {
+                      updateUsernames[member.id].discriminator =
+                        member.user.discriminator;
+                    }
                   }
                 }
               }
@@ -128,8 +133,12 @@ export async function runEvent(client: Discord.Client, RM: object) {
           if (Object.keys(updateUsernames).length > 0) {
             const promises = [];
             for (let k of Object.keys(updateUsernames)) {
+              let unsetData = {}
+              if (!updateUsernames[k].discriminator) {
+                unsetData = { $unset: {discriminator: ""} }
+              }
               promises.push(
-                userdata.updateOne({ id: k }, { $set: updateUsernames[k] })
+                userdata.updateOne({ id: k }, { $set: updateUsernames[k], ...unsetData })
               );
             }
             Promise.all(promises).then(() => dbclient.close());

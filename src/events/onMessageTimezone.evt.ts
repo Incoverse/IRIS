@@ -36,7 +36,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
   if (message.author.id == message.client.user.id) return;
   if (message.content.toLowerCase().includes("timezone") || message.content.toLowerCase().includes("time zone")) {
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Timezone message registered by " + chalk.yellow(message.author.tag)+".")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Timezone message registered by " + chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username)+".")
     let time: any = message.content
       .toLowerCase()
       .match(
@@ -44,7 +44,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
         );
         if (!time) {
       /* prettier-ignore*/
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +chalk.yellow(message.author.tag)+".")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username)+".")
       return;
     }
     time = time[0];
@@ -96,7 +96,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
       timeFormat = "MILITARY"; //* 1234, 2123. 2232
     else if (time.match(/[0-9]{1,2}( |)(am|pm)/gim)) timeFormat = "AMPMSINGLE"; //* 9pm, 2 am, 3pm,
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time format was recognized as: " + chalk.yellow(timeFormat) + " in " + chalk.yellow(message.author.tag) + "'s timezone message.")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time format was recognized as: " + chalk.yellow(timeFormat) + " in " + chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username) + "'s timezone message.")
 
     if (timeFormat == "AMPMSINGLE") {
       if (time.split(" ").length == 2) {
@@ -126,7 +126,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
     }
     if (new Date("2 Jan 1970 " + time).toString() == "Invalid Date") {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " in their timezone message is not valid.")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username) + " in their timezone message is not valid.")
       return;
     }
     let approximatedTimezone = null;
@@ -143,12 +143,12 @@ export async function runEvent(message: Discord.Message, RM: object) {
     }
     if (!approximatedTimezone) {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " did not match any timezone")
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username) + " did not match any timezone")
 
       return;
     }
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.tag) + " was matched to timezone: " + chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username) + " was matched to timezone: " + chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
     
     const client = new MongoClient(global.mongoConnectionString);
     try {
@@ -165,7 +165,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
       if (timezones.length >= 5) timezones.shift();
       let moded = mode(timezones);
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(message.author.tag)+"'s timezone is now approximated to be "+chalk.yellow(moded+ " ("+getOffset(moded)+")"));
+      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username)+"'s timezone is now approximated to be "+chalk.yellow(moded+ " ("+getOffset(moded)+")"));
       await userdata.updateOne(
         query,
         {

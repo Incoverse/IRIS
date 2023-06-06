@@ -43,7 +43,7 @@ export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) 
     );
     const result = await userdata.deleteOne({ id: args[0].id });
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.tag) + " has left the server." + (result.deletedCount>0 ? " Their entry has been removed from the database.":""))
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username) + " has left the server." + (result.deletedCount>0 ? " Their entry has been removed from the database.":""))
   } finally {
     await client.close();
   }

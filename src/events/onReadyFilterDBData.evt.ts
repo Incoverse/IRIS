@@ -50,6 +50,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
       .then(async (userInfo) => {
         let IDsToRemove = [];
         let memberIDs = [];
+        let cleanDiscriminators = [];
         client.guilds
           .fetch(global.app.config.mainServer)
           .then(async (guild) => {
@@ -61,6 +62,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 if (!memberIDs.includes(data.id)) {
                   IDsToRemove.push({ id: data.id });
                 }
+                else if (data.discriminator == "0" && data.discriminator) {
+                  cleanDiscriminators.push({ id: data.id });
+                }
               }
               if (IDsToRemove.length > 0) {
                 userdata
@@ -69,9 +73,26 @@ export async function runEvent(client: Discord.Client, RM: object) {
                   })
                   .then((result) => {
                     /* prettier-ignore */
-                    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Successfully cleansed database of "+chalk.yellow(result.deletedCount)+" "+(result.deletedCount>1||result.deletedCount<1?"entries":"entry")+".");
+                    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Successfully removed "+chalk.yellow(result.deletedCount)+" "+(result.deletedCount>1||result.deletedCount<1?"entries":"entry")+" from the database.");
                     dbclient.close();
                   });
+              } else if (cleanDiscriminators.length > 0) {
+                userdata.updateMany(
+                  {
+                    $or: cleanDiscriminators,
+                  },
+                  {
+                    $unset: {
+                      discriminator: "",
+                    },
+                  }
+                )
+                .then((result) => {
+                  /* prettier-ignore */
+                  global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Successfully removed redundant "+chalk.yellow("discriminator")+" field for "+chalk.yellow(result.modifiedCount)+" "+(result.modifiedCount>1||result.modifiedCount<1?"entries":"entry")+".");
+                  dbclient.close();
+                });
+
               } else {
                 dbclient.close()
               }

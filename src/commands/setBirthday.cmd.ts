@@ -212,7 +212,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
       await client.close();
     }
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.tag)+" set their birthday to: " + date);
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.username)+" set their birthday to: " + date);
     await interaction.editReply(
       "Your birthday is now set to ``" +
         DateFormatter.formatDate(

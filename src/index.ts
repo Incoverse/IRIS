@@ -217,7 +217,6 @@ declare const global: IRISGlobal;
         const userdata = database.collection(
           global.app.config.development ? "userdata_dev" : "userdata"
         );
-        // Query for a movie that has the title 'Back to the Future'
         const query = { id: interaction.user.id };
         userdata.findOne(query).then((result) => {
           const user = interaction.member;
@@ -226,7 +225,6 @@ declare const global: IRISGlobal;
               ...global.app.config.defaultEntry,
               ...{
                 id: interaction.user.id,
-                discriminator: interaction.user.discriminator,
                 last_active: new Date().toISOString(),
                 username: interaction.user.username,
                 isNew:
@@ -234,6 +232,9 @@ declare const global: IRISGlobal;
                   7 * 24 * 60 * 60 * 1000,
               },
             };
+            if (interaction.user.discriminator !== "0" && interaction.user.discriminator) 
+              entry.discriminator = interaction.user.discriminator,
+              
             userdata.insertOne(entry).then(() => {
               client.close();
             });
@@ -531,7 +532,7 @@ declare const global: IRISGlobal;
         chalk.white.bold(
           "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
         ) +
-          chalk.blue.bold(client.user.tag) +
+          chalk.blue.bold(client.user.discriminator != "0" && client.user.discriminator ? client.user.tag: client.user.username) +
           " is ready and is running " +
           chalk.blue.bold(
             global.app.config.development ? "DEVELOPMENT" : "COMMUNITY"

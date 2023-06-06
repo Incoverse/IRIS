@@ -39,7 +39,7 @@ export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) 
   const guild = await args[0].client.guilds.fetch(global.app.config.mainServer);
   let newMembersRole = null;
   await guild.roles.fetch().then(async (roles) => {
-    roles.forEach((role) => {
+     roles.forEach((role) => {
       if (role.name.toLowerCase().includes("new member")) {
         newMembersRole = role;
       }
@@ -56,14 +56,14 @@ export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) 
     );
     const entry = {...global.app.config.defaultEntry, ...{
       id: args[0].id,
-      discriminator: args[0].user.discriminator,
       last_active: new Date().toISOString(),
       username: args[0].user.username,
       isNew: true,
     }}
+    if (args[0].user.discriminator !== "0" && args[0].user.discriminator) entry.discriminator = args[0].user.discriminator;
     await userdata.insertOne(entry);
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.tag) + " has joined the server. A database entry has been created for them.")
+    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username) + " has joined the server. A database entry has been created for them.")
   } finally {
     await dbclient.close();
   }

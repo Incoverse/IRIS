@@ -33,7 +33,7 @@ const commandInfo = {
   ),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
   settings: {
-    devOnly: false
+    devOnly: true
   },
 };
 
@@ -99,7 +99,10 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
       let daysLeft = howManyDaysUntilBirthday(birthday.birthday);
       embed.addFields({
         name:
-          `${user.user.tag}${user.nickname ? ` (${user.nickname})` : ""}` +
+        `${
+          (user.user.discriminator !== "0" && user.user.discriminator ? user.user.tag : user.user.username)
+
+          }${user.nickname ? ` (${user.nickname})` : ""}` +
           (interaction.options.get("timezones")?.value == true
             ? ` - ${birthday.timezone ?? "Europe/London"}`
             : ""),

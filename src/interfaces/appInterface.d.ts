@@ -57,7 +57,7 @@ interface AppInterface {
     defaultEntry: {
       _id?: string | OptionalId<Document> | null;
       id: string;
-      discriminator: string;
+      discriminator?: string;
       last_active: string | null;
       timezones: Array<string>;
       username: string;
