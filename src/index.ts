@@ -515,14 +515,14 @@ declare const global: IRISGlobal;
           "Discord.JS version: " +
           chalk.yellow(version)
       );
-      console.log(
-        chalk.white.bold(
-          "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
-        ) +
-          "Current API Latency: " +
-          chalk.cyanBright(client.ws.ping) +
-          " ms"
-      );
+      // console.log(
+      //   chalk.white.bold(
+      //     "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+      //   ) +
+      //     "Current API Latency: " +
+      //     chalk.cyanBright(client.ws.ping) +
+      //     " ms"
+      // );
       console.log(
         chalk.white.bold(
           "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
