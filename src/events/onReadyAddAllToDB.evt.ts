@@ -76,7 +76,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
                   let userDoc = allDocuments.find((m) => m.id == member.id);
                   if (
                     userDoc.username !== member.user.username ||
-                    userDoc.discriminator !== member.user.discriminator
+                    (userDoc.discriminator !== member.user.discriminator && userDoc.discriminator)
                   ) {
                     global.app.debugLog(
                       chalk.white.bold(
