@@ -207,11 +207,16 @@ export async function runCommand(
           ((interaction.member as GuildMember).displayName.endsWith("s")
             ? "'"
             : "'s") +
-          " daily wordle game\n\n``/wordle guess <word>`` to guess" +
+          " daily wordle game\n\n``/wordle guess <word>`` to guess\n\n" +
           generateBoard(undefined, true, true),
           allowedMentions: { parse: [] },
       });
-
+      interaction.reply({
+        content:"Started!",
+        ephemeral: true,
+      }).then(async (msg) => {
+        await msg.delete();
+      });
       wordle.currentlyPlaying[interaction.user.id].boardMessage =
         await message.fetch();
     } else if (
