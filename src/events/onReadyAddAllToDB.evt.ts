@@ -57,7 +57,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
             }
           });
 
-          guild.members.fetch().then((members) => {
+          await guild.members.fetch().then((members) => {
             members.forEach(async (member) => {
               if (!member.user.bot && member.user.id !== client.user.id) {
                 if (!allDocuments.some((m) => m.id == member.id)) {
@@ -98,8 +98,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
                     };
                     if (member.user.discriminator !== "0" && member.user.discriminator) {
                       updateUsernames[member.id].discriminator =
-                        member.user.discriminator;
+                      member.user.discriminator;
                     }
+                    
                   }
                 }
               }
