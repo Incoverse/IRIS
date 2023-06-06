@@ -110,39 +110,40 @@ const commandInfo = {
         .addSubcommand((subcommand) =>
           subcommand.setName("stop").setDescription("Force-stop IRIS.")
           )
-          .addSubcommand((subcommand) =>
-          subcommand.setName("setpresence").setDescription("Set IRIS's presence.")
-                .addStringOption((option) =>
-                  option
-                    .setName("text")
-                    .setDescription("The text to set IRIS's presence to. Use 'null' to remove the presence.")
-                    .setRequired(true)
-                )
-                .addStringOption((option) =>
-                  option
-                    .setName("type")
-                    .setDescription("The type of the presence.")
-                    .addChoices({
-                      name: "Playing",
-                      value: ActivityType.Playing.toString(),
-                    },
-                    {
-                      name: "Watching",
-                      value: ActivityType.Watching.toString(),
-                    },
-                    {
-                      name: "Listening",
-                      value: ActivityType.Listening.toString(),
-                    },
-                    {
-                      name: "Custom",
-                      value: ActivityType.Custom.toString(),
-                    })
-                )
+          // .addSubcommand((subcommand) =>
+          // subcommand.setName("setpresence").setDescription("Set IRIS's presence.")
+          //       .addStringOption((option) =>
+          //         option
+          //           .setName("text")
+          //           .setDescription("The text to set IRIS's presence to. Use 'null' to remove the presence.")
+          //           .setRequired(true)
+          //       )
+          //       .addStringOption((option) =>
+          //         option
+          //           .setName("type")
+          //           .setDescription("The type of the presence.")
+          //           .addChoices({
+          //             name: "Playing",
+          //             value: ActivityType.Playing.toString(),
+          //           },
+          //           {
+          //             name: "Watching",
+          //             value: ActivityType.Watching.toString(),
+          //           },
+          //           {
+          //             name: "Listening",
+          //             value: ActivityType.Listening.toString(),
+          //           },
+          //           {
+          //             name: "Custom",
+          //             value: ActivityType.Custom.toString(),
+          //           })
+          //       )
+          // )
 
 
 
-          )
+
           // .addSubcommand((subcommand) =>
           // subcommand.setName("disableCommand").setDescription("Disable a command.")
           //       .addStringOption((option) =>
@@ -298,7 +299,13 @@ const commandInfo = {
       } else if (subcommand == "stop") {
         await stopIRIS.runSubCommand(interaction, RM);
       } else if (subcommand == "setpresence") {
-        await setPresence.runSubCommand(interaction, RM);
+
+          return await interaction.reply({
+            content: "This command is currently disabled.",
+            ephemeral: true,
+          });
+          
+        //await setPresence.runSubCommand(interaction, RM);
       } else if (subcommand == "disableCommand") {
       } else if (subcommand == "disableCommand") {}
     }
