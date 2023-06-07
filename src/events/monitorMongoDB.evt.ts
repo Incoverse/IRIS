@@ -71,7 +71,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
           "] "
       ) + " Restarting MongoDB..."
     );
-    await execPromise("sudo systemctl restart mongodb");
+    await execPromise("sudo systemctl restart mongod");
     await sleep(500);
     try {
       await execPromise(
