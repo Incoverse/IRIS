@@ -107,3 +107,4 @@ dist
 .tern-port
 
 local_config.json
+*.status

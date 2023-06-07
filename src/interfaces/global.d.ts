@@ -22,6 +22,14 @@ import { AppInterface } from "./appInterface.js";
 interface IRISGlobal extends NodeJS.Global {
   app: AppInterface;
   bannedUsers: Array<string>;
+  mongoStatus: number;
+  mongoStatuses: {
+      RUNNING: number,
+      RESTARTING: number,
+      STOPPED: number,
+      FAILED: number,
+      NOT_AVAILABLE: number,
+    }
   birthdays: Array<{
     id: string;
     birthday: string;
@@ -46,10 +54,10 @@ interface IRISGlobal extends NodeJS.Global {
       expires: string;
       currentlyPlaying: {
         [key: string]: {
-          boardMessage: Message|null;
+          boardMessage: Message | null;
           guesses: Array<string>;
           startTime: number;
-          lastEphemeralMessage: InteractionResponse|Message|null;
+          lastEphemeralMessage: InteractionResponse | Message | null;
         };
       };
     };

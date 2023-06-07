@@ -1,18 +1,18 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import Discord from "discord.js";
@@ -26,20 +26,24 @@ const eventInfo = {
   type: "discordEvent",
   listenerkey: Discord.Events.GuildMemberAdd,
   settings: {
-    devOnly: false
-  }
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) {
+export async function runEvent(
+  RM: object,
+  ...args: Array<Discord.GuildMember>
+) {
   if (args[0].user.bot) return;
   if (args[0].guild.id !== global.app.config.mainServer) return;
 
   const guild = await args[0].client.guilds.fetch(global.app.config.mainServer);
   let newMembersRole = null;
   await guild.roles.fetch().then(async (roles) => {
-     roles.forEach((role) => {
+    roles.forEach((role) => {
       if (role.name.toLowerCase().includes("new member")) {
         newMembersRole = role;
       }
@@ -54,13 +58,17 @@ export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) 
     const userdata = database.collection(
       global.app.config.development ? "userdata_dev" : "userdata"
     );
-    const entry = {...global.app.config.defaultEntry, ...{
-      id: args[0].id,
-      last_active: new Date().toISOString(),
-      username: args[0].user.username,
-      isNew: true,
-    }}
-    if (args[0].user.discriminator !== "0" && args[0].user.discriminator) entry.discriminator = args[0].user.discriminator;
+    const entry = {
+      ...global.app.config.defaultEntry,
+      ...{
+        id: args[0].id,
+        last_active: new Date().toISOString(),
+        username: args[0].user.username,
+        isNew: true,
+      },
+    };
+    if (args[0].user.discriminator !== "0" && args[0].user.discriminator)
+      entry.discriminator = args[0].user.discriminator;
     await userdata.insertOne(entry);
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username) + " has joined the server. A database entry has been created for them.")
@@ -69,8 +77,11 @@ export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) 
   }
 }
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;
 export const getListenerKey = () => eventInfo.listenerkey;

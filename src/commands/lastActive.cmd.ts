@@ -1,18 +1,18 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import Discord, { Team } from "discord.js";
@@ -28,19 +28,23 @@ const commandInfo = {
     .setName("lastactive")
     .setDescription("Check when a user was last active.")
     .addUserOption((option) =>
-    option
-    .setName("user")
-    .setDescription("The user you want to check")
+      option
+        .setName("user")
+        .setDescription("The user you want to check")
         .setRequired(true)
-        )
-        .setDMPermission(false),
-        // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-        settings: {
-          devOnly: false
-        },
+    )
+    .setDMPermission(false),
+  // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
+  settings: {
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
-export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runCommand(
+  interaction: Discord.CommandInteraction,
+  RM: object
+) {
   try {
     await interaction.deferReply();
     const target = interaction.options.getUser("user");
@@ -85,7 +89,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
             ? "\n\n``" +
               ([
                 ...Array.from(
-                                  (interaction.client.application.owner as Team).members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -103,7 +107,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
             ? "\n\n``" +
               ([
                 ...Array.from(
-                                  (interaction.client.application.owner as Team).members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -131,12 +135,16 @@ const MONTH_NAMES = [
   "December",
 ];
 
-function getFormattedDate(date: Date, prefomattedDate: any = false, hideYear: any = false) {
+function getFormattedDate(
+  date: Date,
+  prefomattedDate: any = false,
+  hideYear: any = false
+) {
   const day = date.getUTCDate();
   const month = MONTH_NAMES[date.getUTCMonth()];
   const year = date.getUTCFullYear();
   let hours = date.getUTCHours();
-  let minutes:any = date.getUTCMinutes();
+  let minutes: any = date.getUTCMinutes();
   const ampm = true;
   if (minutes < 10) {
     // Adding leading zero to minutes
@@ -202,7 +210,10 @@ function timeAgo(dateParam) {
   return getFormattedDate(date); // 10. January 2017. at 10:20
 }
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
 export const commandSettings = () => commandInfo.settings;

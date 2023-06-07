@@ -16,9 +16,12 @@
  */
 
 interface IRISEvent {
+    getListenerKey?: () => any;
+    running: boolean;
     eventType: () => string;
     eventSettings: () => {
         devOnly: boolean;
+        mainOnly: boolean;
     };
     priority: () => number;
     getMS: () => number;

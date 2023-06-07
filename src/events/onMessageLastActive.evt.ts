@@ -1,30 +1,31 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import { MongoClient } from "mongodb";
 import Discord from "discord.js";
-import { IRISGlobal } from "../interfaces/global.js"
+import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 
 const eventInfo = {
   type: "onMessage",
   settings: {
-     devOnly: false
-   },
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -53,7 +54,10 @@ export async function runEvent(message: Discord.Message, RM: object) {
   }
 }
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;

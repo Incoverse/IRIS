@@ -1,18 +1,18 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 const eventInfo = {
@@ -20,8 +20,9 @@ const eventInfo = {
   ms: 12 * 60 * 60 * 1000, //12h
   runImmediately: true,
   settings: {
-    devOnly: false
-  }
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
 import moment from "moment-timezone";
@@ -51,7 +52,10 @@ export async function runEvent(client: Discord.Client, RM: object) {
   for (let memberID of JSON.parse(JSON.stringify(global.newMembers))) {
     await guild.members.fetch(memberID).then(async (member) => {
       if (member.user.bot) return;
-      if (new Date().getTime() - member.joinedAt.getTime() >= 7 * 24 * 60 * 60 * 1000) {
+      if (
+        new Date().getTime() - member.joinedAt.getTime() >=
+        7 * 24 * 60 * 60 * 1000
+      ) {
         global.newMembers = global.newMembers.filter(
           (item) => item !== memberID
         );
@@ -89,9 +93,12 @@ export async function runEvent(client: Discord.Client, RM: object) {
   running = false;
 }
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;
 export const getMS = () => eventInfo.ms;
 export const runImmediately = () => eventInfo.runImmediately;

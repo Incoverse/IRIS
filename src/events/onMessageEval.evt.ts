@@ -1,18 +1,18 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import Discord, { Team } from "discord.js";
@@ -22,10 +22,10 @@ import { inspect } from "util";
 const eventInfo = {
   type: "onMessage",
   settings: {
-     devOnly: false
-   },
+    devOnly: false,
+    mainOnly: false,
+  },
 };
-
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
@@ -35,7 +35,9 @@ export async function runEvent(message: Discord.Message, RM: object) {
     await message.client.application.fetch();
     if (
       [
-        ...Array.from((message.client.application.owner as Team).members.keys()),
+        ...Array.from(
+          (message.client.application.owner as Team).members.keys()
+        ),
         ...global.app.config.externalOwners,
       ].includes(message.author.id)
     ) {
@@ -48,8 +50,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
         // won't error out on objects with circular references
         // (like Collections, for example)
 
-        if (typeof text !== "string")
-          text = inspect(text, { depth: 1 });
+        if (typeof text !== "string") text = inspect(text, { depth: 1 });
 
         // Replace symbols with character code alternatives
         text = text
@@ -98,5 +99,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;

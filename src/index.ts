@@ -17,7 +17,6 @@
 
 import {
   Collection,
-  CommandInteraction,
   Guild,
   GuildMember,
   Message,
@@ -44,35 +43,39 @@ import moment from "moment-timezone";
 import { MongoClient } from "mongodb";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { promisify } from "util";
+import {exec} from "child_process";
+const execPromise = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
 dotenv.config();
 declare const global: IRISGlobal;
+
 //! ------------------------------------------- !\\
 //! -- This is the start of the IRIS journey -- !\\
 //! ------------------------------------------- !\\
 
 (async () => {
+  let fullyReady = false;
   const config = JsonCParser.parse(
     readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
   if (!existsSync("./local_config.json")) {
     writeFileSync(
       "./local_config.json",
-      JSON.stringify(
-        {
-          "presence": {
-            "text": "you",
-            "type": ActivityType.Watching
-          },
-          "disabledCommands": [],
-          "disabledEvents": []
-        }
-      )
-    )
+      JSON.stringify({
+        presence: {
+          text: "you",
+          type: ActivityType.Watching,
+        },
+        disabledCommands: [],
+        disabledEvents: [],
+      })
+    );
   }
-  const localConfig = JSON.parse(readFileSync("./local_config.json", { encoding: "utf-8" }));
+  const localConfig = JSON.parse(
+    readFileSync("./local_config.json", { encoding: "utf-8" })
+  );
   const app: AppInterface = {
     version: JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
       .version,
@@ -85,9 +88,25 @@ declare const global: IRISGlobal;
   global.birthdays = [];
   global.communicationChannel = new EventEmitter();
   global.newMembers = [];
-  global.games = {}
-  global.dirName = __dirname;
+  global.mongoStatuses = {
+    RUNNING: 0,
+    RESTARTING: 1,
+    STOPPED: 2,
+    FAILED: 3,
+    NOT_AVAILABLE: 4,
+  };
+  global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
   global.app.config.development = process.env.DEVELOPMENT == "YES";
+  if (!global.app.config.development) {
+    try {
+      await execPromise("sudo systemctl status mongodb | grep 'active (running)'");
+      global.mongoStatus = global.mongoStatuses.RUNNING
+    } catch (e) {
+      global.mongoStatus = global.mongoStatuses.STOPPED
+    }
+  }
+  global.games = {};
+  global.dirName = __dirname;
   global.mongoConnectionString =
     "mongodb://iris:" +
     process.env.DBPASSWD +
@@ -169,6 +188,7 @@ declare const global: IRISGlobal;
 
     //!--------------------------
     const requiredModules: { [key: string]: any } = {};
+
     console.log(
       chalk.white.bold(
         "[" +
@@ -206,6 +226,20 @@ declare const global: IRISGlobal;
     });
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
+      if (!fullyReady) {
+        return await interaction.reply({
+          content:
+            "I'm still starting up, please wait a few seconds and try again.",
+          ephemeral: true,
+        });
+      }
+      if (global.mongoStatus == global.mongoStatuses.RESTARTING) {
+        return await interaction.reply({
+          content:
+            "The database is currently restarting, please wait a few seconds and try again.",
+          ephemeral: true,
+        });
+      }
       if (interaction.guild == null)
         return await interaction.reply(
           ":x: This command can only be used in a server."
@@ -232,12 +266,14 @@ declare const global: IRISGlobal;
                   7 * 24 * 60 * 60 * 1000,
               },
             };
-            if (interaction.user.discriminator !== "0" && interaction.user.discriminator) 
-              entry.discriminator = interaction.user.discriminator,
-              
-            userdata.insertOne(entry).then(() => {
-              client.close();
-            });
+            if (
+              interaction.user.discriminator !== "0" &&
+              interaction.user.discriminator
+            )
+              (entry.discriminator = interaction.user.discriminator),
+                userdata.insertOne(entry).then(() => {
+                  client.close();
+                });
           } else {
             const updateDoc = {
               $set: {
@@ -290,7 +326,19 @@ declare const global: IRISGlobal;
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
         const command: IRISCommand = await import(`./commands/${file}`);
-        if (!global.app.config.development && command.commandSettings().devOnly) continue;
+        if (
+          command.commandSettings().devOnly &&
+          command.commandSettings().mainOnly
+        ) {
+          /* prettier-ignore */
+          global.app.debugLog(chalk.white.bold("[" + moment().format("M/D/y HH:mm:ss") + "] ") + chalk.redBright( "[" + __filename.split(process.platform == "linux" ? "/" : "\\")[ __filename.split(process.platform == "linux" ? "/" : "\\").length - 1 ] + "] " ) +"Error while registering command: " + chalk.redBright(file) + " (" + chalk.redBright("Command cannot be both devOnly and mainOnly!")+")");
+          continue;
+        }
+        if (!global.app.config.development && command.commandSettings().devOnly)
+          continue;
+        if (global.app.config.development && command.commandSettings().mainOnly)
+          continue;
+
         /* prettier-ignore */
         global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Registering command: " +chalk.blueBright(file));
         requiredModules[
@@ -315,8 +363,13 @@ declare const global: IRISGlobal;
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of eventFiles) {
         const event: IRISEvent = await import(`./events/${file}`);
-        if (!global.app.config.development && event.eventSettings().devOnly)
+        if (!(event.eventSettings().devOnly && event.eventSettings().mainOnly)) {
+
+          if (!global.app.config.development && event.eventSettings().devOnly)
           continue;
+          if (global.app.config.development && event.eventSettings().mainOnly)
+          continue;
+        }
         requiredModules[
           "event" +
             file.replace(".evt.js", "")[0].toUpperCase() +
@@ -342,8 +395,11 @@ declare const global: IRISGlobal;
         }
       })();
       if (!global.app.config.development) {
-
-        if (!global.app.localConfig.presence.type && !global.app.localConfig.presence.text) return;
+        if (
+          !global.app.localConfig.presence.type &&
+          !global.app.localConfig.presence.text
+        )
+          return;
         client.user.setPresence({
           activities: [
             {
@@ -419,6 +475,16 @@ declare const global: IRISGlobal;
         (a: string, b: string) => parseInt(b) - parseInt(a)
       )) {
         for (let i of prioritizedTable[prio]) {
+          if (
+            requiredModules[i].eventSettings().devOnly &&
+            requiredModules[i].eventSettings().mainOnly
+          ) {
+            /* prettier-ignore */
+            global.app.debugLog(chalk.white.bold("[" +moment().format("M/D/y HH:mm:ss") +"] ")+chalk.redBright.bold("[" +__filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1] +"] ") +chalk.redBright("Error while registering")+" '" +chalk.yellow(requiredModules[i].eventType()) +("discordEvent" === requiredModules[i].eventType()? " (" +chalk.blue.bold(requiredModules[i].getListenerKey()) +")": "") +("runEvery" === requiredModules[i].eventType()? " (" +chalk.yellow(prettyMilliseconds(requiredModules[i].getMS(), {verbose: !0,})) +")": "") +"' "+chalk.redBright("event")+": " +chalk.redBright(requiredModules[i].returnFileName()) +" ("+ chalk.redBright("Event cannot be both devOnly and mainOnly!") +")");
+            delete requiredModules[i]
+            delete prioritizedTable[prio][i]
+            continue;
+          }
           /* prettier-ignore */
           global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+__filename.split(process.platform == "linux" ? "/" :"\\")[__filename.split(process.platform == "linux" ? "/" :"\\").length - 1]+"] ")+"Registering '"+chalk.yellow(requiredModules[i].eventType())+("discordEvent"===requiredModules[i].eventType()?" ("+chalk.blue.bold(requiredModules[i].getListenerKey())+")":"")+("runEvery"===requiredModules[i].eventType()?" ("+chalk.yellow(prettyMilliseconds(requiredModules[i].getMS(),{verbose:!0}))+")":"")+"' event: "+chalk.blueBright(requiredModules[i].returnFileName()));
           if (requiredModules[i].eventType() === "runEvery") {
@@ -532,7 +598,11 @@ declare const global: IRISGlobal;
         chalk.white.bold(
           "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
         ) +
-          chalk.blue.bold(client.user.discriminator != "0" && client.user.discriminator ? client.user.tag: client.user.username) +
+          chalk.blue.bold(
+            client.user.discriminator != "0" && client.user.discriminator
+              ? client.user.tag
+              : client.user.username
+          ) +
           " is ready and is running " +
           chalk.blue.bold(
             global.app.config.development ? "DEVELOPMENT" : "COMMUNITY"
@@ -544,6 +614,7 @@ declare const global: IRISGlobal;
           "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
         ) + "------------------------"
       );
+      fullyReady = true;
     });
 
     /* prettier-ignore */

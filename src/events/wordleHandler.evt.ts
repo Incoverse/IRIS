@@ -28,8 +28,9 @@ const eventInfo = {
   ms: 60000,
   runImmediately: true,
   settings: {
-     devOnly: false
-   },
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -70,7 +71,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
       currentlyPlaying: {},
     };
     const oldWordle = wordle;
-    global.games.wordle = {...data};
+    global.games.wordle = { ...data };
     delete data.currentlyPlaying;
     await gamedata.updateOne(
       { type: "wordle" },
@@ -132,7 +133,7 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;
 export const getMS = () => eventInfo.ms;
 export const runImmediately = () => eventInfo.runImmediately;

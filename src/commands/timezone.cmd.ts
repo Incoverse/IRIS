@@ -1,21 +1,21 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, {Team} from "discord.js";
+import Discord, { Team } from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 import moment from "moment-timezone";
@@ -26,14 +26,17 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-  .setName("timezone")
-  .setDescription("Check what timezone IRIS has predicted that you're in."),
+    .setName("timezone")
+    .setDescription("Check what timezone IRIS has predicted that you're in."),
   settings: {
-    devOnly: false
+    devOnly: false,
+    mainOnly: false,
   },
 };
-export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
-
+export async function runCommand(
+  interaction: Discord.CommandInteraction,
+  RM: object
+) {
   try {
     await interaction.deferReply({
       ephemeral: true,
@@ -80,7 +83,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
             ? "\n\n``" +
               ([
                 ...Array.from(
-                                  (interaction.client.application.owner as Team).members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -98,7 +101,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
             ? "\n\n``" +
               ([
                 ...Array.from(
-                                  (interaction.client.application.owner as Team).members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -121,7 +124,7 @@ function getOffset(timezone) {
       stringOffset += "+";
     }
     if (offset.toString().includes(".")) {
-      let fullHourOffset = Math.abs(offset)
+      let fullHourOffset = Math.abs(offset);
       let minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
       stringOffset += fullHourOffset + ":" + minuteOffset;
     } else {
@@ -131,7 +134,10 @@ function getOffset(timezone) {
   return "UTC" + stringOffset;
 }
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
 export const commandSettings = () => commandInfo.settings;

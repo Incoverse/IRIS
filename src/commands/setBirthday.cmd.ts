@@ -1,18 +1,18 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import Discord, { Team } from "discord.js";
@@ -26,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-  .setName("setbirthday")
+    .setName("setbirthday")
     .setDescription("Set your birthday.")
     .addStringOption((option) =>
       option
@@ -35,16 +35,19 @@ const commandInfo = {
           "Type in your birthday in a YYYY-MM-DD format. (put ???? as year to hide your age)"
         )
         .setRequired(true)
-        )
-        .setDMPermission(false),
-        // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-        settings: {
-          devOnly: false
-        },
+    )
+    .setDMPermission(false),
+  // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
+  settings: {
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
-export async function runCommand(interaction: Discord.CommandInteraction, RM: object) {
-
+export async function runCommand(
+  interaction: Discord.CommandInteraction,
+  RM: object
+) {
   try {
     let date: string = interaction.options.get("date").value.toString();
     const client = new MongoClient(global.mongoConnectionString);
@@ -199,14 +202,11 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
         id: interaction.user.id,
       });
       global.birthdays = copy;
-      await userdata.updateOne(
-        query,
-        {
-          $set: {
-            birthday: date,
-          },
-        }
-      );
+      await userdata.updateOne(query, {
+        $set: {
+          birthday: date,
+        },
+      });
     } finally {
       // Ensures that the client will close when you finish/error
       await client.close();
@@ -233,7 +233,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
             ? "\n\n``" +
               ([
                 ...Array.from(
-                                  (interaction.client.application.owner as Team).members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -251,7 +251,7 @@ export async function runCommand(interaction: Discord.CommandInteraction, RM: ob
             ? "\n\n``" +
               ([
                 ...Array.from(
-                                  (interaction.client.application.owner as Team).members.keys()
+                  (interaction.client.application.owner as Team).members.keys()
                 ),
                 ...global.app.config.externalOwners,
               ].includes(interaction.user.id)
@@ -269,7 +269,10 @@ function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 &
 /* prettier-ignore */
 const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e, t) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e, t, r) { return e.replace(t, (function (e) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e) { return (e + 24) % 12 || 12 }, getAmPm: function (e) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e, t, r, g) { return e.replace(t, (function (e) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
 export const getSlashCommand = () => commandInfo.slashCommand;
 export const commandCategory = () => commandInfo.category;
 export const commandSettings = () => commandInfo.settings;

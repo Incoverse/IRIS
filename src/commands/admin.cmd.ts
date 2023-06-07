@@ -26,20 +26,19 @@ import { fileURLToPath } from "url";
 
 import * as restartMongoDB from "../commands-lib/admin-restartMongo.subcmd.js";
 import * as restartIRIS from "../commands-lib/admin-restart.subcmd.js";
-import * as resetCertificate from "../commands-lib/admin-resetcert.subcmd.js";
+import * as checkCertificate from "../commands-lib/admin-checkcert.subcmd.js";
 import * as stopIRIS from "../commands-lib/admin-stop.subcmd.js";
 import * as changeBirthday from "../commands-lib/admin-changeBirthday.subcmd.js";
 import * as changeTimezone from "../commands-lib/admin-changeTimezone.subcmd.js";
 import * as entryManagement from "../commands-lib/admin-entrymgmt.subcmd.js";
 import * as setPresence from "../commands-lib/admin-setPresence.subcmd.js";
 
-
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-  .setName("admin")
+    .setName("admin")
     .setDescription("Admin Commands")
     .addSubcommandGroup((subcommandGroup) =>
       subcommandGroup
@@ -88,8 +87,8 @@ const commandInfo = {
         .setDescription("Commands to manage the system")
         .addSubcommand((subcommand) =>
           subcommand
-            .setName("resetcert")
-            .setDescription("Force a reset of the certificate for MongoDB.")
+            .setName("checkcert")
+            .setDescription("Check when the SSL certificate expires.")
         )
 
         .addSubcommand((subcommand) =>
@@ -98,93 +97,90 @@ const commandInfo = {
             .setDescription("Force a restart of MongoDB.")
         )
     )
-    .addSubcommandGroup((subcommandGroup) =>
-      subcommandGroup
-        .setName("iris")
-        .setDescription("Commands to manage IRIS")
-        .addSubcommand((subcommand) =>
-          subcommand
-            .setName("restart")
-            .setDescription("Force a restart of IRIS.")
-        )
-        .addSubcommand((subcommand) =>
-          subcommand.setName("stop").setDescription("Force-stop IRIS.")
+    .addSubcommandGroup(
+      (subcommandGroup) =>
+        subcommandGroup
+          .setName("iris")
+          .setDescription("Commands to manage IRIS")
+          .addSubcommand((subcommand) =>
+            subcommand
+              .setName("restart")
+              .setDescription("Force a restart of IRIS.")
           )
-          // .addSubcommand((subcommand) =>
-          // subcommand.setName("setpresence").setDescription("Set IRIS's presence.")
-          //       .addStringOption((option) =>
-          //         option
-          //           .setName("text")
-          //           .setDescription("The text to set IRIS's presence to. Use 'null' to remove the presence.")
-          //           .setRequired(true)
-          //       )
-          //       .addStringOption((option) =>
-          //         option
-          //           .setName("type")
-          //           .setDescription("The type of the presence.")
-          //           .addChoices({
-          //             name: "Playing",
-          //             value: ActivityType.Playing.toString(),
-          //           },
-          //           {
-          //             name: "Watching",
-          //             value: ActivityType.Watching.toString(),
-          //           },
-          //           {
-          //             name: "Listening",
-          //             value: ActivityType.Listening.toString(),
-          //           },
-          //           {
-          //             name: "Custom",
-          //             value: ActivityType.Custom.toString(),
-          //           })
-          //       )
-          // )
+          .addSubcommand((subcommand) =>
+            subcommand.setName("stop").setDescription("Force-stop IRIS.")
+          )
+      // .addSubcommand((subcommand) =>
+      // subcommand.setName("setpresence").setDescription("Set IRIS's presence.")
+      //       .addStringOption((option) =>
+      //         option
+      //           .setName("text")
+      //           .setDescription("The text to set IRIS's presence to. Use 'null' to remove the presence.")
+      //           .setRequired(true)
+      //       )
+      //       .addStringOption((option) =>
+      //         option
+      //           .setName("type")
+      //           .setDescription("The type of the presence.")
+      //           .addChoices({
+      //             name: "Playing",
+      //             value: ActivityType.Playing.toString(),
+      //           },
+      //           {
+      //             name: "Watching",
+      //             value: ActivityType.Watching.toString(),
+      //           },
+      //           {
+      //             name: "Listening",
+      //             value: ActivityType.Listening.toString(),
+      //           },
+      //           {
+      //             name: "Custom",
+      //             value: ActivityType.Custom.toString(),
+      //           })
+      //       )
+      // )
 
+      // .addSubcommand((subcommand) =>
+      // subcommand.setName("disableCommand").setDescription("Disable a command.")
+      //       .addStringOption((option) =>
+      //         option
 
+      //           .setName("command")
+      //           .setDescription("The command to disable.")
+      //           .setRequired(true)
+      //       )
+      // )
+      // .addSubcommand((subcommand) =>
+      // subcommand.setName("enableCommand").setDescription("Enable a command.")
+      //       .addStringOption((option) =>
+      //         option
 
+      //           .setName("command")
+      //           .setDescription("The command to enable.")
+      //           .setRequired(true)
+      //       )
+      // )
+      // .addSubcommand((subcommand) =>
+      // subcommand.setName("disableEvent").setDescription("Disable an event.")
+      //       .addStringOption((option) =>
+      //         option
 
-          // .addSubcommand((subcommand) =>
-          // subcommand.setName("disableCommand").setDescription("Disable a command.")
-          //       .addStringOption((option) =>
-          //         option
+      //           .setName("event")
+      //           .setDescription("The event to disable.")
+      //           .setRequired(true)
+      //       )
+      // )
+      // .addSubcommand((subcommand) =>
+      // subcommand.setName("enableEvent").setDescription("Enable an event.")
+      //       .addStringOption((option) =>
+      //         option
 
-          //           .setName("command")
-          //           .setDescription("The command to disable.")
-          //           .setRequired(true)
-          //       )
-          // )
-          // .addSubcommand((subcommand) =>
-          // subcommand.setName("enableCommand").setDescription("Enable a command.")
-          //       .addStringOption((option) =>
-          //         option
-
-          //           .setName("command")
-          //           .setDescription("The command to enable.")
-          //           .setRequired(true)
-          //       )
-          // )
-          // .addSubcommand((subcommand) =>
-          // subcommand.setName("disableEvent").setDescription("Disable an event.")
-          //       .addStringOption((option) =>
-          //         option
-
-          //           .setName("event")
-          //           .setDescription("The event to disable.")
-          //           .setRequired(true)
-          //       )
-          // )
-          // .addSubcommand((subcommand) =>
-          // subcommand.setName("enableEvent").setDescription("Enable an event.")
-          //       .addStringOption((option) =>
-          //         option
-
-          //           .setName("event")
-          //           .setDescription("The event to enable.")
-          //           .setRequired(true)
-          //       )
-          // )
-    
+      //           .setName("event")
+      //           .setDescription("The event to enable.")
+      //           .setRequired(true)
+      //       )
+      // )
     )
 
     .addSubcommandGroup((subcommandGroup) =>
@@ -200,8 +196,8 @@ const commandInfo = {
                 .setName("user")
                 .setDescription("The user whose entry you want to delete")
                 .setRequired(true)
-                )
-                )
+            )
+        )
         .addSubcommand((subcommand) =>
           subcommand
             .setName("get")
@@ -219,9 +215,9 @@ const commandInfo = {
             .setDescription("Create a new entry in the database")
             .addUserOption((option) =>
               option
-              .setName("user")
-              .setDescription("The user whose entry you want to create")
-              .setRequired(true)
+                .setName("user")
+                .setDescription("The user whose entry you want to create")
+                .setRequired(true)
             )
             .addStringOption((option) =>
               option
@@ -239,12 +235,13 @@ const commandInfo = {
     )
 
     .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-    settings: {
-      devOnly: false
-    },
-  };
-  export async function runCommand(
-    interaction: Discord.CommandInteraction,
+  settings: {
+    devOnly: false,
+    mainOnly: false,
+  },
+};
+export async function runCommand(
+  interaction: Discord.CommandInteraction,
   RM: object
 ) {
   try {
@@ -288,8 +285,8 @@ const commandInfo = {
         await changeBirthday.runSubCommand(interaction, RM);
       }
     } else if (subcommandGroup == "system") {
-      if (subcommand == "resetcert") {
-        await resetCertificate.runSubCommand(interaction, RM);
+      if (subcommand == "checkcert") {
+        await checkCertificate.runSubCommand(interaction, RM);
       } else if (subcommand == "restartMongo") {
         await restartMongoDB.runSubCommand(interaction, RM);
       }
@@ -299,15 +296,15 @@ const commandInfo = {
       } else if (subcommand == "stop") {
         await stopIRIS.runSubCommand(interaction, RM);
       } else if (subcommand == "setpresence") {
+        return await interaction.reply({
+          content: "This command is currently disabled.",
+          ephemeral: true,
+        });
 
-          return await interaction.reply({
-            content: "This command is currently disabled.",
-            ephemeral: true,
-          });
-          
         //await setPresence.runSubCommand(interaction, RM);
       } else if (subcommand == "disableCommand") {
-      } else if (subcommand == "disableCommand") {}
+      } else if (subcommand == "disableCommand") {
+      }
     }
   } catch (e) {
     await interaction.client.application.fetch();
@@ -351,7 +348,6 @@ const commandInfo = {
     }
   }
 }
-
 
 export const returnFileName = () =>
   __filename.split(process.platform == "linux" ? "/" : "\\")[

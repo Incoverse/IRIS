@@ -24,8 +24,9 @@ import { fileURLToPath } from "url";
 
 const eventInfo = {
   type: "onStart",
- settings: {
-    devOnly: false
+  settings: {
+    devOnly: false,
+    mainOnly: false,
   },
 };
 
@@ -39,11 +40,11 @@ export async function runEvent(client: Discord.Client, RM: object) {
       global.app.config.development ? "userdata_dev" : "userdata"
     );
     /*
-      * We remove all members from the database that are not in the server. This is to prevent the database from getting too large and bloated.
-      * This is done on startup to ensure that the database is always clean and up-to-date.
-      * 
-      * We're awaiting the result of the find() function, because we don't want to accidentally let other modules access and modify the database before we're done cleaning it.
-    */
+     * We remove all members from the database that are not in the server. This is to prevent the database from getting too large and bloated.
+     * This is done on startup to ensure that the database is always clean and up-to-date.
+     *
+     * We're awaiting the result of the find() function, because we don't want to accidentally let other modules access and modify the database before we're done cleaning it.
+     */
     await userdata
       .find()
       .toArray()
@@ -73,7 +74,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
                     dbclient.close();
                   });
               } else {
-                dbclient.close()
+                dbclient.close();
               }
             });
           });
@@ -89,5 +90,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 10;

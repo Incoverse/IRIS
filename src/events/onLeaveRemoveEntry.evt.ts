@@ -1,18 +1,18 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import Discord from "discord.js";
@@ -26,13 +26,17 @@ const eventInfo = {
   type: "discordEvent",
   listenerkey: Discord.Events.GuildMemberRemove,
   settings: {
-     devOnly: false
-   },
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export async function runEvent(RM: object, ...args: Array<Discord.GuildMember>) {
+export async function runEvent(
+  RM: object,
+  ...args: Array<Discord.GuildMember>
+) {
   if (args[0].user.bot) return;
   if (args[0].guild.id !== global.app.config.mainServer) return;
   const client = new MongoClient(global.mongoConnectionString);
@@ -54,6 +58,6 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;
 export const getListenerKey = () => eventInfo.listenerkey;

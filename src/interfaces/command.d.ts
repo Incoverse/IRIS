@@ -21,6 +21,7 @@ interface IRISCommand {
     commandCategory: () => string;
     commandSettings: () => {
         devOnly: boolean;
+        mainOnly: boolean;
     }
     runCommand: (interaction: Discord.CommandInteraction, RM: object) => Promise<void>;
 }

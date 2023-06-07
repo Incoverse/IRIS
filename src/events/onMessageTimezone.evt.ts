@@ -1,18 +1,18 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | InCo
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Copyright (c) 2023 Inimi | InimicalPart | InCo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 import Discord from "discord.js";
@@ -25,8 +25,9 @@ import { fileURLToPath } from "url";
 const eventInfo = {
   type: "onMessage",
   settings: {
-     devOnly: false
-   },
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,15 +35,18 @@ declare const global: IRISGlobal;
 export async function runEvent(message: Discord.Message, RM: object) {
   if (message.guildId != global.app.config.mainServer) return;
   if (message.author.id == message.client.user.id) return;
-  if (message.content.toLowerCase().includes("timezone") || message.content.toLowerCase().includes("time zone")) {
+  if (
+    message.content.toLowerCase().includes("timezone") ||
+    message.content.toLowerCase().includes("time zone")
+  ) {
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Timezone message registered by " + chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username)+".")
     let time: any = message.content
       .toLowerCase()
       .match(
         /([0-9]{1,2}:[0-9]{2}( |)(am|pm))|([0-9]{1,2}:[0-9]{2})|[0-9]{4}|[0-9]{1,2}( |)(am|pm)/gim
-        );
-        if (!time) {
+      );
+    if (!time) {
       /* prettier-ignore*/
       global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "No matching time format was detected in the timezone message by " +chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username)+".")
       return;
@@ -149,7 +153,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
     }
     /* prettier-ignore */
     global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "Time provided by " +chalk.yellow(message.author.discriminator != "0" && message.author.discriminator ? message.author.tag: message.author.username) + " was matched to timezone: " + chalk.yellow(approximatedTimezone+" ("+getOffset(approximatedTimezone)+")"))
-    
+
     const client = new MongoClient(global.mongoConnectionString);
     try {
       const database = client.db("IRIS");
@@ -228,7 +232,7 @@ function getOffset(timezone) {
       stringOffset += "+";
     }
     if (offset.toString().includes(".")) {
-      let fullHourOffset = Math.abs(offset)
+      let fullHourOffset = Math.abs(offset);
       let minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
       stringOffset += fullHourOffset + ":" + minuteOffset;
     } else {
@@ -237,7 +241,7 @@ function getOffset(timezone) {
   }
   return "UTC" + stringOffset;
 }
-function tConvert(time: any ) {
+function tConvert(time: any) {
   // Check correct time format and split into components
   time = time.toString().match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [
     time,
@@ -252,7 +256,10 @@ function tConvert(time: any ) {
   return time.join(""); // return adjusted time or original string
 }
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+export const returnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
 export const eventType = () => eventInfo.type;
-export const eventSettings  = () => eventInfo.settings;
+export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;

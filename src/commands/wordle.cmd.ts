@@ -31,7 +31,7 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-  .setName("wordle")
+    .setName("wordle")
     .setDescription("Play a game of wordle!")
     .addSubcommand((subcommand) =>
       subcommand
@@ -48,16 +48,17 @@ const commandInfo = {
       subcommand
         .setName("board")
         .setDescription("Get the message link to the current board.")
-        )
-        .addSubcommand((subcommand) =>
-        subcommand.setName("start").setDescription("Start a new game.")
-        )
-        .addSubcommand((subcommand) =>
-        subcommand.setName("stats").setDescription("Get your wordle stats.")
-        ),
-        settings: {
-          devOnly: false
-        },
+    )
+    .addSubcommand((subcommand) =>
+      subcommand.setName("start").setDescription("Start a new game.")
+    )
+    .addSubcommand((subcommand) =>
+      subcommand.setName("stats").setDescription("Get your wordle stats.")
+    ),
+  settings: {
+    devOnly: false,
+    mainOnly: false,
+  },
 };
 
 export async function runCommand(
@@ -209,14 +210,16 @@ export async function runCommand(
             : "'s") +
           " daily wordle game\n\n``/wordle guess <word>`` to guess\n\n" +
           generateBoard(undefined, true, true),
-          allowedMentions: { parse: [] },
+        allowedMentions: { parse: [] },
       });
-      interaction.reply({
-        content:"Started!",
-        ephemeral: true,
-      }).then(async (msg) => {
-        await msg.delete();
-      });
+      interaction
+        .reply({
+          content: "Started!",
+          ephemeral: true,
+        })
+        .then(async (msg) => {
+          await msg.delete();
+        });
       wordle.currentlyPlaying[interaction.user.id].boardMessage =
         await message.fetch();
     } else if (
@@ -255,7 +258,9 @@ export async function runCommand(
         try {
           global.games.wordle.currentlyPlaying[
             interaction.user.id
-          ].lastEphemeralMessage.delete().catch(() => {});
+          ].lastEphemeralMessage
+            .delete()
+            .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
           content: "Your guess must be 5 letters long!",
@@ -274,7 +279,9 @@ export async function runCommand(
         try {
           global.games.wordle.currentlyPlaying[
             interaction.user.id
-          ].lastEphemeralMessage.delete().catch(()=>{});
+          ].lastEphemeralMessage
+            .delete()
+            .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
           content: "You have already guessed that word!",
@@ -294,7 +301,9 @@ export async function runCommand(
         try {
           global.games.wordle.currentlyPlaying[
             interaction.user.id
-          ].lastEphemeralMessage.delete().catch(()=>{});
+          ].lastEphemeralMessage
+            .delete()
+            .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
           content: "That is not a valid word!",
@@ -312,16 +321,18 @@ export async function runCommand(
       try {
         global.games.wordle.currentlyPlaying[
           interaction.user.id
-        ].lastEphemeralMessage.delete().catch(()=>{});
+        ].lastEphemeralMessage
+          .delete()
+          .catch(() => {});
       } catch {}
       if (wordle.word !== guess) {
         if (
           global.games.wordle.currentlyPlaying[interaction.user.id].guesses
             .length == 6
         ) {
-          endTime =Date.now() -
-          global.games.wordle.currentlyPlaying[interaction.user.id]
-            .startTime
+          endTime =
+            Date.now() -
+            global.games.wordle.currentlyPlaying[interaction.user.id].startTime;
           await wordle.currentlyPlaying[interaction.user.id].boardMessage.edit({
             content:
               "**" +
@@ -361,9 +372,9 @@ export async function runCommand(
         ].lastEphemeralMessage = msg;
         return;
       } else {
-        endTime =Date.now() -
-        global.games.wordle.currentlyPlaying[interaction.user.id]
-          .startTime
+        endTime =
+          Date.now() -
+          global.games.wordle.currentlyPlaying[interaction.user.id].startTime;
         await wordle.currentlyPlaying[interaction.user.id].boardMessage.edit({
           content:
             "**" +
@@ -378,9 +389,7 @@ export async function runCommand(
               ? "es"
               : "") +
             "** | **" +
-            prettyMilliseconds(
-endTime
-            ) +
+            prettyMilliseconds(endTime) +
             "**!\n" +
             generateBoard(undefined, true, true),
         });
@@ -418,7 +427,7 @@ endTime
         if (!userData?.gameData?.wordle) {
           await interaction.editReply({
             content:
-              "You have not played wordle before! Try playing a game first!"
+              "You have not played wordle before! Try playing a game first!",
           });
           return;
         }
@@ -509,8 +518,7 @@ endTime
         userData.gameData.wordle.last12 = [
           ...userData.gameData.wordle.last12,
           {
-            time:
-            endTime,
+            time: endTime,
             guesses:
               global.games.wordle.currentlyPlaying[interaction.user.id].guesses,
           },

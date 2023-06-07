@@ -48,10 +48,11 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
-  .setName("uno")
+    .setName("uno")
     .setDescription("UNOOOO!"),
   settings: {
     devOnly: true,
+    mainOnly: false,
   },
 };
 
@@ -906,9 +907,15 @@ export async function runCommand(
                   "\n----------------------------\n" +
                   (await generateOrder()) +
                   "\n\n**" +
-                  (players.get(player.name).discriminator !== "0" && players.get(player.name).discriminator ? players.get(player.name).tag : players.get(player.name).username) +
+                  (players.get(player.name).discriminator !== "0" &&
+                  players.get(player.name).discriminator
+                    ? players.get(player.name).tag
+                    : players.get(player.name).username) +
                   "** caught **" +
-                  (players.get(previousPlayer.name).discriminator !== "0" && players.get(previousPlayer.name).discriminator ? players.get(previousPlayer.name).tag : players.get(previousPlayer.name).username) +
+                  (players.get(previousPlayer.name).discriminator !== "0" &&
+                  players.get(previousPlayer.name).discriminator
+                    ? players.get(previousPlayer.name).tag
+                    : players.get(previousPlayer.name).username) +
                   "** for not calling UNO and they have drawn **3** cards!",
                 files: [cardToImage(game.discardedCards.cards[0])],
                 // allowedMentions: { parse: [] },
@@ -1225,7 +1232,10 @@ export async function runCommand(
               "\n----------------------------\n" +
               (await generateOrder()) +
               "\n\n**" +
-                  (players.get(player.name).discriminator !== "0" && players.get(player.name).discriminator ? players.get(player.name).tag : players.get(player.name).username) +
+              (players.get(player.name).discriminator !== "0" &&
+              players.get(player.name).discriminator
+                ? players.get(player.name).tag
+                : players.get(player.name).username) +
               "** drew **" +
               amount +
               "** card" +
@@ -1268,8 +1278,11 @@ export async function runCommand(
           "\n----------------------------\n" +
           (await generateOrder()) +
           "\n\n**" +
-                  (players.get(player.name).discriminator !== "0" && players.get(player.name).discriminator ? players.get(player.name).tag : players.get(player.name).username) +
-                  "** drew **" +
+          (players.get(player.name).discriminator !== "0" &&
+          players.get(player.name).discriminator
+            ? players.get(player.name).tag
+            : players.get(player.name).username) +
+          "** drew **" +
           drawChoice[player.name] +
           "** card" +
           (drawChoice[player.name] > 1 ? "s" : "") +
@@ -1330,8 +1343,11 @@ export async function runCommand(
             "\n----------------------------\n" +
             (await generateOrder()) +
             "\n\n**" +
-                  (players.get(player.name).discriminator !== "0" && players.get(player.name).discriminator ? players.get(player.name).tag : players.get(player.name).username) +
-                  "** " +
+            (players.get(player.name).discriminator !== "0" &&
+            players.get(player.name).discriminator
+              ? players.get(player.name).tag
+              : players.get(player.name).username) +
+            "** " +
             (drawChoice[player.name]
               ? "drew **" +
                 drawChoice[player.name] +
@@ -1354,7 +1370,10 @@ export async function runCommand(
           "Failed to play card " +
             cardToText(card) +
             " by " +
-            (players.get(player.name).discriminator !== "0" && players.get(player.name).discriminator ? players.get(player.name).tag : players.get(player.name).username) +
+            (players.get(player.name).discriminator !== "0" &&
+            players.get(player.name).discriminator
+              ? players.get(player.name).tag
+              : players.get(player.name).username) +
             " on a " +
             cardToText(game.discardedCards.cards[0])
         );
@@ -1365,8 +1384,9 @@ export async function runCommand(
       for (let [key, value] of players) {
         final +=
           "**" +
-          (value.discriminator !== "0" && value.discriminator ? value.tag : value.username) +
-          
+          (value.discriminator !== "0" && value.discriminator
+            ? value.tag
+            : value.username) +
           "** has **" +
           game.getPlayerByName(key).hand.cards.length +
           "** card" +
@@ -1928,8 +1948,11 @@ export async function runCommand(
       for (let player of order) {
         final +=
           (game.currentPlayer.name == player.name ? "**" : "") +
-            (players.get(player.name).discriminator !== "0" && players.get(player.name).discriminator ? players.get(player.name).tag : players.get(player.name).username) +
-            (game.currentPlayer.name == player.name ? "**" : "") +
+          (players.get(player.name).discriminator !== "0" &&
+          players.get(player.name).discriminator
+            ? players.get(player.name).tag
+            : players.get(player.name).username) +
+          (game.currentPlayer.name == player.name ? "**" : "") +
           " " +
           seperator +
           " ";
@@ -1971,7 +1994,9 @@ export async function runCommand(
       for (let [key, value] of players) {
         final +=
           "- *" +
-          (value.discriminator !== "0" && value.discriminator ? value.tag : value.username) +
+          (value.discriminator !== "0" && value.discriminator
+            ? value.tag
+            : value.username) +
           "*" +
           (key == interaction.user.id ? " (**HOST**)" : "") +
           "\n";
@@ -1987,7 +2012,9 @@ export async function runCommand(
       for (let [key, value] of players) {
         final +=
           "- " +
-          (value.discriminator !== "0" && value.discriminator ? value.tag : value.username) +
+          (value.discriminator !== "0" && value.discriminator
+            ? value.tag
+            : value.username) +
           " - " +
           game.getPlayerByName(value.id).hand.cards.length +
           " card" +
