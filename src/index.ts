@@ -99,7 +99,7 @@ declare const global: IRISGlobal;
   global.app.config.development = process.env.DEVELOPMENT == "YES";
   if (!global.app.config.development) {
     try {
-      await execPromise("sudo systemctl status mongodb | grep 'active (running)'");
+      await execPromise("sudo systemctl status mongod | grep 'active (running)'");
       global.mongoStatus = global.mongoStatuses.RUNNING
     } catch (e) {
       global.mongoStatus = global.mongoStatuses.STOPPED
