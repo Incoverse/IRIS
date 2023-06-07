@@ -42,7 +42,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
     await delay(1500)
     try {
       await execPromise(
-        "sudo systemctl status mongod | grep 'active (running)' "
+        "systemctl status mongod | grep 'active (running)' "
       );
     } catch (e) {
       /* prettier-ignore */

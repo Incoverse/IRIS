@@ -75,7 +75,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     await sleep(500);
     try {
       await execPromise(
-        "sudo systemctl status mongod | grep 'active (running)' "
+        "systemctl status mongod | grep 'active (running)' "
       );
     } catch (e) {
       /* prettier-ignore */
