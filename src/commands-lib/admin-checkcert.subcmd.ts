@@ -38,7 +38,7 @@ export async function runSubCommand(
   } else {
     await interaction.deferReply();
     let output = await execPromise(
-      "openssl x509 -enddate -noout -in /etc/ssl/IRIS/fullchain.pem"
+      "openssl x509 -enddate -noout -in /etc/ssl/fullchain.pem"
     );
     interaction.editReply(
       "The certificate expires in: ``" +
