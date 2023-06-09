@@ -45,9 +45,7 @@ const commandInfo = {
         )
     )
     .addSubcommand((subcommand) =>
-      subcommand
-        .setName("board")
-        .setDescription("Get the message link to the current board.")
+      subcommand.setName("board").setDescription("Show your board")
     )
     .addSubcommand((subcommand) =>
       subcommand.setName("start").setDescription("Start a new game.")
@@ -208,7 +206,7 @@ export async function runCommand(
           ((interaction.member as GuildMember).displayName.endsWith("s")
             ? "'"
             : "'s") +
-          " daily wordle game\n\n``/wordle guess <word>`` to guess\n\n" +
+          " daily wordle game\n\n``/wordle guess [word]`` to guess\n\n" +
           generateBoard(undefined, true, true),
         allowedMentions: { parse: [] },
       });
@@ -233,13 +231,27 @@ export async function runCommand(
           ephemeral: true,
         });
       }
-
-      await interaction.reply({
+      try {
+        global.games.wordle.currentlyPlaying[
+          interaction.user.id
+        ].lastEphemeralMessage
+          .delete()
+          .catch(() => {});
+      } catch (e) {}
+      const msg = await interaction.reply({
         content:
-          "Your board can be found here: " +
-          wordle.currentlyPlaying[interaction.user.id].boardMessage.url,
+          "**" +
+          (6 -
+            global.games.wordle.currentlyPlaying[interaction.user.id].guesses
+              .length) +
+          "** guesses remaining!\n" +
+          generateBoard(),
         ephemeral: true,
       });
+      global.games.wordle.currentlyPlaying[
+        interaction.user.id
+      ].lastEphemeralMessage = msg;
+      return;
     } else if (
       (interaction.options as CommandInteractionOptionResolver).getSubcommand(
         true
@@ -351,10 +363,13 @@ export async function runCommand(
         }
         await wordle.currentlyPlaying[interaction.user.id].boardMessage.edit({
           content:
-            wordle.currentlyPlaying[interaction.user.id].boardMessage.content
-              .replace(/<.*>/gm, "")
-              .trim() +
-            "\n" +
+            "<@" +
+            (interaction.member as GuildMember).id +
+            ">" +
+            ((interaction.member as GuildMember).displayName.endsWith("s")
+              ? "'"
+              : "'s") +
+            " daily wordle game\n\n``/wordle guess [word]`` to guess\n\n" +
             generateBoard(undefined, true, true),
         });
         const msg = await interaction.reply({
