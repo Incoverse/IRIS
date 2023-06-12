@@ -42,7 +42,7 @@ export async function runSubCommand(
     );
     let domain = await execPromise("openssl x509 -subject -noout -in /etc/ssl/fullchain.pem")
     interaction.editReply(
-      "The certificate for ``"+domain.stdout.trim().split("=")[1].trim()+"`` expires in: ``" +
+      "The certificate for ``"+domain.stdout.trim().split("=")[2].trim()+"`` expires in: ``" +
         prettyMilliseconds(
           new Date(output.stdout.trim().split("=")[1]).getTime() -
             new Date().getTime()
