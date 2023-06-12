@@ -99,7 +99,7 @@ declare const global: IRISGlobal;
   global.app.config.development = process.env.DEVELOPMENT == "YES";
   if (!global.app.config.development) {
     try {
-      await execPromise("sudo systemctl status mongod | grep 'active (running)'");
+      await execPromise("systemctl status mongod | grep 'active (running)'");
       global.mongoStatus = global.mongoStatuses.RUNNING
     } catch (e) {
       global.mongoStatus = global.mongoStatuses.STOPPED
@@ -134,7 +134,7 @@ declare const global: IRISGlobal;
   try {
     if (process.env.TOKEN == null) {
       console.log(
-        "Token is missing, please make sure you have the .env file in the directory with the correct information. Please see https://github.com/InimicalPart/IRIS for more information."
+        "Token is missing, please make sure you have the .env file in the directory with the correct information. Please see https://github.com/Incoverse/IRIS for more information."
       );
       process.exit(1);
     }
