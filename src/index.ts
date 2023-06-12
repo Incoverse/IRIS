@@ -110,7 +110,7 @@ declare const global: IRISGlobal;
   global.mongoConnectionString =
     "mongodb://iris:" +
     process.env.DBPASSWD +
-    "@extension.inimicalpart.com:27017/?authMechanism=DEFAULT&tls=true";
+    "@ext.kennevo.com:27017/?authMechanism=DEFAULT&tls=true";
   global.resources = {
     wordle: {
       validGuesses: (
