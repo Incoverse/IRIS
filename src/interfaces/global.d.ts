@@ -15,12 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { InteractionResponse, Message, SlashCommandBuilder } from "discord.js";
+import { InteractionResponse, Message, REST, SlashCommandBuilder } from "discord.js";
 import { EventEmitter } from "events";
 import { AppInterface } from "./appInterface.js";
 
 interface IRISGlobal extends NodeJS.Global {
   app: AppInterface;
+  reload: {
+    commands: Array<string>;
+  }
   bannedUsers: Array<string>;
   mongoStatus: number;
   mongoStatuses: {
@@ -30,6 +33,11 @@ interface IRISGlobal extends NodeJS.Global {
       FAILED: number,
       NOT_AVAILABLE: number,
     }
+  overrides: {
+    reloadCommands: () => Promise<boolean>;
+    removeCommand: (commandName: string, guildId: string)=> Promise<boolean>;
+  }
+  rest: REST;
   birthdays: Array<{
     id: string;
     birthday: string;

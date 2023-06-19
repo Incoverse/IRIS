@@ -95,10 +95,18 @@ declare const global: IRISGlobal;
     FAILED: 3,
     NOT_AVAILABLE: 4,
   };
+  global.reload = {
+    commands: []
+  };
+  global.overrides = {
+    reloadCommands: ()=>{return new Promise<boolean>((_a, reject) => reject(false))},
+    removeCommand: (_commandName: string, _guildId: string) =>{return new Promise<boolean>((_a, reject) => reject(false))}
+    }
   global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
   global.app.config.development = process.env.DEVELOPMENT == "YES";
   if (!global.app.config.development) {
     try {
+
       await execPromise("systemctl status mongod | grep 'active (running)'");
       global.mongoStatus = global.mongoStatuses.RUNNING
     } catch (e) {
@@ -348,6 +356,7 @@ declare const global: IRISGlobal;
         ] = command;
         commands.push(command?.getSlashCommand()?.toJSON());
       }
+      global.reload.commands = commands;
       console.log(
         chalk.white.bold(
           "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
@@ -376,12 +385,12 @@ declare const global: IRISGlobal;
             file.replace(".evt.js", "").slice(1)
         ] = event;
       }
-      const rest = new REST({
+      global.rest = new REST({
         version: "9",
       }).setToken(process.env.TOKEN);
       (async () => {
         try {
-          await rest.put(
+          await global.rest.put(
             Routes.applicationGuildCommands(
               client.user.id,
               global.app.config.mainServer
