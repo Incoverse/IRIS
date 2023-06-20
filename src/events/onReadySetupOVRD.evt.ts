@@ -63,18 +63,21 @@ export async function runEvent(client: Discord.Client, RM: object) {
 
             try {
                 if (commandName == "*") {
-                    global.rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body: [] })
+                    await global.rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body: [] })
+                    resolve(true);
                  } else {
                     const guild = await client.guilds.fetch(guildId);
                     if (!guild) return reject(false);
-                     const command = await guild.commands.fetch();
-                     const commandId = command.find(a=>a.name==commandName).id;
-                     if (!commandId) return reject(false);
-                     await global.rest.delete(
-                         Routes.applicationGuildCommand(client.user.id, guildId, commandId)
-                         )
-                         resolve(true);
-                        }
+                    const command = await guild.commands.fetch();
+                    const commandId = command.find(a=>a.name==commandName).id;
+                    if (!commandId) return reject(false);
+                    await global.rest.delete(
+                        Routes.applicationGuildCommand(client.user.id, guildId, commandId)
+                    )
+                    
+                  resolve(true);
+                    
+                }
             } catch (error) {
                 console.error(error);
                 reject(false);
