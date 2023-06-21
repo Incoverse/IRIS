@@ -11,6 +11,9 @@ IRIS (Intelligent Response Interface System) is a Discord bot created by and for
 5. Type in ``npm run CnR`` (CnR = Compile & Run)
 
 ### Server creation notes
-Please use this template when making your testing server: https://discord.new/MkA8QjFNa3b6
+You can skip this by using the following server template: https://discord.new/PTqAeyCChkYW
+---
+The following channels are required for IRIS to function as intended: ``birthdays``, ``open-a-ticket``
+The following roles are required for IRIS to function as intended: ``New Member``, ``It's my birthday!``
 
 Contact Inimi if you have any questions or need help with something.
