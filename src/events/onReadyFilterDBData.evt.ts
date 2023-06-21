@@ -35,9 +35,9 @@ declare const global: IRISGlobal;
 export async function runEvent(client: Discord.Client, RM: object) {
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
-    const database = dbclient.db("IRIS");
+    const database = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
     const userdata = database.collection(
-      global.app.config.development ? "userdata_dev" : "userdata"
+      global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
     );
     /*
      * We remove all members from the database that are not in the server. This is to prevent the database from getting too large and bloated.

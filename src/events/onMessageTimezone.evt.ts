@@ -156,9 +156,9 @@ export async function runEvent(message: Discord.Message, RM: object) {
 
     const client = new MongoClient(global.mongoConnectionString);
     try {
-      const database = client.db("IRIS");
+      const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
       const userdata = database.collection(
-        global.app.config.development ? "userdata_dev" : "userdata"
+        global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
       );
       let a;
       // Query for a movie that has the title 'Back to the Future'

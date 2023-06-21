@@ -41,9 +41,9 @@ export async function runEvent(
   if (args[0].guild.id !== global.app.config.mainServer) return;
   const client = new MongoClient(global.mongoConnectionString);
   try {
-    const database = client.db("IRIS");
+    const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
     const userdata = database.collection(
-      global.app.config.development ? "userdata_dev" : "userdata"
+      global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
     );
     const result = await userdata.deleteOne({ id: args[0].id });
     /* prettier-ignore */

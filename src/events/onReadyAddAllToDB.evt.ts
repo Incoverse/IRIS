@@ -37,15 +37,29 @@ export async function runEvent(client: Discord.Client, RM: object) {
   const dbclient = new MongoClient(global.mongoConnectionString);
 
   try {
-    const database = dbclient.db("IRIS");
+    const database = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
     const userdata = database.collection(
-      global.app.config.development ? "userdata_dev" : "userdata"
+      global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
     );
     let toBeAdded = [];
     let updateUsernames = {};
     /*
      * We're awaiting the result of the find() function, because we don't want to accidentally let other modules access and modify the database before we're done cleaning it.
      */
+      const documents = await userdata.find().toArray();
+      for (let document of documents) {
+        let obj = {
+          id: document.id,
+          birthday: document.birthday,
+          timezone: document.approximatedTimezone,
+          passed: document.birthdayPassed,
+        };
+        if (document.birthday !== null) global.birthdays.push(obj);
+        if (document.isNew) {
+          if (!global.newMembers.includes(document.id))
+            global.newMembers.push(document.id);
+        }
+      }
     await userdata
       .find()
       .toArray()
@@ -132,8 +146,10 @@ export async function runEvent(client: Discord.Client, RM: object) {
               }
             });
           });
+          const promises = [];
+
           if (toBeAdded.length > 0) {
-            userdata.insertMany(toBeAdded).then((result) => {
+            promises.push(userdata.insertMany(toBeAdded).then((result) => {
               global.app.debugLog(
                 chalk.white.bold(
                   "[" +
@@ -146,10 +162,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
                   result.insertedCount +
                   " missing UserData document(s)."
               );
-            });
+            }))
           }
           if (Object.keys(updateUsernames).length > 0) {
-            const promises = [];
             for (let k of Object.keys(updateUsernames)) {
               let unsetData = {};
               if (!updateUsernames[k].discriminator) {
@@ -162,6 +177,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 )
               );
             }
+          }
+          if (promises.length > 0) {
             Promise.all(promises).then(() => dbclient.close());
           } else {
             dbclient.close();

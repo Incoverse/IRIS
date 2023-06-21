@@ -172,9 +172,9 @@ export async function runCommand(
       }
       const dbclient = new MongoClient(global.mongoConnectionString);
       const userdata = dbclient
-        .db("IRIS")
+        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
         .collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
       if (
         (await userdata.findOne({ id: interaction.user.id }))?.gameData?.wordle
@@ -429,9 +429,9 @@ export async function runCommand(
       //Generate an embed that will contain the following: Games played, games won, longest streak, current streak, average time (average from last12 and then prettify with prettyMilliseconds), average guesses. Add emojis before the name and use fields.
       const client = new MongoClient(global.mongoConnectionString);
       const collection = client
-        .db("IRIS")
+        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
         .collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
       try {
         // make sure that if the user hasnt played wordle before, it says so
@@ -514,9 +514,9 @@ export async function runCommand(
     async function generateStats(failed: boolean) {
       const client = new MongoClient(global.mongoConnectionString);
       const collection = client
-        .db("IRIS")
+        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
         .collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
       try {
         let userData: any = await collection.findOne({

@@ -34,9 +34,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
       if (birthday == "null") {
         const client = new MongoClient(global.mongoConnectionString);
         const collection = client
-          .db("IRIS")
+          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
           .collection(
-            global.app.config.development ? "userdata_dev" : "userdata"
+            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
           );
         const rresult = await collection.findOneAndUpdate(
           { id: user.id },
@@ -116,9 +116,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
       }
       const client = new MongoClient(global.mongoConnectionString);
       const collection = client
-        .db("IRIS")
+        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
         .collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
 
       const result = await collection.findOneAndUpdate(

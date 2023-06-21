@@ -54,9 +54,9 @@ export async function runEvent(
     global.newMembers.push(args[0].id);
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
-    const database = dbclient.db("IRIS");
+    const database = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
     const userdata = database.collection(
-      global.app.config.development ? "userdata_dev" : "userdata"
+      global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
     );
     const entry = {
       ...global.app.config.defaultEntry,

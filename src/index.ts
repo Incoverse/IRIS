@@ -115,8 +115,21 @@ declare const global: IRISGlobal;
   }
   global.games = {};
   global.dirName = __dirname;
+  const mainFileName = __filename.split(
+    process.platform == "linux" ? "/" : "\\"
+  )[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+  if (process.env.DBUSERNAME == "iris" && global.app.config.development) {
+    console.log(
+      chalk.white.bold(
+        "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+      ) + "Hold on! You are attempting to run IRIS in development mode, but are using the main credentials, which is not allowed. Please change the DBUSERNAME and DBPASSWD in the .env file to the development credentials."
+    );
+    process.exit(1);
+  }
   global.mongoConnectionString =
-    "mongodb://iris:" +
+    "mongodb://" +
+    process.env.DBUSERNAME
+    + ":" +
     process.env.DBPASSWD +
     "@ext.kennevo.com:27017/?authMechanism=DEFAULT&tls=true&family=4";
   global.resources = {
@@ -133,9 +146,7 @@ declare const global: IRISGlobal;
       ).split("\n"),
     },
   };
-  const mainFileName = __filename.split(
-    process.platform == "linux" ? "/" : "\\"
-  )[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+
   if (global.app.config.development) {
     global.app.config.mainServer = global.app.config.developmentServer;
   }
@@ -255,9 +266,9 @@ declare const global: IRISGlobal;
       if (interaction.guildId !== global.app.config.mainServer) return;
       const client = new MongoClient(global.mongoConnectionString);
       try {
-        const database = client.db("IRIS");
+        const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
         const userdata = database.collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
         const query = { id: interaction.user.id };
         userdata.findOne(query).then((result) => {
@@ -430,29 +441,6 @@ declare const global: IRISGlobal;
         )
         .catch(console.error);
 
-      const clienttwo = new MongoClient(global.mongoConnectionString);
-      try {
-        const database = clienttwo.db("IRIS");
-        const userdata = database.collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
-        );
-        const documents = await userdata.find().toArray();
-        for (let document of documents) {
-          let obj = {
-            id: document.id,
-            birthday: document.birthday,
-            timezone: document.approximatedTimezone,
-            passed: document.birthdayPassed,
-          };
-          if (document.birthday !== null) global.birthdays.push(obj);
-          if (document.isNew) {
-            if (!global.newMembers.includes(document.id))
-              global.newMembers.push(document.id);
-          }
-        }
-      } finally {
-        await clienttwo.close();
-      }
       const guild: Guild = await client.guilds.fetch(
         global.app.config.mainServer
       );
@@ -590,6 +578,22 @@ declare const global: IRISGlobal;
           "Discord.JS version: " +
           chalk.yellow(version)
       );
+      if (global.app.config.development) {
+        console.log(
+          chalk.white.bold(
+            "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+          ) +
+            "Database "+ chalk.yellowBright("GAMEDATA") +" collection: " +
+            chalk.cyanBright("DEVSRV_GD_" + mainServer.id)
+        );
+        console.log(
+          chalk.white.bold(
+            "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+          ) +
+            "Database "+ chalk.yellowBright("USERDATA") +" collection: " +
+            chalk.cyanBright("DEVSRV_UD_" + mainServer.id)
+        );
+      }
       // console.log(
       //   chalk.white.bold(
       //     "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "

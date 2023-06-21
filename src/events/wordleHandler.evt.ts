@@ -39,22 +39,32 @@ export async function runEvent(client: Discord.Client, RM: object) {
   let wordle = global?.games?.wordle;
   if (!wordle) {
     const dbclient = new MongoClient(global.mongoConnectionString);
-    const database = dbclient.db("IRIS");
+    const database = dbclient.db(
+      global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
+    );
     const gamedata = database.collection(
-      global.app.config.development ? "gamedata_dev" : "gamedata"
+      global.app.config.development
+        ? "DEVSRV_GD_" + global.app.config.mainServer
+        : "gamedata"
     );
     const game = await gamedata.findOne({ type: "wordle" });
     dbclient.close();
-    game.data.currentlyPlaying = {};
-    wordle = game.data;
-    global.games.wordle = wordle;
+    if (game) {
+      game.data.currentlyPlaying = {};
+      wordle = game.data;
+      global.games.wordle = wordle;
+    }
   }
   // First check if the wordle is expired, and if it is, make a new one
-  if (new Date(wordle.expires).getTime() < new Date().getTime()) {
+  if (!wordle || new Date(wordle.expires).getTime() < new Date().getTime()) {
     const dbclient = new MongoClient(global.mongoConnectionString);
-    const database = dbclient.db("IRIS");
+    const database = dbclient.db(
+      global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
+    );
     const gamedata = database.collection(
-      global.app.config.development ? "gamedata_dev" : "gamedata"
+      global.app.config.development
+        ? "DEVSRV_GD_" + global.app.config.mainServer
+        : "gamedata"
     );
     // Generate a new wordle
     const newWordle =
@@ -68,19 +78,22 @@ export async function runEvent(client: Discord.Client, RM: object) {
         new Date().getTime() + 1000 * 60 * 60 * 24
       ).toISOString(),
       id: uuid4(),
-      currentlyPlaying: {},
     };
-    const oldWordle = wordle;
-    global.games.wordle = { ...data };
-    delete data.currentlyPlaying;
-    await gamedata.updateOne(
-      { type: "wordle" },
-      {
-        $set: {
-          data,
-        },
-      }
-    );
+    global.games.wordle = { ...data, currentlyPlaying: {} };
+    if (!wordle)
+      await gamedata.insertOne({
+        type: "wordle",
+        data,
+      });
+    else
+      await gamedata.updateOne(
+        { type: "wordle" },
+        {
+          $set: {
+            data,
+          },
+        }
+      );
     global.app.debugLog(
       chalk.white.bold(
         "[" +
@@ -99,11 +112,12 @@ export async function runEvent(client: Discord.Client, RM: object) {
         ) +
         ")"
     );
-
+    if (!wordle) return dbclient.close();
     const userdata = database.collection(
-      global.app.config.development ? "userdata_dev" : "userdata"
+      global.app.config.development
+        ? "DEVSRV_UD_" + global.app.config.mainServer
+        : "userdata"
     );
-
     await userdata.updateMany(
       // Reset streak for everyone that didn't solve the previous wordle
       {
@@ -125,6 +139,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
       },
       { $set: { "gameData.wordle.streak": 0 } }
     );
+    dbclient.close();
   }
 }
 

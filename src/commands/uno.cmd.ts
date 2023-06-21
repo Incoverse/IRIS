@@ -201,9 +201,9 @@ export async function runCommand(
     try {
       const db = new MongoClient(global.mongoConnectionString);
       const collection = db
-        .db("IRIS")
+        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
         .collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
 
       collection
@@ -1879,9 +1879,9 @@ export async function runCommand(
         try {
           const db = new MongoClient(global.mongoConnectionString);
           const collection = db
-            .db("IRIS")
+            .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
             .collection(
-              global.app.config.development ? "userdata_dev" : "userdata"
+              global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
             );
 
           collection

@@ -64,14 +64,14 @@ export async function runEvent(client: Discord.Client, RM: object) {
         member.roles.remove(newMembersRole);
         updated.push(memberID);
       }
-    });
+    });}
     if (updated.length > 0) {
       const client = new MongoClient(global.mongoConnectionString);
-      try {
-        const database = client.db("IRIS");
+        const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
         const userdata = database.collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
+
         for (let index in updated) {
           updated[index] = { id: updated[index] };
         }
@@ -82,13 +82,10 @@ export async function runEvent(client: Discord.Client, RM: object) {
               isNew: false,
             },
           }
-        );
-      } finally {
-        // Ensures that the client will close when you finish/error
-        await client.close();
-      }
+        ).then(() => {
+          client.close();
+        });
     }
-  }
   // -----------
   running = false;
 }

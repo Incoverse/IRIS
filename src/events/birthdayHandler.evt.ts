@@ -68,9 +68,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
         //! Cannot timezone clip into new birthday
         const dbclient = new MongoClient(global.mongoConnectionString);
         try {
-          let db = dbclient.db("IRIS");
+          let db = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
           let userdata = db.collection(
-            global.app.config.development ? "userdata_dev" : "userdata"
+            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
           );
           await userdata.updateOne(
             { id: birthday.id },
@@ -141,9 +141,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
         });
         const dbclient = new MongoClient(global.mongoConnectionString);
         try {
-          let db = dbclient.db("IRIS");
+          let db = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
           let userdata = db.collection(
-            global.app.config.development ? "userdata_dev" : "userdata"
+            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
           );
           await userdata.updateOne(
             { id: birthday.id },

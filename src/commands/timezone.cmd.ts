@@ -43,9 +43,9 @@ export async function runCommand(
     });
     const client = new MongoClient(global.mongoConnectionString);
     try {
-      const db = client.db("IRIS");
+      const db = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
       const userdata = db.collection(
-        global.app.config.development ? "userdata_dev" : "userdata"
+        global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
       );
       const userinfo = await userdata.findOne({ id: interaction.user.id });
       if (!userinfo.approximatedTimezone) {

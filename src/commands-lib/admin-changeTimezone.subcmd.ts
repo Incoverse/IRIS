@@ -34,9 +34,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
 
       const client = new MongoClient(global.mongoConnectionString);
       const collection = client
-        .db("IRIS")
+        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
         .collection(
-          global.app.config.development ? "userdata_dev" : "userdata"
+          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
         );
       if (timezone == null) {
         const result = await collection.findOne({ id: user.id });

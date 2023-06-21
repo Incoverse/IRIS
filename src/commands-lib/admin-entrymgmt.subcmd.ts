@@ -47,9 +47,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         const client = new MongoClient(global.mongoConnectionString);
     
         const collection = client
-          .db("IRIS")
+          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
           .collection(
-            global.app.config.development ? "userdata_dev" : "userdata"
+            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
           );
         const result = await collection.findOne({ id: user.id });
         client.close();
@@ -89,9 +89,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         const client = new MongoClient(global.mongoConnectionString);
     
         const collection = client
-          .db("IRIS")
+          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
           .collection(
-            global.app.config.development ? "userdata_dev" : "userdata"
+            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
           );
     
         // Check if the user already has an entry in the database
@@ -158,9 +158,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         const client = new MongoClient(global.mongoConnectionString);
     
         const collection = client
-          .db("IRIS")
+          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
           .collection(
-            global.app.config.development ? "userdata_dev" : "userdata"
+            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
           );
         /*
          * Here we do not check if the user is a bot, because if a bot entry is accidentally created, it should be able to be deleted.
