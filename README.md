@@ -10,4 +10,7 @@ IRIS (Intelligent Response Interface System) is a Discord bot created by and for
 4. Navigate to the project directory
 5. Type in ``npm run CnR`` (CnR = Compile & Run)
 
+### Server creation notes
+Please use this template when making your testing server: https://discord.new/MkA8QjFNa3b6
+
 Contact Inimi if you have any questions or need help with something.
