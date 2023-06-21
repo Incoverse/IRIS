@@ -108,3 +108,5 @@ dist
 
 local_config.json
 *.status
+# dont push config.jsonc, this will prevent any accidental config pushes by the dev team
+config.jsonc
