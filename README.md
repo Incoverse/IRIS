@@ -3,6 +3,8 @@ IRIS (Intelligent Response Interface System) is a Discord bot created by and for
 
 
 ## Information for the members of the Development Team
+
+The ``/admin`` commands will only be visible to users with the permission "Manage Messages". Keep this in mind when testing.
 ### Setup
 1. Make sure you have Node.JS (latest) installed.
 2. Open CMD/Terminal
