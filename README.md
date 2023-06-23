@@ -14,7 +14,7 @@ In the .env file you were provided with, add:
 And of course, replace "BOT.TOKEN.HERE" with your bot token.
 
 ### Steps
-1. Make sure you have Node.JS (latest) installed.
+1. Make sure you have Node.JS (19.9.0 (latest one has bugs)) installed.
 2. Open cmd/terminal
 3. Type in ``npm i -g typescript``
 4. Navigate to the project directory
