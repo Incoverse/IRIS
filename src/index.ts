@@ -583,6 +583,13 @@ declare const global: IRISGlobal;
           chalk.white.bold(
             "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
           ) +
+            "Database name: " +
+            chalk.cyanBright("IRIS_DEVELOPMENT")
+        );
+        console.log(
+          chalk.white.bold(
+            "[" + moment().format("M/D/y HH:mm:ss") + "] [" + mainFileName + "] "
+          ) +
             "Database "+ chalk.yellowBright("GAMEDATA") +" collection: " +
             chalk.cyanBright("DEVSRV_GD_" + mainServer.id)
         );

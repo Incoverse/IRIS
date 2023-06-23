@@ -232,9 +232,9 @@ const commandInfo = {
                 )
             )
         )
-    )
+    ),
 
-    .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
+    //.setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
   settings: {
     devOnly: false,
     mainOnly: false,

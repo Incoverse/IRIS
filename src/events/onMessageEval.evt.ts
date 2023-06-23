@@ -59,6 +59,11 @@ export async function runEvent(message: Discord.Message, RM: object) {
 
         text = text.replaceAll(message.client.token, "[REDACTED]");
         text = text.replaceAll(process.env.DBPASSWD, "[REDACTED]");
+        text = text.replaceAll(process.env.cSecret, "[REDACTED]");
+        text = text.replaceAll(process.env.cID, "[REDACTED]");
+        text = text.replaceAll(process.env.ACCESS_TKN, "[REDACTED]");
+        text = text.replaceAll(process.env.REFRESH_TKN, "[REDACTED]");
+
         // Send off the cleaned up result
         return text;
       };
