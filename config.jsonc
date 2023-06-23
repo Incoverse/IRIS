@@ -1,50 +1,93 @@
 {
-    //? Any user that will be considered as an "owner" of the bot.
-    //! Development Team members, add your User ID here. 
-    "externalOwners": ["514961805517258772"],
-    //? Show errors on "There was an error while executing this command!".
-    //? If the user that ran the command is an owner, detailed error information will be shown.
-    //! Development Team members, it is recommended to keep this on.
-    "showErrors": true,
-    //? This option shows messages like "registered command xyz", "running event xyz", etc. recommended to be on for satisfication purposes.
-    "debugging": true,
-    //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env
-    //! Development Team members, this main server will never be used, so you can leave this as it is or clear it.
-    "mainServer": "786013884216639509", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
-    //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env
-    //! Development Team members, put your server ID here.
-    "developmentServer": "931616832668958748",
-    // "development": true //* This is automatically set by the bot using the .env value. 'global.app.config.development' will be true if 'DEVELOPMENT' is set to 'YES' in .env
+  //? Any user that will be considered as an "owner" of the bot.
+  //! Development Team members, add your User ID here.
+  "externalOwners": [],
+  //? Show errors on "There was an error while executing this command!".
+  //? If the user that ran the command is an owner, detailed error information will be shown.
+  //! Development Team members, it is recommended to keep this on.
+  "showErrors": true,
+  //? This option shows messages like "registered command xyz", "running event xyz", etc. recommended to be on for satisfication purposes.
+  "debugging": true,
+  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env
+  //! Development Team members, this main server will never be used, so you can leave this as it is or clear it.
+  "mainServer": "786013884216639509", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
+  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env
+  //! Development Team members, put your server ID here.
+  "developmentServer": "931616832668958748",
+  // "development": true //* 'global.app.config.development' will be automatically set true if 'DEVELOPMENT' is set to 'YES' in .env
 
-    //? These permissions are for commands (currently only working on /admin), the specified role names in the array will be able to use the command. Has to be lowercased
-    //! Development Team members, replace the role names in "development" to a role that you have on your server. "main" will not be used so you can leave that as it is.
-    "permissions" : {
-        "admin": { 
-            "main": ["engineer", "moderators", "support team"], // role names
-            "development": ["administrator", "moderator", "support team"] // role names
+  //? These permissions are for commands.
+  //? @user / @user#1234 / @userid (recommended)
+  //? &rolename (recommended) / &roleid
+  //? #channelname (recommended) / #channelid
+  //?
+  //? canSee is whether or not the user can see the command when they do /. If the user can't see the command, they can't use it.
+  //! Development Team members, replace the "development" part to your needs.
+  "permissions": {
+    "admin": {
+      "main": [
+        {
+          "selector": "&Engineer", // 'Engineer' role
+          "canSee": true // Can see and use the command.
+        },
+        {
+          "selector": "&Moderator", // 'Moderator' role
+          "canSee": true // Can see and use the command.
+        },
+        {
+          "selector": "&Support Team", // 'Support Team' role
+          "canSee": true // Can see and use the command.
+        },
+        {
+          "selector": "&everyone", // 'everyone' role
+          "canSee": false // Can't see or use the command.
         }
-    },
-
-    //? The default entry that will be created for new users, some fields will be automatically filled in by the bot.
-    //! Development Team members, you can leave this as it is unless you need to add another field to the user database document.
-    "defaultEntry" : {
-        "id": "",
-        "last_active": null,
-        "timezones": [],
-        "username": "",
-        "approximatedTimezone": null,
-        "birthday":null,
-        "birthdayPassed": false,
-        "isNew": false,
-        "gameData": {}
-    },
-
-    //? This specifies resources for the bot to use, such as links to wordle answers and guesses. (Make sure to use raw links if using GitHub!)
-    //! Development Team members, you can leave this as it is unless you need to add another resource.
-    "resources": {
-        "wordle": {
-            "validGuesses": "https://gist.githubusercontent.com/cfreshman/cdcdf777450c5b5301e439061d29694c/raw/b8375870720504ecf89c1970ea4532454f12de94/wordle-allowed-guesses.txt", 
-            "validWords": "https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/1792f853e1cd0249f7588c724e00d46dbc4894eb/wordle-answers-alphabetical.txt"
+      ],
+      "development": [
+        {
+          "selector": "&Administrator", // 'Administrator' role
+          "canSee": true // Can see and use the command.
+        },
+        {
+          "selector": "&Moderator", // 'Moderator' role 
+          "canSee": true // Can see and use the command.
+        },
+        {
+          "selector": "&Support Team", // 'Support Team' role
+          "canSee": true // Can see and use the command.
+        },
+        {
+          "selector": "&IRIS Development", // 'IRIS Development' role
+          "canSee": true // Can see and use the command.
+        },
+        {
+          "selector": "&everyone", // 'everyone' role (aka. @everyone)
+          "canSee": false // Can't see or use the command.
         }
+      ]
     }
+  },
+
+  //? The default entry that will be created for new users, some fields will be automatically filled in by the bot.
+  //! Development Team members, you can leave this as it is unless you need to add another field to the user database document.
+  "defaultEntry": {
+    "id": "",
+    "last_active": null,
+    "timezones": [],
+    "username": "",
+    "approximatedTimezone": null,
+    "birthday": null,
+    "birthdayPassed": false,
+    "isNew": false,
+    "gameData": {}
+  },
+
+  //? This specifies resources for the bot to use, such as links to wordle answers and guesses. (Make sure to use raw links if using GitHub!)
+  //! Development Team members, you can leave this as it is unless you need to add another resource.
+  "resources": {
+    "wordle": {
+      "validGuesses": "https://gist.githubusercontent.com/cfreshman/cdcdf777450c5b5301e439061d29694c/raw/b8375870720504ecf89c1970ea4532454f12de94/wordle-allowed-guesses.txt",
+      "validWords": "https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/1792f853e1cd0249f7588c724e00d46dbc4894eb/wordle-answers-alphabetical.txt"
+    }
+  }
 }
