@@ -35,7 +35,7 @@ declare const global: IRISGlobal;
 let tokenExpirySec = Number.MAX_SAFE_INTEGER;
 export async function runEvent(client: Discord.Client, RM: object) {
   global.communicationChannel.on("authInquiryResp", async (message) => {
-    if (message.data.completed) tokenExpirySec = message.data.expires_in;
+    if (message.data.authMade) tokenExpirySec = message.data.expires_in;
 
     startTokenTimer();
   });
