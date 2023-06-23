@@ -22,6 +22,8 @@ And of course, replace "BOT.TOKEN.HERE" with your bot token.
 6. Follow "Server creation notes" below
 7. Type in ``npm run CnR`` in your cmd/terminal (CnR = Compile & Run)
 
+On the first start up, you will have a Discord link that you need to authorize so that IRIS can set command permissions and visibility. (The account that is authorizing has to be able to see the "integrations" tab in server settings as well as be able to change permissions for slash commands on the development server.
+
 
 
 ### Server creation notes
