@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "cleanup": "rm -rf ./dist",
+    "cleanup": "del dist /f /s /q",
     "compile": "npm run cleanup && npm run build",
     "start": "node --no-warnings ./dist/index.js",
     "CnR": "npm run cleanup && npm run build && npm run start"
