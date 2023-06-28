@@ -38,7 +38,6 @@ export let running = false;
 export async function runEvent(client: Discord.Client, RM: object) {
   running = true;
   // -----------
-  // console.log(global.birthdays)
   for (let birthday of JSON.parse(JSON.stringify(global.birthdays))) {
     if (birthday.timezone == null) birthday.timezone = "Europe/London";
     if (birthday.passed) {
@@ -111,8 +110,11 @@ export async function runEvent(client: Discord.Client, RM: object) {
             }
           });
         });
+        const username = (await guild.members.fetch(birthday.id)).user.username
+        const ordinalAgeorNot = (birthday.birthday.split(/\W+/g)[0] !== "0000"? chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")
+        const timeInTimezone = moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ "It's " + chalk.yellow((await guild.members.fetch(birthday.id)).user.username) + "'s "+(birthday.birthday.split(/\W+/g)[0] !== "0000"? chalk.yellow(getOrdinalNum(new Date().getUTCFullYear()-new Date(birthday.birthday).getUTCFullYear())) + " ": "")+"birthday! In "+chalk.yellow(birthday.timezone)+" it's currently " + chalk.yellow(moment(new Date()).tz(birthday.timezone).format("MMMM Do, YYYY @ hh:mm a")) + ".")
+        global.logger.debug(`It's ${chalk.yellow(username)}'s ${ordinalAgeorNot} birthday! In ${chalk.yellow(birthday.timezone)} it's currently ${chalk.yellow(timeInTimezone)}.`,returnFileName())
         const user = await guild.members.fetch(birthday.id);
         await user.roles.add(birthdayRole);
         guild.channels.fetch().then((channels) => {

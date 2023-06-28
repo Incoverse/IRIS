@@ -37,6 +37,7 @@ const commandInfo = {
     devOnly: false,
     mainOnly: false,
   },
+  defaultPermissions: null
 };
 export async function runCommand(
   interaction: Discord.CommandInteraction,
@@ -102,7 +103,7 @@ export async function runCommand(
     }
     return;
   } catch (e) {
-    console.error(e);
+    global.logger.error(e, returnFileName());
     Team;
     await interaction.client.application.fetch();
     if (interaction.replied || interaction.deferred) {

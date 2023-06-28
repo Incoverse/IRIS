@@ -121,7 +121,7 @@ export async function runCommand(
     }
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } catch (e) {
-    console.error(e);
+    global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({

@@ -24,6 +24,14 @@ interface IRISGlobal extends NodeJS.Global {
   reload: {
     commands: Array<string>;
   }
+  logName: string;
+  logger: {
+    log: (message: string, sender: string) => void;
+    error: (message: string, sender: string) => void;
+    debug: (message: string, sender: string) => void;
+    debugError: (message: string, sender: string) => void;
+  }
+
   bannedUsers: Array<string>;
   mongoStatus: number;
   mongoStatuses: {

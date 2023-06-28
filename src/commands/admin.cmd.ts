@@ -32,6 +32,7 @@ import * as changeBirthday from "../commands-lib/admin-changeBirthday.subcmd.js"
 import * as changeTimezone from "../commands-lib/admin-changeTimezone.subcmd.js";
 import * as entryManagement from "../commands-lib/admin-entrymgmt.subcmd.js";
 import * as setPresence from "../commands-lib/admin-setPresence.subcmd.js";
+import * as logs from "../commands-lib/admin-logs.subcmd.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -109,6 +110,10 @@ const commandInfo = {
           )
           .addSubcommand((subcommand) =>
             subcommand.setName("stop").setDescription("Force-stop IRIS.")
+          )
+          .addSubcommand((subcommand) =>
+            subcommand
+              .setName("logs").setDescription("Get IRIS' logs.")
           )
       // .addSubcommand((subcommand) =>
       // subcommand.setName("setpresence").setDescription("Set IRIS's presence.")
@@ -239,6 +244,7 @@ const commandInfo = {
     devOnly: false,
     mainOnly: false,
   },
+  defaultPermissions: null
 };
 export async function runCommand(
   interaction: Discord.CommandInteraction,
@@ -252,23 +258,6 @@ export async function runCommand(
         * Get the allowed roles from the config file, if the bot is in development mode, use the development roles, else use the main roles
         * If the development roles are null, use the main roles
     */
-    const AllowedRoles =
-      process.env.DEVELOPMENT == "YES"
-        ? adminPermissions.development == null
-          ? adminPermissions.main
-          : adminPermissions.development
-        : adminPermissions.main;
-    if (
-      !(interaction.member.roles as GuildMemberRoleManager).cache.some((role) =>
-        AllowedRoles.includes(role.name.toLowerCase())
-      )
-    ) {
-      await interaction.reply({
-        content: "You don't have permission to use this command!",
-        ephemeral: true,
-      });
-      return;
-    }
     const subcommandGroup = (
       interaction.options as CommandInteractionOptionResolver
     ).getSubcommandGroup(true);
@@ -302,13 +291,13 @@ export async function runCommand(
         });
 
         //await setPresence.runSubCommand(interaction, RM);
-      } else if (subcommand == "disableCommand") {
-      } else if (subcommand == "disableCommand") {
+      } else if (subcommand == "logs") {
+        await logs.runSubCommand(interaction, RM);
       }
     }
   } catch (e) {
     await interaction.client.application.fetch();
-    console.error(e);
+    global.logger.error(e, returnFileName());
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
         content:

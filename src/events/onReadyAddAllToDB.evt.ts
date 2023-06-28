@@ -100,27 +100,15 @@ export async function runEvent(client: Discord.Client, RM: object) {
                     (userDoc.discriminator !== member.user.discriminator &&
                       userDoc.discriminator)
                   ) {
-                    global.app.debugLog(
-                      chalk.white.bold(
-                        "[" +
-                          moment().format("M/D/y HH:mm:ss") +
-                          "] [" +
-                          returnFileName() +
-                          "] "
-                      ) +
-                        chalk.yellow(
-                          !userDoc.discriminator
-                            ? userDoc.username
-                            : userDoc.username + "#" + userDoc.discriminator
-                        ) +
-                        " changed their username to " +
-                        chalk.yellow(
-                          member.user.discriminator !== "0" &&
-                            member.user.discriminator
-                            ? member.user.tag
-                            : member.user.username
-                        ) +
-                        "."
+                    const oldUsername =                         !userDoc.discriminator
+                    ? userDoc.username
+                    : userDoc.username + "#" + userDoc.discriminator
+                    const newUsername =                           member.user.discriminator !== "0" &&
+                    member.user.discriminator
+                    ? member.user.tag
+                    : member.user.username
+                    global.logger.debug(
+                      `${chalk.yellow(oldUsername)} changed their username to ${chalk.yellow(newUsername)}.`, returnFileName()
                     );
                     updateUsernames[member.id] = {
                       username: member.user.username,
@@ -150,17 +138,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
 
           if (toBeAdded.length > 0) {
             promises.push(userdata.insertMany(toBeAdded).then((result) => {
-              global.app.debugLog(
-                chalk.white.bold(
-                  "[" +
-                    moment().format("M/D/y HH:mm:ss") +
-                    "] [" +
-                    returnFileName() +
-                    "] "
-                ) +
-                  "Successfully added " +
-                  result.insertedCount +
-                  " missing UserData document(s)."
+              global.logger.debug(
+                `Successfully added ${result.insertedCount} missing UserData document(s).`, returnFileName()
               );
             }))
           }

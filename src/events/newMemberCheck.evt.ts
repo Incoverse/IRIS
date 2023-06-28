@@ -60,7 +60,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
           (item) => item !== memberID
         );
         /* prettier-ignore */
-        global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Removing '"+newMembersRole.name+"' (role) from "+chalk.yellow(member.user.discriminator != "0" && member.user.discriminator ? member.user.tag: member.user.username));
+        const user = member.user.discriminator != "0" && member.user.discriminator ? member.user.tag: member.user.username
+        global.logger.debug(`Removing '${newMembersRole.name}' (role) from ${chalk.yellow(user)}`,returnFileName());
         member.roles.remove(newMembersRole);
         updated.push(memberID);
       }

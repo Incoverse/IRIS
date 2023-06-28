@@ -70,8 +70,9 @@ export async function runEvent(
     if (args[0].user.discriminator !== "0" && args[0].user.discriminator)
       entry.discriminator = args[0].user.discriminator;
     await userdata.insertOne(entry);
+    const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username) + " has joined the server. A database entry has been created for them.")
+    global.logger.debug(`${chalk.yellow(user)} has joined the server. A database entry has been created for them.`, returnFileName())
   } finally {
     await dbclient.close();
   }

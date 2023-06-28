@@ -506,7 +506,7 @@ export async function runCommand(
 
         // .set
       } catch (err) {
-        console.error(err);
+        global.logger.error(err, returnFileName());
         client.close();
       }
     }
@@ -566,40 +566,9 @@ export async function runCommand(
             },
           }
         );
-        // console.log(
-        //   await collection.updateOne(
-        //     { id: interaction.user.id },
-        //     {
-        //       $push: {
-        //         "gameData.wordle.last12": {
-        //           time:
-        //             Date.now() -
-        //             global.games.wordle.currentlyPlaying[interaction.user.id]
-        //               .startTime,
-        //           guesses:
-        //             global.games.wordle.currentlyPlaying[interaction.user.id]
-        //               .guesses,
-        //         },
-        //       },
-        //     }
-        //   )
-        // );
-
-        // console.log(
-        //   await collection.updateOne(
-        //     {
-        //       id: interaction.user.id,
-        //       "gameData.wordle.last12": { $size: 13 },
-        //     },
-        //     {
-        //       $pop: { "gameData.wordle.last12": -1 },
-        //     },
-        //     {}
-        //   )
-        // );
         await client.close();
       } catch (e) {
-        console.log(e);
+        global.logger.error(e, returnFileName());
       }
     }
 
@@ -683,7 +652,7 @@ export async function runCommand(
       return board;
     }
   } catch (e) {
-    console.error(e);
+    global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({

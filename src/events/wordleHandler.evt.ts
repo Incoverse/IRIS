@@ -94,24 +94,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
           },
         }
       );
-    global.app.debugLog(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) +
-        "Successfully generated new wordle: " +
-        chalk.green(newWordle) +
-        " (Expires: " +
-        chalk.green(
-          moment(new Date(new Date().getTime() + 1000 * 60 * 60 * 24)).format(
-            "M/D/y HH:mm:ss"
-          )
-        ) +
-        ")"
-    );
+    
+    global.logger.debug(`Successfully generated new wordle: ${chalk.green(newWordle)} (Expires: ${chalk.green(moment(new Date(new Date().getTime() + 1000 * 60 * 60 * 24)).format("M/D/y HH:mm:ss"))})`, returnFileName());
     if (!wordle) return dbclient.close();
     const userdata = database.collection(
       global.app.config.development

@@ -40,7 +40,7 @@ export async function runCommand(
     // cmd stuff here
     interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
   } catch (e) {
-    console.error(e);
+    global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({

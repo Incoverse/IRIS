@@ -96,10 +96,8 @@ async function refreshDiscordToken(r_tkn) {
     }
   );
   const tokenResponse = await tokenResponseData.body.json();
-  global.app.debugLog(
-    chalk.white.bold(
-      "[" + moment().format("M/D/y HH:mm:ss") + "] [" + returnFileName() + "] "
-    ) + "Discord OAuth2 token successfully refreshed."
+  global.logger.debug(
+      `Discord OAuth2 token successfully refreshed.`, returnFileName()
   );
   return tokenResponse;
 }

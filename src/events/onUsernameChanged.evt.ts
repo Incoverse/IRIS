@@ -45,41 +45,17 @@ export async function runEvent(RM: object, ...args: Array<Discord.User>) {
     return; // User changed something else, which we don't care about
 
   if (oldUser.discriminator !== "0" && newUser.discriminator === "0") {
-    global.app.debugLog(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) +
-        chalk.yellow(oldUser.tag) +
-        " is now using the new username system. Username: " +
-        chalk.yellow(newUser.username) +
-        "."
+    global.logger.debug(
+      `${chalk.yellow(oldUser.tag)} is now using the new username system. Username: ${chalk.yellow(newUser.username)}.`,returnFileName()
     );
   } else {
-    global.app.debugLog(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) +
-        chalk.yellow(
-          oldUser.discriminator == "0" || !oldUser.discriminator
-            ? oldUser.username
-            : oldUser.tag
-        ) +
-        " changed their username to " +
-        chalk.yellow(
-          newUser.discriminator == "0" || !newUser.discriminator
-            ? newUser.username
-            : newUser.tag
-        ) +
-        "."
-    );
+    const oldUsername = oldUser.discriminator == "0" || !oldUser.discriminator
+    ? oldUser.username
+    : oldUser.tag
+    const newUsername = newUser.discriminator == "0" || !newUser.discriminator
+    ? newUser.username
+    : newUser.tag
+    global.logger.debug(`${chalk.yellow(oldUsername)} changed their username to ${chalk.yellow(newUsername)}.`, returnFileName());
   }
 
   const dbclient = new MongoClient(global.mongoConnectionString);

@@ -35,7 +35,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
     );
   } else {
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.username)+" has restarted MongoDB.");
+    global.logger.debug(`${chalk.yellow(interaction.user.username)} has restarted MongoDB.`, returnFileName());
 
     interaction.deferReply();
     await execPromise("sudo systemctl restart mongod");
@@ -46,14 +46,14 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
       );
     } catch (e) {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.red("MongoDB failed to start!"));
+      global.logger.debugError(chalk.red("MongoDB failed to start!"), returnFileName());
       interaction.editReply(
         "⚠️ MongoDB has been restarted, but is not running due to a failure."
       );
       return;
       }
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.greenBright("MongoDB successfully started back up!"));
+    global.logger.debug(chalk.greenBright("MongoDB successfully started back up!"), returnFileName());
     interaction.editReply(
       ":white_check_mark: MongoDB has been restarted successfully."
     );

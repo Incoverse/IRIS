@@ -79,7 +79,7 @@ export async function runCommand(
     }
     return;
   } catch (e) {
-    console.error(e);
+    global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({

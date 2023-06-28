@@ -74,5 +74,4 @@ interface AppInterface {
       };
     };
   };
-  debugLog: Function;
 }

@@ -398,7 +398,7 @@ export async function runCommand(
             ephemeral: true,
           });
         } catch (e) {
-          console.error(e);
+          global.logger.error(e, returnFileName());
           return;
         }
         return;
@@ -611,7 +611,7 @@ export async function runCommand(
             ephemeral: true,
           });
         } catch (e) {
-          console.error(e);
+          global.logger.error(e, returnFileName());
           return;
         }
         return;
@@ -629,7 +629,7 @@ export async function runCommand(
             ephemeral: true,
           });
         } catch (e) {
-          console.error(e);
+          global.logger.error(e, returnFileName());
           return;
         }
         return;
@@ -722,7 +722,7 @@ export async function runCommand(
           try {
             await settings.toUpdate.edit(toSendData);
           } catch (e) {
-            console.error(e);
+            global.logger.error(e, returnFileName());
             return;
           }
           response = settings.toUpdate;
@@ -730,16 +730,12 @@ export async function runCommand(
           response = await inter.reply(toSendData);
         }
       } catch (e) {
-        console.error(e);
+        global.logger.error(e, returnFileName());
         return false;
       }
       if (!settings.updateInteraction) {
         // if (inter instanceof MessageComponentInteraction) {
         if (interactionTimers[inter.user.id]) {
-          console.log(
-            "Clearing interaction timers...",
-            interactionTimers[inter.user.id]
-          );
           clearTimeout(interactionTimers[inter.user.id].warn);
           clearTimeout(interactionTimers[inter.user.id].close);
           delete interactionTimers[inter.user.id];
@@ -753,7 +749,7 @@ export async function runCommand(
                   "**Heads up!** Your hand is about to be closed in **1 minute** due to Discord's 15 minute time limit on interactions. You can also reset the interaction timer yourself by clicking 'Show Hand' again.\n\nWhen the message gets deleted, please re-open your hand using the 'Show Hand' button to continue playing as normal.\n||.||",
               });
             } catch (e) {
-              console.error(e);
+              global.logger.error(e, returnFileName());
             }
           }, 13 * 60 * 1000),
           close: setTimeout(async () => {
@@ -768,7 +764,7 @@ export async function runCommand(
             try {
               interactions[inter.user.id].delete();
             } catch (e) {
-              console.error(e);
+              global.logger.error(e, returnFileName());
             }
             delete interactions[inter.user.id];
             delete interactionTimers[inter.user.id];
@@ -978,7 +974,7 @@ export async function runCommand(
                 ],
               });
             } catch (e) {
-              console.error(e);
+              global.logger.error(e, returnFileName());
               return;
             }
             handleShowHandButtons(inter, "selectCard", {
@@ -991,7 +987,7 @@ export async function runCommand(
                 ephemeral: true,
               });
             } catch (e) {
-              console.error(e);
+              global.logger.error(e, returnFileName());
               return;
             }
           }
@@ -1039,7 +1035,7 @@ export async function runCommand(
                 ephemeral: true,
               });
             } catch (e) {
-              console.error(e);
+              global.logger.error(e, returnFileName());
               return;
             }
             return;
@@ -1083,7 +1079,7 @@ export async function runCommand(
                 });
               }
             } catch (e) {
-              // console.error(e);
+              // global.logger.error(e, returnFileName());
               return;
             }
           }
@@ -1154,7 +1150,7 @@ export async function runCommand(
                 toUpdate: interactions[inter.interaction.user.id],
               });
             } catch (e) {
-              // console.error(e);
+              // global.logger.error(e, returnFileName());
               return;
             }
           }
@@ -1197,7 +1193,7 @@ export async function runCommand(
             toUpdate: interactions[player.name],
           });
         } catch (e) {
-          // console.error(e);
+          // global.logger.error(e, returnFileName());
           // return;
         }
         if (settings.drawUntilPlayable) return;
@@ -1827,12 +1823,6 @@ export async function runCommand(
             oldPlayer: { name: string },
             newPlayer: { name: string | number }
           ) => {
-            // console.log(
-            //   players.get(oldPlayer.name).username +
-            //     " -> " +
-            //     players.get(newPlayer.name).username
-            // );
-
             if (
               (game.discardedCards.cards[0].value.value ==
                 UGE.constants.values.REVERSE ||
@@ -2227,7 +2217,7 @@ export async function runCommand(
       }
     }
   } catch (e) {
-    console.error(e);
+    global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({

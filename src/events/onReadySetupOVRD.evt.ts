@@ -51,7 +51,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
               );
                 resolve(true);
             } catch (error) {
-              console.error(error);
+              global.logger.error(error, returnFileName());
                 reject(false);
             }
         })
@@ -60,7 +60,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
     global.overrides.removeCommand = async (commandName:string, guildId:string) => {
         return new Promise<boolean>(async (resolve, reject) => {
                 // message.guild.commands.fetch().then(e=>c=message.channel.send({content:"</uno:"+e.find(a=>a.name=="uno").id+">"}))
-
             try {
                 if (commandName == "*") {
                     await global.rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body: [] })
@@ -79,7 +78,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
                     
                 }
             } catch (error) {
-                console.error(error);
+                global.logger.error(error, returnFileName());
                 reject(false);
             }
 

@@ -36,8 +36,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         " system when we're expecting LINUX."
     );
   } else {
+    const user = chalk.yellow(interaction.user.discriminator != "0" && interaction.user.discriminator ? interaction.user.tag: interaction.user.username)
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.yellow(interaction.user.discriminator != "0" && interaction.user.discriminator ? interaction.user.tag: interaction.user.username)+" has restarted IRIS.");
+    global.logger.debug(`${user} has restarted IRIS.`,returnFileName());
 
     await interaction.reply({
       content: "IRIS is now restarting...",

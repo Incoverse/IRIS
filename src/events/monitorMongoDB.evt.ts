@@ -43,33 +43,15 @@ export async function runEvent(client: Discord.Client, RM: object) {
   if (existsSync("./mongodb.status")) {
     unlinkSync("./mongodb.status");
     global.mongoStatus = global.mongoStatuses.RESTARTING;
-    global.app.debugLog(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) + " Restart of MongoDB has been requested and is in progress."
+    global.logger.debug(
+      `Restart of MongoDB has been requested and is in progress.`, returnFileName()
     );
-    global.app.debugLog(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) + " Waiting few seconds to let other commands finish..."
+    global.logger.debug(
+      `Waiting few seconds to let other commands finish...`, returnFileName()
     );
     await sleep(3000);
-    global.app.debugLog(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) + " Restarting MongoDB..."
+    global.logger.debug(
+      `Restarting MongoDB...`, returnFileName()
     );
     await execPromise("sudo systemctl restart mongod");
     await sleep(500);
@@ -79,20 +61,12 @@ export async function runEvent(client: Discord.Client, RM: object) {
       );
     } catch (e) {
       /* prettier-ignore */
-      global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+chalk.red("MongoDB failed to start!"));
+      global.logger.debugError(chalk.red("MongoDB failed to start!"), returnFileName());
       global.mongoStatus = global.mongoStatuses.FAILED;
       return;
     }
     global.mongoStatus = global.mongoStatuses.RUNNING;
-    global.app.debugLog(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) + chalk.greenBright("MongoDB successfully started back up!")
-    );
+    global.logger.debug(chalk.greenBright("MongoDB successfully started back up!"), returnFileName());
   }
   // -----------
   running = false;

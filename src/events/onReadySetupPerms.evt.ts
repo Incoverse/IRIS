@@ -51,21 +51,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
   ).commands.fetch();
   for (const command of Object.keys(permissions)) {
     if (!allCommands.some((cmd) => cmd.name == command)) {
-      console.log(
-        chalk.redBright.bold(
-          "[" +
-            moment().format("YYYY-MM-DD HH:mm:ss") +
-            "] [" +
-            returnFileName() +
-            "] " +
-            "Invalid command: " +
-            command +
-            " | " +
-            "Command could not be found in '" +
-            global.app.config.mainServer +
-            "'."
-        )
-      );
+      global.logger.error(`Invalid command: ${command} | Command could not be found in '${global.app.config.mainServer}'.`, returnFileName());
       continue;
     }
     const commandId = allCommands.find((cmd) => cmd.name == command).id;
@@ -106,44 +92,17 @@ export async function runEvent(client: Discord.Client, RM: object) {
         }
       );
       if (tokenResponseData.statusCode == 200) {
-        global.app.debugLog(
-          chalk.white.bold(
-            "[" +
-              moment().format("M/D/y HH:mm:ss") +
-              "] [" +
-              returnFileName() +
-              "] "
-          ) +
-            "Successfully updated permissions for command '" +
-            chalk.yellowBright(command) +
-            "'."
-        );
+        global.logger.debug(`Successfully updated permissions for command '${chalk.yellowBright(command)}'.`, returnFileName());
       } else {
-        global.app.debugLog(
-          chalk.white.bold(
-            "[" +
-              moment().format("M/D/y HH:mm:ss") +
-              "] [" +
-              returnFileName() +
-              "] "
-          ) +
-            "Failed to update permissions for command '" +
-            chalk.yellowBright(command) +
-            "'."
+        global.logger.debugError(
+            `Failed to update permissions for command '${chalk.yellowBright(command)}'.`, returnFileName()
         );
-        global.app.debugLog(
-            chalk.white.bold(
-              "[" +
-                moment().format("M/D/y HH:mm:ss") +
-                "] [" +
-                returnFileName() +
-                "] "
-            ), await tokenResponseData.body.json());
+        global.logger.debugError(await tokenResponseData.body.json(), returnFileName());
       }
     } catch (err) {
-      console.log(err);
+      global.logger.error(err, returnFileName());
     }
-    function getDifference(array1, array2) {
+    function getDifference(array1: any[], array2: any[]) {
       return array1.filter((object1) => {
         return !array2.some((object2) => {
           return (
@@ -188,19 +147,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
         // is the selector already an id?
         if (selector.match(/!?[0-9]{18}/)) return selector.replace("@", "");
         else {
-          console.log(
-            chalk.redBright.bold(
-              "[" +
-                moment().format("YYYY-MM-DD HH:mm:ss") +
-                "] [" +
-                returnFileName() +
-                "] " +
-                "Invalid selector: " +
-                selector +
-                " | " +
-                "Must be a user snowflake."
-            )
-          );
+          global.logger.error(`Invalid selector: ${selector} | Must be a user snowflake.`, returnFileName());
           return null;
         }
       } else if (selector.startsWith("#")) {
@@ -222,21 +169,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
           if (channel) {
             return channel.id;
           } else {
-            console.log(
-              chalk.redBright.bold(
-                "[" +
-                  moment().format("YYYY-MM-DD HH:mm:ss") +
-                  "] [" +
-                  returnFileName() +
-                  "] " +
-                  "Invalid selector: " +
-                  selector +
-                  " | " +
-                  "Channel could not be found in '" +
-                  server.name +
-                  "'."
-              )
-            );
+            global.logger.error(`Invalid selector: ${selector} | Channel could not be found in '${server.name}'.`, returnFileName());
             return null;
           }
         }
@@ -256,38 +189,12 @@ export async function runEvent(client: Discord.Client, RM: object) {
           if (role) {
             return role.id;
           } else {
-            console.log(
-              chalk.redBright.bold(
-                "[" +
-                  moment().format("YYYY-MM-DD HH:mm:ss") +
-                  "] [" +
-                  returnFileName() +
-                  "] " +
-                  "Invalid selector: " +
-                  selector +
-                  " | " +
-                  "Role could not be found in '" +
-                  server.name +
-                  "'."
-              )
-            );
+            global.logger.error(`Invalid selector: ${selector} | Role could not be found in '${server.name}'.`, returnFileName());
             return null;
           }
         }
       } else {
-        console.log(
-          chalk.redBright.bold(
-            "[" +
-              moment().format("YYYY-MM-DD HH:mm:ss") +
-              "] [" +
-              returnFileName() +
-              "] " +
-              "Invalid selector: " +
-              selector +
-              " | " +
-              "Must start with '@', '#' or '&'."
-          )
-        );
+        global.logger.error(`Invalid selector: ${selector} | Must start with '@', '#' or '&'.`, returnFileName());
         return null;
       }
     }

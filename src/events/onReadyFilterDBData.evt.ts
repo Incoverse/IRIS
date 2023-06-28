@@ -69,8 +69,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
                     $or: IDsToRemove,
                   })
                   .then((result) => {
+                    const entryOrEntries = result.deletedCount>1||result.deletedCount<1?"entries":"entry" // if more than 1, or less than 1, use plural
                     /* prettier-ignore */
-                    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+"Successfully removed "+chalk.yellow(result.deletedCount)+" "+(result.deletedCount>1||result.deletedCount<1?"entries":"entry")+" from the database.");
+                    global.logger.debug(`Successfully removed ${chalk.yellow(result.deletedCount)} ${entryOrEntries} from the database.`,returnFileName());
                     dbclient.close();
                   });
               } else {

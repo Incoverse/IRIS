@@ -86,62 +86,22 @@ export async function runEvent(client: Discord.Client, RM: object) {
     await response.send("Authorization completed. You can close this window now.");
     completed = true;
     server.close(
-        () => global.app.debugLog(
-            chalk.white.bold(
-                "[" +
-                moment().format("M/D/y HH:mm:ss") +
-                "] [" +
-                returnFileName() +
-                "] "
-            ) + "Express server for oauth2 is no longer listening on port " + chalk.whiteBright(port) + ".")
+        () => global.logger.debug(
+            `Express server for oauth2 is no longer listening on port ${chalk.whiteBright(port)}.`, returnFileName())
 
     );
   });
 
   if (!process.env.ACCESS_TKN || !process.env.REFRESH_TKN) {
     server = app.listen(port, () => {
-        global.app.debugLog(
-            chalk.white.bold(
-                "[" +
-                moment().format("M/D/y HH:mm:ss") +
-                "] [" +
-                returnFileName() +
-                "] "
-            ) + "Express server for oauth2 is now running and listening on port " + chalk.whiteBright(port) + "."
+        global.logger.debug(`Express server for oauth2 is now running and listening on port ${chalk.whiteBright(port)}.`, returnFileName()
         )
     });
-    console.log(
-      chalk.white.bold(
-        "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          returnFileName() +
-          "] "
-      ) +
-        "Please visit the following link to authorize it so we can set command permissions properly:"
-    );
-    console.log(
-        chalk.white.bold(
-            "[" +
-            moment().format("M/D/y HH:mm:ss") +
-            "] [" +
-            returnFileName() +
-            "] "
-            + chalk.yellowBright(
-                "https://discord.com/oauth2/authorize?client_id=" +
-                  process.env.cID +
-                  "&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update"
-              )))
+    global.logger.log("Please visit the following link to authorize it so we can set command permissions properly:", returnFileName());
+    global.logger.log(chalk.yellowBright(`https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update`), returnFileName())
     await waitUntilComplete();
   } else {
-    global.app.debugLog(
-        chalk.white.bold(
-            "[" +
-            moment().format("M/D/y HH:mm:ss") +
-            "] [" +
-            returnFileName() +
-            "] "
-        ) + "Credentials were found in .env file. Making sure they are valid...")
+    global.logger.debug(`Credentials were found in .env file. Making sure they are valid...`, returnFileName())
 
     const tokenResponseData = await request(
         "https://discord.com/api/oauth2/token",
@@ -170,24 +130,10 @@ export async function runEvent(client: Discord.Client, RM: object) {
         const newDotEnv = objectToEnv(parsedDotEnv);
         writeFileSync(".env", newDotEnv);
         completed = true;
-        global.app.debugLog(
-            chalk.white.bold(
-                "[" +
-                moment().format("M/D/y HH:mm:ss") +
-                "] [" +
-                returnFileName() +
-                "] "
-            ) + "Credentials are valid.")
+        global.logger.debug("Credentials are valid.", returnFileName())
 
     } else {
-        global.app.debugLog(
-            chalk.white.bold(
-                "[" +
-                moment().format("M/D/y HH:mm:ss") +
-                "] [" +
-                returnFileName() +
-                "] "
-            ) + "Credentials are invalid. Starting oauth2 process...")
+        global.logger.debug("Credentials are invalid. Starting oauth2 process...", returnFileName())
             // clear
         const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
         delete parsedDotEnv["ACCESS_TKN"];
@@ -222,15 +168,7 @@ function waitUntilComplete() {
     const interval = setInterval(() => {
       if (completed) {
         clearInterval(interval);
-        console.log(
-            chalk.white.bold(
-                "[" +
-                moment().format("M/D/y HH:mm:ss") +
-                "] [" +
-                returnFileName() +
-                "] ") + "Authorization was successfully completed, resuming boot-up."
-        );
-
+        global.logger.log("Authorization was successfully completed, resuming boot-up.", returnFileName());
         resolve();
       }
     }, 1000);

@@ -45,9 +45,10 @@ export async function runEvent(
     const userdata = database.collection(
       global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
     );
-    const result = await userdata.deleteOne({ id: args[0].id });
+    await userdata.deleteOne({ id: args[0].id });
+    const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
     /* prettier-ignore */
-    global.app.debugLog(chalk.white.bold("["+moment().format("M/D/y HH:mm:ss")+"] ["+returnFileName()+"] ")+ chalk.yellow(args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username) + " has left the server." + (result.deletedCount>0 ? " Their entry has been removed from the database.":""))
+    global.logger.debug(`${chalk.yellow(user)} has left the server. Their entry has been removed from the database.`,returnFileName())
   } finally {
     await client.close();
   }

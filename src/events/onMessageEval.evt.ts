@@ -91,7 +91,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
           message.channel.send(`\`\`\`js\n${msg}\n\`\`\``);
         }
       } catch (err) {
-        console.error(err);
+        global.logger.error(err, returnFileName());
         // Reply in the channel with our error
         msg.edit(`\`ERROR\` \`\`\`xl\n${err}\n\`\`\``);
       }
