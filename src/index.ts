@@ -484,6 +484,10 @@ declare const global: IRISGlobal;
       
       global.logger.log("------------------------", returnFileName());
       if (!hasAllPerms) {
+        global.logger.debugError(
+          `${chalk.redBright.bold(client.user.username)} is missing one or more permissions! Please grant them and restart the bot.`,
+          returnFileName()
+        );
         process.exit(1);
       }
 
