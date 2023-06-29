@@ -36,6 +36,7 @@ import {
   EmbedBuilder,
   CacheType,
   GuildMemberRoleManager,
+  PermissionsBitField,
 } from "discord.js";
 import { AppInterface } from "./interfaces/appInterface.js";
 import { IRISGlobal } from "./interfaces/global.js";
@@ -97,7 +98,7 @@ declare const global: IRISGlobal;
   }
   const logStream = createWriteStream(`./logs/${global.logName}`);
   global.logger = {
-    log: (message: string, sender: string) => {
+    log: (message: any, sender: string) => {
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
       console.log(
         chalk.white.bold(
@@ -119,7 +120,7 @@ declare const global: IRISGlobal;
         "\n"
       );
     },
-    error: (message: string, sender: string) => {
+    error: (message: any, sender: string) => {
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
       console.log(
         chalk.white.bold(
@@ -140,7 +141,7 @@ declare const global: IRISGlobal;
         "\n"
       );
     },
-    debug: (message: string, sender: string) => {
+    debug: (message: any, sender: string) => {
       if (config.debugging) {
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
       console.log(
@@ -163,7 +164,7 @@ declare const global: IRISGlobal;
         );
       }
     },
-    debugError: (message: string, sender: string) => {
+    debugError: (message: any, sender: string) => {
       if (config.debugging) {
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
       console.log(
@@ -200,8 +201,18 @@ declare const global: IRISGlobal;
   global.birthdays = [];
   global.communicationChannel = new EventEmitter();
   global.newMembers = [];
+  const requiredPermissions = [
+    PermissionsBitField.Flags.AddReactions,
+    PermissionsBitField.Flags.AttachFiles,
+    PermissionsBitField.Flags.ManageMessages,
+    PermissionsBitField.Flags.ManageRoles,
+    PermissionsBitField.Flags.ReadMessageHistory,
+    PermissionsBitField.Flags.SendMessages,
+    PermissionsBitField.Flags.UseExternalEmojis,
+    PermissionsBitField.Flags.ViewChannel,
+  ]
   process.on('uncaughtException', function(err) {
-    console.error((err && err.stack) ? err.stack : err);
+    global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-");
   });
   const onExit = (a: string | number) => {
     if (a==2) return
@@ -443,6 +454,42 @@ declare const global: IRISGlobal;
       global.logger.log(`${chalk.white("[I]")} ${chalk.green("Logged in!")} ${chalk.white("[I]")}`, returnFileName());
       global.logger.log("------------------------", returnFileName());
 
+
+      // Check if bot has every permission it needs in global.app.config.mainServer
+      const guild = await client.guilds.fetch(global.app.config.mainServer);
+      const me = await guild.members.fetch(client.user.id);
+      const perms = me.permissions;
+      let hasAllPerms = true
+      global.logger.debug(
+        // check permissions for <server name>
+        `Checking permissions in ${chalk.cyanBright(guild.name)}`,
+        returnFileName()
+      )
+      global.logger.log("------------------------", returnFileName());
+
+      for (let i of requiredPermissions) {
+        if (!perms.has(i)) {
+          global.logger.debugError(
+            `${chalk.redBright.bold(client.user.username)} is missing permission ${chalk.redBright.bold(new PermissionsBitField(i).toArray()[0])}!`,
+            returnFileName()
+          );
+          hasAllPerms = false
+        } else {
+          global.logger.debug(
+            `${chalk.yellowBright(client.user.username)} has permission ${chalk.yellowBright(new PermissionsBitField(i).toArray()[0])}.`,
+            returnFileName()
+          )
+        }
+      }
+      
+      global.logger.log("------------------------", returnFileName());
+      if (!hasAllPerms) {
+        process.exit(1);
+      }
+
+
+
+
       const commands: Array<string> = [];
       // Grab all the command files from the commands directory you created earlier
       const commandsPath = join(__dirname, "commands");
@@ -546,17 +593,17 @@ declare const global: IRISGlobal;
       const mainServer = await client.guilds.fetch(
         global.app.config.mainServer
       );
-      let users: Array<UserResolvable> = [];
-      await mainServer.members
-        .fetch()
-        .then(async (member: Collection<Snowflake, GuildMember>) =>
-          member.forEach(async (m: GuildMember) => users.push(m.id))
-        )
-        .catch(console.error);
+      // let users: Array<UserResolvable> = [];
+      // await mainServer.members
+      //   .fetch()
+      //   .then(async (member: Collection<Snowflake, GuildMember>) =>
+      //     member.forEach(async (m: GuildMember) => users.push(m.id))
+      //   )
+      //   .catch(console.error);
 
-      const guild: Guild = await client.guilds.fetch(
-        global.app.config.mainServer
-      );
+      // const guild: Guild = await client.guilds.fetch(
+      //   global.app.config.mainServer
+      // );
       await guild.roles
         .fetch()
         .then((roles: Collection<Snowflake, Role>): void => {
@@ -585,10 +632,10 @@ declare const global: IRISGlobal;
         (a: string, b: string) => parseInt(b) - parseInt(a)
       )) {
         for (let i of prioritizedTable[prio]) {
-          const adder = ("discordEvent" === requiredModules[i].eventType()? " (" +chalk.blue.bold(requiredModules[i].getListenerKey()) +")": (
-            "runEvery" === requiredModules[i].eventType()? " (" +chalk.yellow(prettyMilliseconds(requiredModules[i].getMS(), {verbose: !0,})) +")": ""
+          const adder = ("discordEvent" === requiredModules[i].eventType()? " (" +chalk.cyan.bold(requiredModules[i].getListenerKey()) +")": (
+            "runEvery" === requiredModules[i].eventType()? " (" +chalk.hex("#FFA500")(prettyMilliseconds(requiredModules[i].getMS(), {verbose: !0,})) +")": ""
           ))
-          const eventType = chalk.yellow(requiredModules[i].eventType())
+          const eventType = chalk.yellowBright(requiredModules[i].eventType())
           const eventName = chalk.blueBright(requiredModules[i].returnFileName())
           if (
             requiredModules[i].eventSettings().devOnly &&
@@ -601,12 +648,13 @@ declare const global: IRISGlobal;
             continue;
           }
           /* prettier-ignore */
+          if (!eventType.includes("onStart"))
           global.logger.debug(`Registering '${eventType}${adder}' event: ${eventName}`, returnFileName());
           if (requiredModules[i].eventType() === "runEvery") {
-            const prettyInterval = chalk.yellow(prettyMilliseconds(requiredModules[i].getMS(),{verbose: true}))
+            const prettyInterval = chalk.hex("#FFA500")(prettyMilliseconds(requiredModules[i].getMS(),{verbose: true}))
             if (requiredModules[i].runImmediately()) {
               /* prettier-ignore */
-              global.logger.debug(`Running '${eventType} (${chalk.blue.bold("runImmediately")})' event: ${eventName}`, returnFileName());
+              global.logger.debug(`Running '${eventType} (${chalk.cyan.bold("runImmediately")})' event: ${eventName}`, returnFileName());
               await requiredModules[i].runEvent(client, requiredModules);
             }
             setInterval(async () => {
@@ -620,7 +668,7 @@ declare const global: IRISGlobal;
               }
             }, requiredModules[i].getMS());
           } else if (requiredModules[i].eventType() === "discordEvent") {
-            const listenerKey = chalk.blue.bold(requiredModules[i].getListenerKey())
+            const listenerKey = chalk.cyan.bold(requiredModules[i].getListenerKey())
             client.on(
               requiredModules[i].getListenerKey(),
               async (...args: any) => {
@@ -637,10 +685,11 @@ declare const global: IRISGlobal;
           }
         }
       }
-      global.logger.log(`All commands and events have been registered. ${eventFiles.length} event(s), ${commands.length} command(s).`, returnFileName());
+      global.logger.log("", returnFileName());
+      global.logger.log(`All commands and events have been registered. ${chalk.yellowBright(eventFiles.length)} event(s), ${chalk.yellowBright(commands.length)} command(s).`, returnFileName());
       global.logger.log("------------------------", returnFileName());
-      global.logger.log(`${chalk.redBright(mainServer.name)} has ${chalk.cyanBright(users.length)} members.`, returnFileName());
-      global.logger.log("------------------------", returnFileName());
+      // global.logger.log(`${chalk.redBright(mainServer.name)} has ${chalk.cyanBright(users.length)} members.`, returnFileName());
+      // global.logger.log("------------------------", returnFileName());
       /* prettier-ignore */
       const DaT = DateFormatter.formatDate(new Date(),`MMMM ????, YYYY @ hh:mm:ss A`).replace("????", getOrdinalNum(new Date().getDate()))
       global.logger.log(`Current date & time is: ${chalk.cyanBright(DaT)}`, returnFileName());
@@ -651,7 +700,7 @@ declare const global: IRISGlobal;
       global.logger.debug(`Log name: ${chalk.cyanBright(global.logName)}`, returnFileName());
       global.logger.log("------------------------", returnFileName());
       const botUsername = client.user.discriminator != "0" && client.user.discriminator ? client.user.tag : client.user.username
-      global.logger.log(`${chalk.blue.bold(botUsername)} is ready and is running ${chalk.blue.bold(global.app.config.development ? "DEVELOPMENT" : "COMMUNITY")} edition!`, returnFileName());
+      global.logger.log(`${chalk.blueBright.bold(botUsername)} is ready and is running ${chalk.blueBright.bold(global.app.config.development ? "DEVELOPMENT" : "COMMUNITY")} edition!`, returnFileName());
       global.logger.log("------------------------", returnFileName());
 
       fullyReady = true;

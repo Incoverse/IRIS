@@ -101,7 +101,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
     global.logger.log(chalk.yellowBright(`https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update`), returnFileName())
     await waitUntilComplete();
   } else {
-    global.logger.debug(`Credentials were found in .env file. Making sure they are valid...`, returnFileName())
 
     const tokenResponseData = await request(
         "https://discord.com/api/oauth2/token",
@@ -130,10 +129,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
         const newDotEnv = objectToEnv(parsedDotEnv);
         writeFileSync(".env", newDotEnv);
         completed = true;
-        global.logger.debug("Credentials are valid.", returnFileName())
 
     } else {
-        global.logger.debug("Credentials are invalid. Starting oauth2 process...", returnFileName())
+        global.logger.debug("Credentials in .env were invalid. Starting oauth2 process...", returnFileName())
             // clear
         const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
         delete parsedDotEnv["ACCESS_TKN"];
