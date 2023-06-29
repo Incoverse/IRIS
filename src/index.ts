@@ -688,16 +688,17 @@ declare const global: IRISGlobal;
       global.logger.log("", returnFileName());
       global.logger.log(`All commands and events have been registered. ${chalk.yellowBright(eventFiles.length)} event(s), ${chalk.yellowBright(commands.length)} command(s).`, returnFileName());
       global.logger.log("------------------------", returnFileName());
-      // global.logger.log(`${chalk.redBright(mainServer.name)} has ${chalk.cyanBright(users.length)} members.`, returnFileName());
-      // global.logger.log("------------------------", returnFileName());
       /* prettier-ignore */
       const DaT = DateFormatter.formatDate(new Date(),`MMMM ????, YYYY @ hh:mm:ss A`).replace("????", getOrdinalNum(new Date().getDate()))
       global.logger.log(`Current date & time is: ${chalk.cyanBright(DaT)}`, returnFileName());
       global.logger.log(`Discord.JS version: ${chalk.yellow(version)}`, returnFileName());
-      global.logger.debug(`Database name: ${chalk.cyanBright("IRIS_DEVELOPMENT")}`, returnFileName());
-      global.logger.debug(`Database ${chalk.yellowBright("GAMEDATA")} collection: ${chalk.cyanBright("DEVSRV_GD_" + mainServer.id)}`, returnFileName());
-      global.logger.debug(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright("DEVSRV_UD_" + mainServer.id)}`, returnFileName());
-      global.logger.debug(`Log name: ${chalk.cyanBright(global.logName)}`, returnFileName());
+      
+      if (global.app.config.development) {
+        global.logger.log(`Database name: ${chalk.cyanBright("IRIS_DEVELOPMENT")}`, returnFileName());
+        global.logger.log(`Database ${chalk.yellowBright("GAMEDATA")} collection: ${chalk.cyanBright("DEVSRV_GD_" + mainServer.id)}`, returnFileName());
+        global.logger.log(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright("DEVSRV_UD_" + mainServer.id)}`, returnFileName());
+        global.logger.log(`Log name: ${chalk.cyanBright(global.logName)}`, returnFileName());
+      }
       global.logger.log("------------------------", returnFileName());
       const botUsername = client.user.discriminator != "0" && client.user.discriminator ? client.user.tag : client.user.username
       global.logger.log(`${chalk.blueBright.bold(botUsername)} is ready and is running ${chalk.blueBright.bold(global.app.config.development ? "DEVELOPMENT" : "COMMUNITY")} edition!`, returnFileName());
