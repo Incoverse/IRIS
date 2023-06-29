@@ -17,7 +17,7 @@
   // "development": true //* 'global.app.config.development' will be automatically set true if 'DEVELOPMENT' is set to 'YES' in .env
 
   //? These permissions are for commands.
-  //? @user / @user#1234 / @userid (recommended)
+  //? @userid
   //? &rolename (recommended) / &roleid
   //? #channelname (recommended) / #channelid
   //?
