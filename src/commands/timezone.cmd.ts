@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { Team } from "discord.js";
+import Discord from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 import moment from "moment-timezone";
@@ -81,12 +81,7 @@ export async function runCommand(
           "⚠️ There was an error while executing this command!" +
           (global.app.config.showErrors == true
             ? "\n\n``" +
-              ([
-                ...Array.from(
-                  (interaction.client.application.owner as Team).members.keys()
-                ),
-                ...global.app.config.externalOwners,
-              ].includes(interaction.user.id)
+              (global.app.owners.includes(interaction.user.id)
                 ? e.stack.toString()
                 : e.toString()) +
               "``"
@@ -99,12 +94,7 @@ export async function runCommand(
           "⚠️ There was an error while executing this command!" +
           (global.app.config.showErrors == true
             ? "\n\n``" +
-              ([
-                ...Array.from(
-                  (interaction.client.application.owner as Team).members.keys()
-                ),
-                ...global.app.config.externalOwners,
-              ].includes(interaction.user.id)
+              (global.app.owners.includes(interaction.user.id)
                 ? e.stack.toString()
                 : e.toString()) +
               "``"

@@ -30,6 +30,12 @@ import {
   Routes,
   ActivityType,
   version,
+  Team,
+  CommandInteraction,
+  CommandInteractionOptionResolver,
+  EmbedBuilder,
+  CacheType,
+  GuildMemberRoleManager,
 } from "discord.js";
 import { AppInterface } from "./interfaces/appInterface.js";
 import { IRISGlobal } from "./interfaces/global.js";
@@ -186,6 +192,7 @@ declare const global: IRISGlobal;
       .version,
     localConfig: localConfig,
     config: config,
+    owners: [], // this will be filled in later
   };
   
   global.app = app;
@@ -196,7 +203,7 @@ declare const global: IRISGlobal;
   process.on('uncaughtException', function(err) {
     console.error((err && err.stack) ? err.stack : err);
   });
-  const onExit = (a) => {
+  const onExit = (a: string | number) => {
     if (a==2) return
     global.logger.log("IRIS is shutting down...", "IRIS-"+a);
     process.exit(2);
@@ -393,12 +400,40 @@ declare const global: IRISGlobal;
         client.close();
       }
       if (!interaction.isChatInputCommand()) return;
+      let fullCmd = interaction.commandName;
+      if ((
+        interaction.options as CommandInteractionOptionResolver
+      ).getSubcommandGroup()) {
+        fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommandGroup()}`;
+      }
+      if ((
+        interaction.options as CommandInteractionOptionResolver
+      ).getSubcommand()) {
+        fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommand()}`;
+      }
+      
+      
       for (let command in requiredModules) {
         if (command.startsWith("cmd")) {
           if (
             interaction.commandName == command.replace("cmd", "").toLowerCase()
           ) {
-            requiredModules[command].runCommand(interaction, requiredModules);
+            if (await checkPermissions(interaction, fullCmd)) {
+              requiredModules[command].runCommand(interaction, requiredModules);
+            } else {
+              // global.logger.debugError(`${interaction.user.username} tried to run command '/${fullCmd}' but was denied access.`, returnFileName())
+              await interaction.reply({
+                embeds: [
+                  new EmbedBuilder().setTitle("Access Denied").setDescription(
+                    "You do not have permission to run this command."
+                  ).setColor("Red").setFooter({
+                    text: interaction.user.username,
+                    iconURL: interaction.user.avatarURL()
+                  })
+                ],
+                ephemeral: true,
+              });
+            }
           }
         }
       }
@@ -441,6 +476,15 @@ declare const global: IRISGlobal;
         commands.push(command?.getSlashCommand()?.toJSON());
       }
       global.reload.commands = commands;
+      await client.application.fetch();
+      if (client.application.owner instanceof Team) {
+        global.app.owners = Array.from(
+          client.application.owner.members.keys()
+        );
+      } else {
+        global.app.owners = [client.application.owner.id];
+      }
+      global.app.owners = [...global.app.owners, ...global.app.config.externalOwners];
       global.logger.log("------------------------", returnFileName());
 
       const eventsPath = join(__dirname, "events");
@@ -612,11 +656,128 @@ declare const global: IRISGlobal;
 
       fullyReady = true;
     });
+    async function userAffectedByPermSet(user: GuildMember, permissionSet: any[]) {
+      const rolesSorted = Array.from((user.roles as GuildMemberRoleManager).cache.values())
+      const roles = rolesSorted.map((r:Role)=>r.id)
+      // check if any selector will affect the user, this means: if the user has a role that is in the selector, return true
+      // if the user is in the selector, return true
+      // if the selector is @everyone, return true
 
+
+      for (const permission of permissionSet) {
+        const id = permission.selector.slice(1)
+        if (id == global.app.config.mainServer) return true
+        if (permission.selector.startsWith("#")) {
+          if (user.guild.channels.cache.has(id)) return true
+        } else if (permission.selector.startsWith("&")) {
+          if (roles.includes(id)) return true
+        } else if (permission.selector.startsWith("@")) {
+          if (user.id == id) return true
+        }
+      }
+      return false
+
+    }
+    async function analyzePerms (interaction: CommandInteraction, permissions: any[]) {
+      if (global.app.owners.includes(interaction.user.id)) return true
+      const rolesSorted = Array.from((interaction.member.roles as GuildMemberRoleManager).cache.values()).sort((a:Role,b:Role)=>a.rawPosition-b.rawPosition)
+      const roles = rolesSorted.map((r:Role)=>r.id)
+      let defaultChannelPermission = true;
+      let defaultUserPermission = true;
+      const channelPermissions = permissions.filter((p: { selector: string; }) => p.selector.startsWith("#"));
+      const rolePermissions = permissions.filter((p: { selector: string; }) => p.selector.startsWith("&"));
+      const userPermissions = permissions.filter((p: { selector: string; }) => p.selector.startsWith("@"));
+  
+      // start with channel permissions
+      let containedChannelID = false;
+      for (const permission of channelPermissions) {
+          const id = permission.selector.slice(1)
+          if (id == interaction.channel.id) {
+              containedChannelID = true;
+              if (!permission.canUse) {
+                  return false;
+              }
+          } else if (id == (BigInt(global.app.config.mainServer) - 1n).toString()) {
+              defaultChannelPermission = permission.canUse;
+          }
+      }
+      if (!containedChannelID && !defaultChannelPermission) return false;
+      // then user permissions
+  let containedUserID = false;
+  for (const permission of userPermissions) {
+  const id = permission.selector.slice(1);
+  if (id == interaction.user.id) {
+  containedUserID = true;
+  if (!permission.canUse) {
+  return false;
+  }
+  } else if (id == global.app.config.mainServer) {
+  defaultUserPermission = permission.canUse;
+  }
+  }
+  if (!containedUserID && !defaultUserPermission) return false;
+  let rolePerms={}
+  for (const permission of rolePermissions) {
+  const id = permission.selector.slice(1);
+  rolePerms[id]=permission.canUse
+  }
+      let finalRoleResult = true
+      for (const role of roles) {
+          if (Object.keys(rolePerms).includes(role)) {
+              finalRoleResult = rolePerms[role]
+          } 
+      }
+      return finalRoleResult
+  }
     /* prettier-ignore */
     const getOrdinalNum = (n:number)=> { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
     /* prettier-ignore */
     const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e:any, t:any) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t:any) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t:any) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e:any, t:any, r:any) { return e.replace(t, (function (e:any) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e:any) { return (e + 24) % 12 || 12 }, getAmPm: function (e:any) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e:any, t:any, r:any, g:any) { return e.replace(t, (function (e:any) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
+    
+    async function checkPermissions(interaction: CommandInteraction, fullCmd: string) {
+      const defaultPermission = true
+
+      /*
+        Example: "admin iris logs"
+
+        1. Check if "admin iris logs" has a permissions set, and check against it, if user is not allowed, return false else continue
+        2. Check if "admin iris" has a permissions set, and check against it, if user is not allowed, return false else continue
+        3. Check if "admin" has a permissions set, and check against it, if user is not allowed, return false else continue
+        4. return defaultPermission
+
+        You can check if a user passes a permission check by using analyzePerms(interaction, permissionSet)
+        You can get the permission set by doing global.app.config.permissions[fullCmd] (fullCmd is the command name, like "admin iris logs", change it appropriately)  
+      */
+
+      // admin iris logs
+      const fullCmdPermissions = global.app.config.permissions[fullCmd]
+      if (fullCmdPermissions) {
+        if (await userAffectedByPermSet(interaction.member as GuildMember, fullCmdPermissions))
+        return await analyzePerms(interaction, fullCmdPermissions)
+      }
+      // if comamnd has 2 or more words continue, else return defaultPermission
+      const fullCmdSplit = fullCmd.split(" ")
+      if (fullCmdSplit.length < 2) return defaultPermission
+      
+      // admin iris
+      fullCmdSplit.pop()
+      const fullCmdPermissions2 = global.app.config.permissions[fullCmdSplit.join(" ")]
+      if (fullCmdPermissions2) {
+        if (await userAffectedByPermSet(interaction.member as GuildMember, fullCmdPermissions2))
+        return await analyzePerms(interaction, fullCmdPermissions2)
+      }
+      // if command has 3 words, continue, else return defaultPermission
+      if (fullCmdSplit.length < 2) return defaultPermission 
+      
+      // admin
+      fullCmdSplit.pop()
+      const fullCmdPermissions3 = global.app.config.permissions[fullCmdSplit.join(" ")]
+      if (fullCmdPermissions3) {
+        if (await userAffectedByPermSet(interaction.member as GuildMember, fullCmdPermissions3))
+        return await analyzePerms(interaction, fullCmdPermissions3)
+      }
+      return defaultPermission
+    }
 
     client.login(process.env.TOKEN);
   } catch (e: any) {

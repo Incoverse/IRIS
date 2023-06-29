@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { Team } from "discord.js";
+import Discord from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 import { inspect } from "util";
@@ -34,12 +34,7 @@ export async function runEvent(message: Discord.Message, RM: object) {
   if (message.content.startsWith(".IRIS-EVAL ")) {
     await message.client.application.fetch();
     if (
-      [
-        ...Array.from(
-          (message.client.application.owner as Team).members.keys()
-        ),
-        ...global.app.config.externalOwners,
-      ].includes(message.author.id)
+      global.app.owners.includes(message.author.id)
     ) {
       const clean = async (text: string) => {
         // If our input is a promise, await it before continuing

@@ -22,48 +22,32 @@
   //? #channelname (recommended) / #channelid
   //?
   //? canSee is whether or not the user can see the command when they do /. If the user can't see the command, they can't use it.
+  //? Commands that only have the main command name, no subcommand group or subcommand, need a "canSee" value as well as a "canUse" value.
+  //? Commands that have more than the main command (subcommand group / subcommand) only need a "canUse" value
   //! Development Team members, replace the "development" part to your needs.
   "permissions": {
     "admin": {
       "main": [
-        {
-          "selector": "&Engineer", // 'Engineer' role
-          "canSee": true // Can see and use the command.
-        },
-        {
-          "selector": "&Moderator", // 'Moderator' role
-          "canSee": true // Can see and use the command.
-        },
-        {
-          "selector": "&Support Team", // 'Support Team' role
-          "canSee": true // Can see and use the command.
-        },
-        {
-          "selector": "&everyone", // 'everyone' role
-          "canSee": false // Can't see or use the command.
-        }
+        { "selector": "&Engineer", "canSee": true, "canUse": true },
+        { "selector": "&Moderator", "canSee": true, "canUse": true },
+        { "selector": "&Support Team", "canSee": true, "canUse": true },
+        { "selector": "&Development Team", "canSee": true, "canUse": false },
+        { "selector": "&everyone", "canSee": false, "canUse": false }
       ],
       "development": [
-        {
-          "selector": "&Administrator", // 'Administrator' role
-          "canSee": true // Can see and use the command.
-        },
-        {
-          "selector": "&Moderator", // 'Moderator' role 
-          "canSee": true // Can see and use the command.
-        },
-        {
-          "selector": "&Support Team", // 'Support Team' role
-          "canSee": true // Can see and use the command.
-        },
-        {
-          "selector": "&IRIS Development", // 'IRIS Development' role
-          "canSee": true // Can see and use the command.
-        },
-        {
-          "selector": "&everyone", // 'everyone' role (aka. @everyone)
-          "canSee": false // Can't see or use the command.
-        }
+        { "selector": "&Administrator", "canSee": true, "canUse": true },
+        { "selector": "&Moderator", "canSee": true, "canUse": true },
+        { "selector": "&Support Team", "canSee": true, "canUse": true },
+        { "selector": "&IRIS Development", "canSee": true, "canUse": false },
+        { "selector": "&everyone", "canSee": false, "canUse": false }
+      ]
+    },
+    "admin iris logs": {
+      "main": [
+        { "selector": "&Development Team", "canUse": true }
+      ],
+      "development": [
+        { "selector": "&IRIS Development", "canUse": true }
       ]
     }
   },

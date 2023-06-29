@@ -35,7 +35,7 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export async function runEvent(client: Discord.Client, RM: object) {
-  const permissions = global.app.config.permissions;
+  let permissions = global.app.config.permissions;
 
   // clean out other edition permissions
   for (const permission of Object.keys(permissions)) {
@@ -45,6 +45,24 @@ export async function runEvent(client: Discord.Client, RM: object) {
       permissions[permission] = permissions[permission]["main"];
     }
   }
+  // convert all selectors to ids
+  for (const command of Object.keys(permissions)) {
+    for (const permission of permissions[command]) {
+      // selector should be the first character that identifies the type of selector, and then the id
+      // e.g. @123456789012345678
+      permissions[command][
+        permissions[command].indexOf(permission)
+      ].selector = permission.selector.slice(0,1) + await convertSelectorToId(permission.selector);
+    }
+  }
+  permissions = {...permissions}
+  // remove all permissions where the command has 2 or more words
+  for (const command of Object.keys(permissions)) {
+    if (command.split(" ").length > 1) {
+      delete permissions[command];
+    }
+  }
+
 
   const allCommands = await (
     await client.guilds.fetch(global.app.config.mainServer)
@@ -142,61 +160,61 @@ export async function runEvent(client: Discord.Client, RM: object) {
         permission: customobject.canSee,
       };
     }
-    async function convertSelectorToId(selector: string) {
-      if (selector.startsWith("@")) {
-        // is the selector already an id?
-        if (selector.match(/!?[0-9]{18}/)) return selector.replace("@", "");
-        else {
-          global.logger.error(`Invalid selector: ${selector} | Must be a user snowflake.`, returnFileName());
-          return null;
-        }
-      } else if (selector.startsWith("#")) {
-        if (selector.match(/!?[0-9]{18}/)) return selector.replace("#", "");
-        else {
-          if (
-            selector.replace("#", "") == "all" ||
-            selector.replace("#", "") == "*"
-          ) {
-            return (BigInt(global.app.config.mainServer) - 1n).toString();
-          }
-          const server = await client.guilds.fetch(
-            global.app.config.mainServer
-          );
-          const channels = await server.channels.fetch();
-          const channel = channels.find(
-            (channel) => channel.name == selector.replace("#", "")
-          );
-          if (channel) {
-            return channel.id;
-          } else {
-            global.logger.error(`Invalid selector: ${selector} | Channel could not be found in '${server.name}'.`, returnFileName());
-            return null;
-          }
-        }
-      } else if (selector.startsWith("&")) {
-        if (selector.match(/!?[0-9]{18}/)) return selector.replace("&", "");
-        else {
-          if (selector.replace("&", "") == "everyone") {
-            return global.app.config.mainServer;
-          }
-          const server = await client.guilds.fetch(
-            global.app.config.mainServer
-          );
-          const roles = await server.roles.fetch();
-          const role = roles.find(
-            (role) => role.name == selector.replace("&", "")
-          );
-          if (role) {
-            return role.id;
-          } else {
-            global.logger.error(`Invalid selector: ${selector} | Role could not be found in '${server.name}'.`, returnFileName());
-            return null;
-          }
-        }
-      } else {
-        global.logger.error(`Invalid selector: ${selector} | Must start with '@', '#' or '&'.`, returnFileName());
+  }
+  async function convertSelectorToId(selector: string) {
+    if (selector.startsWith("@")) {
+      // is the selector already an id?
+      if (selector.match(/!?[0-9]{18}/)) return selector.replace("@", "");
+      else {
+        global.logger.error(`Invalid selector: ${selector} | Must be a user snowflake.`, returnFileName());
         return null;
       }
+    } else if (selector.startsWith("#")) {
+      if (selector.match(/!?[0-9]{18}/)) return selector.replace("#", "");
+      else {
+        if (
+          selector.replace("#", "") == "all" ||
+          selector.replace("#", "") == "*"
+        ) {
+          return (BigInt(global.app.config.mainServer) - 1n).toString();
+        }
+        const server = await client.guilds.fetch(
+          global.app.config.mainServer
+        );
+        const channels = await server.channels.fetch();
+        const channel = channels.find(
+          (channel) => channel.name == selector.replace("#", "")
+        );
+        if (channel) {
+          return channel.id;
+        } else {
+          global.logger.error(`Invalid selector: ${selector} | Channel could not be found in '${server.name}'.`, returnFileName());
+          return null;
+        }
+      }
+    } else if (selector.startsWith("&")) {
+      if (selector.match(/!?[0-9]{18}/)) return selector.replace("&", "");
+      else {
+        if (selector.replace("&", "") == "everyone") {
+          return global.app.config.mainServer;
+        }
+        const server = await client.guilds.fetch(
+          global.app.config.mainServer
+        );
+        const roles = await server.roles.fetch();
+        const role = roles.find(
+          (role) => role.name == selector.replace("&", "")
+        );
+        if (role) {
+          return role.id;
+        } else {
+          global.logger.error(`Invalid selector: ${selector} | Role could not be found in '${server.name}'.`, returnFileName());
+          return null;
+        }
+      }
+    } else {
+      global.logger.error(`Invalid selector: ${selector} | Must start with '@', '#' or '&'.`, returnFileName());
+      return null;
     }
   }
 }

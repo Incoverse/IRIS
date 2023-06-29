@@ -15,7 +15,7 @@
   * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { Team } from "discord.js";
+import Discord from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 import chalk from "chalk";

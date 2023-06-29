@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { Team } from "discord.js";
+import Discord from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 
@@ -104,7 +104,6 @@ export async function runCommand(
     return;
   } catch (e) {
     global.logger.error(e, returnFileName());
-    Team;
     await interaction.client.application.fetch();
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
@@ -112,12 +111,7 @@ export async function runCommand(
           "⚠️ There was an error while executing this command!" +
           (global.app.config.showErrors == true
             ? "\n\n``" +
-              ([
-                ...Array.from(
-                  (interaction.client.application.owner as Team).members.keys()
-                ),
-                ...global.app.config.externalOwners,
-              ].includes(interaction.user.id)
+              (global.app.owners.includes(interaction.user.id)
                 ? e.stack.toString()
                 : e.toString()) +
               "``"
@@ -130,12 +124,7 @@ export async function runCommand(
           "⚠️ There was an error while executing this command!" +
           (global.app.config.showErrors == true
             ? "\n\n``" +
-              ([
-                ...Array.from(
-                  (interaction.client.application.owner as Team).members.keys()
-                ),
-                ...global.app.config.externalOwners,
-              ].includes(interaction.user.id)
+              (global.app.owners.includes(interaction.user.id)
                 ? e.stack.toString()
                 : e.toString()) +
               "``"

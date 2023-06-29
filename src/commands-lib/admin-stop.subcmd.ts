@@ -15,14 +15,13 @@
   * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { Team } from "discord.js";
+import Discord from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
 import { promisify } from "util";
 import { exec } from "child_process";
 const execPromise = promisify(exec);
-import moment from "moment-timezone";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);

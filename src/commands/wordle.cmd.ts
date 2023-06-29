@@ -660,12 +660,7 @@ export async function runCommand(
           "⚠️ There was an error while executing this command!" +
           (global.app.config.showErrors == true
             ? "\n\n``" +
-              ([
-                ...Array.from(
-                  (interaction.client.application.owner as Team).members.keys()
-                ),
-                ...global.app.config.externalOwners,
-              ].includes(interaction.user.id)
+              (global.app.owners.includes(interaction.user.id)
                 ? e.stack.toString()
                 : e.toString()) +
               "``"
@@ -678,12 +673,7 @@ export async function runCommand(
           "⚠️ There was an error while executing this command!" +
           (global.app.config.showErrors == true
             ? "\n\n``" +
-              ([
-                ...Array.from(
-                  (interaction.client.application.owner as Team).members.keys()
-                ),
-                ...global.app.config.externalOwners,
-              ].includes(interaction.user.id)
+              (global.app.owners.includes(interaction.user.id)
                 ? e.stack.toString()
                 : e.toString()) +
               "``"

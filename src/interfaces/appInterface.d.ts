@@ -23,6 +23,7 @@ import {
   ActivityType,
 } from "discord.js";
 import { ObjectId } from "mongodb";
+import { Permissions } from "./permissions";
 
 interface AppInterface {
   version: string;
@@ -39,6 +40,7 @@ interface AppInterface {
     disabledCommands: Array<string>;
     disabledEvents: Array<string>;
   };
+  owners: Array<string>;
   config: {
     externalOwners: Array<string>;
     showErrors: boolean;
@@ -47,12 +49,7 @@ interface AppInterface {
     developmentServer: string;
     development: boolean;
 
-    permissions: {
-      admin: {
-        main: Array<string>;
-        development: Array<string> | null;
-      };
-    };
+    permissions: Permissions
 
     defaultEntry: {
       _id?: string | OptionalId<Document> | null;
