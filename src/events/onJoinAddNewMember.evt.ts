@@ -28,7 +28,7 @@ const eventInfo = {
   settings: {
     devOnly: false,
     mainOnly: false,
-  },
+  },    
 };
 
 const __filename = fileURLToPath(import.meta.url);

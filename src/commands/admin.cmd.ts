@@ -24,15 +24,15 @@ import Discord, {
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 
-import * as restartMongoDB from "../commands-lib/admin-restartMongo.subcmd.js";
-import * as restartIRIS from "../commands-lib/admin-restart.subcmd.js";
-import * as checkCertificate from "../commands-lib/admin-checkcert.subcmd.js";
-import * as stopIRIS from "../commands-lib/admin-stop.subcmd.js";
-import * as changeBirthday from "../commands-lib/admin-changeBirthday.subcmd.js";
-import * as changeTimezone from "../commands-lib/admin-changeTimezone.subcmd.js";
-import * as entryManagement from "../commands-lib/admin-entrymgmt.subcmd.js";
-import * as setPresence from "../commands-lib/admin-setPresence.subcmd.js";
-import * as logs from "../commands-lib/admin-logs.subcmd.js";
+import * as restartMongoDB from "./command-lib/admin-restartMongo.cmdlib.js";
+import * as restartIRIS from "./command-lib/admin-restart.cmdlib.js";
+import * as checkCertificate from "./command-lib/admin-checkcert.cmdlib.js";
+import * as stopIRIS from "./command-lib/admin-stop.cmdlib.js";
+import * as changeBirthday from "./command-lib/admin-changeBirthday.cmdlib.js";
+import * as changeTimezone from "./command-lib/admin-changeTimezone.cmdlib.js";
+import * as entryManagement from "./command-lib/admin-entrymgmt.cmdlib.js";
+import * as setPresence from "./command-lib/admin-setPresence.cmdlib.js";
+import * as logs from "./command-lib/admin-logs.cmdlib.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);

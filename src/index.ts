@@ -52,6 +52,8 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { promisify, inspect } from "util";
 import {exec} from "child_process";
+
+import performance from "./lib/performance.js";
 const execPromise = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -451,6 +453,9 @@ declare const global: IRISGlobal;
     });
 
     client.on(Events.ClientReady, async () => {
+      const finalLogInTime = performance.end("logInTime", {
+        silent: true,
+      })
       global.logger.log(`${chalk.white("[I]")} ${chalk.green("Logged in!")} ${chalk.white("[I]")}`, returnFileName());
       global.logger.log("------------------------", returnFileName());
 
@@ -466,7 +471,7 @@ declare const global: IRISGlobal;
         returnFileName()
       )
       global.logger.log("------------------------", returnFileName());
-
+      performance.start("permissionCheck"); //! <---
       for (let i of requiredPermissions) {
         if (!perms.has(i)) {
           global.logger.debugError(
@@ -475,12 +480,17 @@ declare const global: IRISGlobal;
           );
           hasAllPerms = false
         } else {
+          performance.pause("permissionCheck"); // pause the timer so that the log time isn't included //! <---
           global.logger.debug(
             `${chalk.yellowBright(client.user.username)} has permission ${chalk.yellowBright(new PermissionsBitField(i).toArray()[0])}.`,
             returnFileName()
           )
+          performance.resume("permissionCheck");//! <---
         }
       }
+      const finalPermissionCheckTime = performance.end("permissionCheck", { //1.234ms //! <---
+        silent: true,
+      })
       
       global.logger.log("------------------------", returnFileName());
       if (!hasAllPerms) {
@@ -492,8 +502,7 @@ declare const global: IRISGlobal;
       }
 
 
-
-
+      performance.start("commandRegistration");
       const commands: Array<string> = [];
       // Grab all the command files from the commands directory you created earlier
       const commandsPath = join(__dirname, "commands");
@@ -508,8 +517,10 @@ declare const global: IRISGlobal;
           command.commandSettings().devOnly &&
           command.commandSettings().mainOnly
         ) {
+          performance.pause("commandRegistration");
           /* prettier-ignore */
           global.logger.debugError(`Error while registering command: ${chalk.redBright(file)} (${chalk.redBright("Command cannot be both devOnly and mainOnly!")})`,returnFileName());
+          performance.resume("commandRegistration");
           continue;
         }
         if (!global.app.config.development && command.commandSettings().devOnly)
@@ -517,8 +528,10 @@ declare const global: IRISGlobal;
         if (global.app.config.development && command.commandSettings().mainOnly)
           continue;
 
+          performance.pause("commandRegistration");
         /* prettier-ignore */
         global.logger.debug(`Registering command: ${chalk.blueBright(file)}`,returnFileName());
+        performance.resume("commandRegistration");
         requiredModules[
           "cmd" +
             command.getSlashCommand().name[0].toUpperCase() +
@@ -526,6 +539,7 @@ declare const global: IRISGlobal;
         ] = command;
         commands.push(command?.getSlashCommand()?.toJSON());
       }
+      const finalCommandRegistrationTime = performance.end("commandRegistration", {silent: true})
       global.reload.commands = commands;
       await client.application.fetch();
       if (client.application.owner instanceof Team) {
@@ -537,7 +551,7 @@ declare const global: IRISGlobal;
       }
       global.app.owners = [...global.app.owners, ...global.app.config.externalOwners];
       global.logger.log("------------------------", returnFileName());
-
+      performance.start("eventLoader");
       const eventsPath = join(__dirname, "events");
       const eventFiles = readdirSync(eventsPath).filter((file: string) =>
         file.endsWith(".evt.js")
@@ -560,6 +574,7 @@ declare const global: IRISGlobal;
             file.replace(".evt.js", "").slice(1)
         ] = event;
       }
+      const finalEventLoaderTime = performance.end("eventLoader", {silent: true})
       global.rest = new REST({
         version: "9",
       }).setToken(process.env.TOKEN);
@@ -632,6 +647,7 @@ declare const global: IRISGlobal;
         }
       }
 
+      performance.start("eventRegistration");
       for (const prio of Object.keys(prioritizedTable).sort(
         (a: string, b: string) => parseInt(b) - parseInt(a)
       )) {
@@ -645,20 +661,27 @@ declare const global: IRISGlobal;
             requiredModules[i].eventSettings().devOnly &&
             requiredModules[i].eventSettings().mainOnly
           ) {
+            performance.pause("eventRegistration")
             /* prettier-ignore */
             global.logger.debugError(`${chalk.redBright("Error while registering")} '${eventType}${adder}' ${chalk.redBright("event")}: ${chalk.redBright(requiredModules[i].returnFileName())} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
+            performance.resume("eventRegistration")
             delete requiredModules[i]
             delete prioritizedTable[prio][i]
             continue;
           }
           /* prettier-ignore */
-          if (!eventType.includes("onStart"))
-          global.logger.debug(`Registering '${eventType}${adder}' event: ${eventName}`, returnFileName());
+          if (!eventType.includes("onStart")) {
+            performance.pause("eventRegistration")
+            global.logger.debug(`Registering '${eventType}${adder}' event: ${eventName}`, returnFileName());
+            performance.resume("eventRegistration")
+          }
           if (requiredModules[i].eventType() === "runEvery") {
             const prettyInterval = chalk.hex("#FFA500")(prettyMilliseconds(requiredModules[i].getMS(),{verbose: true}))
             if (requiredModules[i].runImmediately()) {
+              performance.pause("eventRegistration")
               /* prettier-ignore */
               global.logger.debug(`Running '${eventType} (${chalk.cyan.bold("runImmediately")})' event: ${eventName}`, returnFileName());
+              performance.resume("eventRegistration")
               await requiredModules[i].runEvent(client, requiredModules);
             }
             setInterval(async () => {
@@ -682,15 +705,24 @@ declare const global: IRISGlobal;
               }
             );
           } else if (requiredModules[i].eventType() === "onStart") {
+            performance.pause("eventRegistration")
             global.logger.debug(
               `Running '${eventType}' event: ${eventName}`, returnFileName()
             );
+            performance.resume("eventRegistration")
             await requiredModules[i].runEvent(client, requiredModules);
           }
         }
       }
+      const finalEventRegistrationTime = performance.end("eventRegistration",{silent: true});
       global.logger.log("", returnFileName());
       global.logger.log(`All commands and events have been registered. ${chalk.yellowBright(eventFiles.length)} event(s), ${chalk.yellowBright(commands.length)} command(s).`, returnFileName());
+      global.logger.debug("------------------------", returnFileName());
+      global.logger.debug("Bot log in time: " + chalk.yellowBright(finalLogInTime), returnFileName());
+      global.logger.debug("Permission check time: " + chalk.yellowBright(finalPermissionCheckTime), returnFileName());
+      global.logger.debug("Command registration time: " + chalk.yellowBright(finalCommandRegistrationTime), returnFileName());
+      global.logger.debug("Event load time: " + chalk.yellowBright(finalEventLoaderTime), returnFileName());
+      global.logger.debug("Event registration time: " + chalk.yellowBright(finalEventRegistrationTime), returnFileName());
       global.logger.log("------------------------", returnFileName());
       /* prettier-ignore */
       const DaT = DateFormatter.formatDate(new Date(),`MMMM ????, YYYY @ hh:mm:ss A`).replace("????", getOrdinalNum(new Date().getDate()))
@@ -832,7 +864,7 @@ declare const global: IRISGlobal;
       }
       return defaultPermission
     }
-
+    performance.start("logInTime")
     client.login(process.env.TOKEN);
   } catch (e: any) {
     global.logger.log(e, returnFileName());

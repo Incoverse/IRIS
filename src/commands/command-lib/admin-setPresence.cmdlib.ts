@@ -16,7 +16,7 @@
  */
 
 import Discord, { ActivityType, CommandInteractionOptionResolver, Team } from "discord.js";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "../../interfaces/global.js";
 import { fileURLToPath } from "url";
 import { writeFileSync } from "fs";
 

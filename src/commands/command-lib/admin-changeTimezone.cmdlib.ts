@@ -16,7 +16,7 @@
  */
 
 import Discord, { CommandInteractionOptionResolver, Team } from "discord.js";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "../../interfaces/global.js";
 import { fileURLToPath } from "url";
 import { MongoClient } from "mongodb";
 import moment from "moment-timezone";
