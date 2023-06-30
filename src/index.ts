@@ -65,6 +65,7 @@ declare const global: IRISGlobal;
 //! ------------------------------------------- !\\
 
 (async () => {
+  performance.start("fullRun");
   let fullyReady = false;
   const config = JsonCParser.parse(
     readFileSync("./config.jsonc", { encoding: "utf-8" })
@@ -723,6 +724,8 @@ declare const global: IRISGlobal;
       global.logger.debug("Command registration time: " + chalk.yellowBright(finalCommandRegistrationTime), returnFileName());
       global.logger.debug("Event load time: " + chalk.yellowBright(finalEventLoaderTime), returnFileName());
       global.logger.debug("Event registration time: " + chalk.yellowBright(finalEventRegistrationTime), returnFileName());
+      global.logger.debug("", returnFileName());
+      global.logger.debug("Total load time: " + chalk.yellowBright(performance.end("fullRun", {silent:true})), returnFileName());
       global.logger.log("------------------------", returnFileName());
       /* prettier-ignore */
       const DaT = DateFormatter.formatDate(new Date(),`MMMM ????, YYYY @ hh:mm:ss A`).replace("????", getOrdinalNum(new Date().getDate()))
