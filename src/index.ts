@@ -481,12 +481,14 @@ declare const global: IRISGlobal;
           );
           hasAllPerms = false
         } else {
-          performance.pause("permissionCheck"); // pause the timer so that the log time isn't included //! <---
+          performance.pause("fullRun")
+performance.pause("permissionCheck"); // pause the timer so that the log time isn't included //! <---
           global.logger.debug(
             `${chalk.yellowBright(client.user.username)} has permission ${chalk.yellowBright(new PermissionsBitField(i).toArray()[0])}.`,
             returnFileName()
           )
-          performance.resume("permissionCheck");//! <---
+          performance.resume("fullRun")
+performance.resume("permissionCheck");//! <---
         }
       }
       const finalPermissionCheckTime = performance.end("permissionCheck", { //1.234ms //! <---
@@ -518,9 +520,11 @@ declare const global: IRISGlobal;
           command.commandSettings().devOnly &&
           command.commandSettings().mainOnly
         ) {
+          performance.pause("fullRun")
           performance.pause("commandRegistration");
           /* prettier-ignore */
           global.logger.debugError(`Error while registering command: ${chalk.redBright(file)} (${chalk.redBright("Command cannot be both devOnly and mainOnly!")})`,returnFileName());
+          performance.resume("fullRun")
           performance.resume("commandRegistration");
           continue;
         }
@@ -529,9 +533,11 @@ declare const global: IRISGlobal;
         if (global.app.config.development && command.commandSettings().mainOnly)
           continue;
 
-          performance.pause("commandRegistration");
+        performance.pause("fullRun")
+        performance.pause("commandRegistration");
         /* prettier-ignore */
         global.logger.debug(`Registering command: ${chalk.blueBright(file)}`,returnFileName());
+        performance.resume("fullRun")
         performance.resume("commandRegistration");
         requiredModules[
           "cmd" +
@@ -662,9 +668,11 @@ declare const global: IRISGlobal;
             requiredModules[i].eventSettings().devOnly &&
             requiredModules[i].eventSettings().mainOnly
           ) {
+            performance.pause("fullRun")
             performance.pause("eventRegistration")
             /* prettier-ignore */
             global.logger.debugError(`${chalk.redBright("Error while registering")} '${eventType}${adder}' ${chalk.redBright("event")}: ${chalk.redBright(requiredModules[i].returnFileName())} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
+            performance.resume("fullRun")
             performance.resume("eventRegistration")
             delete requiredModules[i]
             delete prioritizedTable[prio][i]
@@ -672,16 +680,20 @@ declare const global: IRISGlobal;
           }
           /* prettier-ignore */
           if (!eventType.includes("onStart")) {
+            performance.pause("fullRun")
             performance.pause("eventRegistration")
             global.logger.debug(`Registering '${eventType}${adder}' event: ${eventName}`, returnFileName());
+            performance.resume("fullRun")
             performance.resume("eventRegistration")
           }
           if (requiredModules[i].eventType() === "runEvery") {
             const prettyInterval = chalk.hex("#FFA500")(prettyMilliseconds(requiredModules[i].getMS(),{verbose: true}))
             if (requiredModules[i].runImmediately()) {
+              performance.pause("fullRun")
               performance.pause("eventRegistration")
               /* prettier-ignore */
               global.logger.debug(`Running '${eventType} (${chalk.cyan.bold("runImmediately")})' event: ${eventName}`, returnFileName());
+              performance.resume("fullRun")
               performance.resume("eventRegistration")
               await requiredModules[i].runEvent(client, requiredModules);
             }
@@ -706,16 +718,19 @@ declare const global: IRISGlobal;
               }
             );
           } else if (requiredModules[i].eventType() === "onStart") {
+            performance.pause("fullRun")
             performance.pause("eventRegistration")
             global.logger.debug(
               `Running '${eventType}' event: ${eventName}`, returnFileName()
             );
+            performance.resume("fullRun")
             performance.resume("eventRegistration")
             await requiredModules[i].runEvent(client, requiredModules);
           }
         }
       }
       const finalEventRegistrationTime = performance.end("eventRegistration",{silent: true});
+      const finalTotalTime = performance.end("fullRun", {silent:true})
       global.logger.log("", returnFileName());
       global.logger.log(`All commands and events have been registered. ${chalk.yellowBright(eventFiles.length)} event(s), ${chalk.yellowBright(commands.length)} command(s).`, returnFileName());
       global.logger.debug("------------------------", returnFileName());
@@ -725,7 +740,7 @@ declare const global: IRISGlobal;
       global.logger.debug("Event load time: " + chalk.yellowBright(finalEventLoaderTime), returnFileName());
       global.logger.debug("Event registration time: " + chalk.yellowBright(finalEventRegistrationTime), returnFileName());
       global.logger.debug("", returnFileName());
-      global.logger.debug("Total load time: " + chalk.yellowBright(performance.end("fullRun", {silent:true})), returnFileName());
+      global.logger.debug("Total load time: " + chalk.yellowBright(finalTotalTime), returnFileName());
       global.logger.log("------------------------", returnFileName());
       /* prettier-ignore */
       const DaT = DateFormatter.formatDate(new Date(),`MMMM ????, YYYY @ hh:mm:ss A`).replace("????", getOrdinalNum(new Date().getDate()))
@@ -792,23 +807,23 @@ declare const global: IRISGlobal;
       }
       if (!containedChannelID && !defaultChannelPermission) return false;
       // then user permissions
-  let containedUserID = false;
-  for (const permission of userPermissions) {
-  const id = permission.selector.slice(1);
-  if (id == interaction.user.id) {
-  containedUserID = true;
-  if (!permission.canUse) {
-  return false;
-  }
-  } else if (id == global.app.config.mainServer) {
-  defaultUserPermission = permission.canUse;
-  }
-  }
-  if (!containedUserID && !defaultUserPermission) return false;
-  let rolePerms={}
-  for (const permission of rolePermissions) {
-  const id = permission.selector.slice(1);
-  rolePerms[id]=permission.canUse
+      let containedUserID = false;
+      for (const permission of userPermissions) {
+        const id = permission.selector.slice(1);
+        if (id == interaction.user.id) {
+          containedUserID = true;
+          if (!permission.canUse) {
+            return false;
+          }
+        } else if (id == global.app.config.mainServer) {
+          defaultUserPermission = permission.canUse;
+        }
+      }
+      if (!containedUserID && !defaultUserPermission) return false;
+      let rolePerms={}
+      for (const permission of rolePermissions) {
+      const id = permission.selector.slice(1);
+      rolePerms[id] = permission.canUse
   }
       let finalRoleResult = true
       for (const role of roles) {
