@@ -740,7 +740,7 @@ performance.resume("permissionCheck");//! <---
       global.logger.debug("Event load time: " + chalk.yellowBright(finalEventLoaderTime), returnFileName());
       global.logger.debug("Event registration time: " + chalk.yellowBright(finalEventRegistrationTime), returnFileName());
       global.logger.debug("", returnFileName());
-      global.logger.debug("Total load time: " + chalk.yellowBright(finalTotalTime), returnFileName());
+      global.logger.debug("Full load time: " + chalk.yellowBright(finalTotalTime), returnFileName());
       global.logger.log("------------------------", returnFileName());
       /* prettier-ignore */
       const DaT = DateFormatter.formatDate(new Date(),`MMMM ????, YYYY @ hh:mm:ss A`).replace("????", getOrdinalNum(new Date().getDate()))
