@@ -149,6 +149,7 @@ const envToObject = (env: string) => {
     const envObject = {};
     envArray.forEach((env) => {
       const [key, value] = env.split("=");
+      if (!key||key.trim() == "") return;
       envObject[key] = value;
     });
     return envObject;
@@ -157,6 +158,9 @@ const envToObject = (env: string) => {
   const objectToEnv = (object: object) => {
     let env = "";
     Object.entries(object).forEach(([key, value]) => {
+
+      if (!key||key.trim() == "") return;
+
       env += `${key}=${value}\n`;
     });
     return env.trim();

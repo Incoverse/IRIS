@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! OVRD stands for Override.
 
 import Discord from "discord.js";
 import undici from "undici";
