@@ -50,6 +50,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     });
   });
   for (let memberID of JSON.parse(JSON.stringify(global.newMembers))) {
+    
     await guild.members.fetch(memberID).then(async (member) => {
       if (member.user.bot) return;
       if (

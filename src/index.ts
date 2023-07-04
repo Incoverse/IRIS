@@ -116,7 +116,7 @@ declare const global: IRISGlobal;
       logStream.write(
         "[" +
         moment().format("M/D/y HH:mm:ss") +
-        "] [" +
+        "] [LOG] [" +
         sender +
         "] " +
         message +
@@ -137,7 +137,7 @@ declare const global: IRISGlobal;
       logStream.write(
         "[" +
         moment().format("M/D/y HH:mm:ss") +
-        "] [" +
+        "] [ERR] [" +
         sender +
         "] " +
         message +
@@ -159,7 +159,7 @@ declare const global: IRISGlobal;
       logStream.write(
           "[" +
           moment().format("M/D/y HH:mm:ss") +
-          "] [" +
+          "] [DBG] [" +
           sender +
           "] " +
           message +
@@ -182,7 +182,7 @@ declare const global: IRISGlobal;
       logStream.write(
           "[" +
           moment().format("M/D/y HH:mm:ss") +
-          "] [" +
+          "] [DBG-ERR] [" +
           sender +
           "] " +
           message +
