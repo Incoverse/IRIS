@@ -417,12 +417,12 @@ declare const global: IRISGlobal;
       let fullCmd = interaction.commandName;
       if ((
         interaction.options as CommandInteractionOptionResolver
-      ).getSubcommandGroup()) {
+      ).getSubcommandGroup(false)) {
         fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommandGroup()}`;
       }
       if ((
         interaction.options as CommandInteractionOptionResolver
-      ).getSubcommand()) {
+      ).getSubcommand(false)) {
         fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommand()}`;
       }
       
