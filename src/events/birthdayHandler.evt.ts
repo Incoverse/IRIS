@@ -123,19 +123,18 @@ export async function runEvent(client: Discord.Client, RM: object) {
               channel.name.includes("birthdays") &&
               channel.type == Discord.ChannelType.GuildText
             ) {
+              let birthdayMessages = [
+                "It's <mention>'<s> [ord][ ]birthday! Happy birthday"
+              ]
+              let birthdayMessage = birthdayMessages[0]
+                .replace("<mention>", "<@"+birthday.id+">")
+                .replace("<s>",(user.displayName.toLowerCase().endsWith("s") ? "" : "s"))
+                .replace("[ord]", (birthday.birthday.split(/\W+/g)[0] !== "0000"? getOrdinalNum(new Date().getUTCFullYear() -new Date(birthday.birthday).getUTCFullYear()): ""))
+                .replace("[ ]", birthday.birthday.split(/\W+/g)[0] !== "0000"? " " : "")
               await channel.send(
-                "It's <@" +
-                  birthday.id +
-                  ">'" +
-                  (user.displayName.toLowerCase().endsWith("s") ? "" : "s") +
-                  " " +
-                  (birthday.birthday.split(/\W+/g)[0] !== "0000"
-                    ? getOrdinalNum(
-                        new Date().getUTCFullYear() -
-                          new Date(birthday.birthday).getUTCFullYear()
-                      ) + " "
-                    : "") +
-                  "birthday! Happy birthday!" // It's @USER's <ordinal num (17th,12th,etc.)> birthday! Happy birthday!
+                {
+                  content: birthdayMessage
+                }
               );
               return false;
             }
