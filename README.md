@@ -31,7 +31,7 @@
 
 
 <!-- TABLE OF CONTENTS -->
-<details align="center">
+<details>
   <summary>Table of Contents</summary>
   <ol>
     <li>
