@@ -124,7 +124,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
               channel.type == Discord.ChannelType.GuildText
             ) {
               let birthdayMessages = [
-                "It's <mention>'<s> [ord][ ]birthday! Happy birthday"
+                "It's <mention>'<s> [ord][ ]birthday! Happy birthday!"
               ]
               let birthdayMessage = birthdayMessages[0]
                 .replace("<mention>", "<@"+birthday.id+">")
