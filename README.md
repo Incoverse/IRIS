@@ -12,19 +12,12 @@
     <img src="https://i.imgur.com/fZa7QZ4.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">IRIS</h3>
+  <h3 align="center">IRIS (Intelligent Response Interface System)</h3>
 
   <p align="center">
-    IRIS (Intelligent Response Interface System) is a Discord bot created by and for the Chaos Crew Community!
+    IRIS is a Discord bot created by and for the Chaos Crew Community!
     <br />
-    <a href="https://github.com/Incoverse/IRIS"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="#about-the-project">View Demo</a>
-    ·
-    <a href="https://github.com/Incoverse/IRIS/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/Incoverse/IRIS/issues">Request Feature</a>
+    <hr>
   </p>
 </div>
 
@@ -60,16 +53,11 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
-INSERT THE VIDEO HERE AND REMOVE THE ABOVE PHOTO
 
-This video shows the process of setting up the bot on your system to test.
 
-Welcome to the official GitHub developers repository for IRIS, a Discord bot developed and refined by the vibrant and passionate Chaos Crew Discord community. IRIS stands for Intelligent Response Interface System, and it is designed to revolutionize your Discord experience. IRIS brings a new level of interactivity, functionality, and fun to the Chaos Crew server.:smile:
+Welcome to the official repository for IRIS, a Discord Bot developed by and for the Kennevo's Chaos Crew community. IRIS stands for Intelligent Response Interface System, and was designed to simplify automation as well as bring fun to the Chaos Crew community.
 
-The development of IRIS is a collaborative effort, driven by the collective wisdom and expertise of the chaos crew. This repository serves as a central hub for contributors, where ideas are shared, code is written, and issues are resolved. 
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+IRIS is coded from scratch and with :heart: by the Development Team. 
 
 
 
@@ -84,21 +72,21 @@ There are many frameworks/libraries used to create this project. Here are a few 
 * [![chalk][chalk]][chalk-url]
 
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#readme-top">Go to the top</a>)</p>
 
 
 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-To get a local copy up and running follow these simple example steps.
+Follow these steps to get a copy of IRIS up and running on your machine!
 
 ### Prerequisites
 
-* [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-* [VSCode](https://code.visualstudio.com/download)
-* [MongoDB Compass](https://www.mongodb.com/try/download/compass)
 * [Node.JS](https://nodejs.org/en) (19.9.0 (latest one has bugs)) 
+* [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+* [VSCode](https://code.visualstudio.com/download) (optional)
+* [MongoDB Compass](https://www.mongodb.com/try/download/compass) (optional)
 
 ### Installation
 
@@ -106,96 +94,98 @@ To get a local copy up and running follow these simple example steps.
    ```sh
    git clone https://github.com/Incoverse/IRIS
    ```
-2. Install NPM typescript packages
+2. Navigate to the project directory
+   ```sh
+   cd IRIS
+   ```
+4. Install TypeScript using npm
    ```sh
    npm i -g typescript
    ```
-3. Navigate to the project directory
-4. Customize `config.jsonc` to your needs, check comments for guidance. Modify the developmentServer with your test server id
-5. Install any missing packages
+5. Customize `config.jsonc` to your needs, check comments for guidance. Modify the `developmentServer` field with your test server ID
+6. Install any missing packages
    ```
-   npm i
+   npm install
    ```
-6. Create your discord bot.
-   * Create a new Discord Application [Here](https://discord.com/developers/applications)
-   * Go to the OAuth2 section and note down your client ID and secret
-   * Staying on the same page, add a redirect URL `http://localhost:7380` (discord may add a / at the end, be sure to remove it) 
-   * Go to the Bot section and turn on all intents and note down your bot token
-7. Add your `.env` file in the root directory and replace the bot token, client ID, client Secret
+   
+7. Create your discord bot.
+   * [Create a new Discord Application](https://discord.com/developers/applications)
+   * Go to the `OAuth2` section and write down your client ID and secret
+   * Staying on the same page, add the following redirect URI `http://localhost:7380` (Discord may add a slash at the end, make sure to remove it) 
+   * Go to the `Bot` section and turn on all of the intents and write down your bot token (click 'Reset Token' to create the token)
+8. Create a `.env` file in the project's root directory and replace the following values to the ones you've written down: `[bot-token]`, `[client-id]`, `[client-secret]`. Leave the rest as it is.
    ```
-   TOKEN="BOT.TOKEN.HERE"
+   TOKEN="[bot-token]"
    DBUSERNAME="irisdev"
    DBPASSWD="UQyOxR19Egua3iW0Bi75ORIb2dn6yGT6Cs9ITRbwUK37ADpCyV"
    DEVELOPMENT="YES"
    cID="[client-id]"
    cSecret="[client-secret]"
    ```   
-9. Now it's time to add your bot to your server. Use the following URL, but replace "[client-id] with the client-id from earlier: https://discord.com/api/oauth2/authorize?client_id=[client-id]&permissions=328866327553&scope=bot%20applications.commands 
-11. Follow <a href="#server-creation-notes">Server Creation Notes</a>
-12. Type in `npm run CnR` in your cmd/terminal (CnR = Compile & Run)
-13. Click the link generated in the console to authorize the bot. it should be in this format `https://discord.com/oauth2/authorize?client_id=[client ID]&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update`
+9. Now it's time to add your bot to your server. Use the following URL, but replace `[client-id]` with the client ID you wrote down: https://discord.com/api/oauth2/authorize?client_id=[client-id]&permissions=328866327553&scope=bot%20applications.commands 
+11. Follow <a href="#server-creation-notes">Server Creation Notes</a> to create your server.
+12. Write `npm run CnR` in your cmd/terminal (CnR = Compile & Run) and click Enter.
+13. When a link is displayed in the console, open it in your browser and authorize it. This will allow IRIS to properly set up command permissions (defined in `config.jsonc`).
 
 
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- Server Creation Notes -->
 ## Server Creation Notes
 
-You can skip this by using the following server template: https://discord.new/PTqAeyCChkYW
+> **Note**: You can skip this by using the following server template: https://discord.new/b4vRrmwJB5kG 
+---
 
 The following channels are required for IRIS to function as intended: `birthdays`, `open-a-ticket`.
+
 The following roles are required for IRIS to function as intended: `New Member`, `It's my birthday!`.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-To gather the logs for debugging 
+#### Get debugging logs
    ```
    /admin iris logs
    ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#readme-top">Go to the top</a>)</p>
 
 
 
 <!-- CONTRIBUTING -->
 ## Contributing
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply post an idea in the ideas section on Discord with the proper tags.
-
-1. Fork the repo
-  - [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) of this repo
-2. Clone the fork to local
+1. [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) of this repository
+3. Clone the fork
    ```sh
-   git clone https://github.com/your_username/IRIS
+   git clone https://github.com/YOUR_USERNAME/IRIS
    ```
-3. Continue from step 2 in <a href="#installation">Installation</a>
+4. Continue from step 3 in <a href="#installation">Installation</a>
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 
 
 <!-- LICENSE -->
 ## License
 
-Distributed under the  GPL-3.0 license. See [LICENSE](https://github.com/Incoverse/IRIS/blob/main/LICENSE) for more information.
+Distributed under the GPL-3.0 license. See [LICENSE](https://github.com/Incoverse/IRIS/blob/main/LICENSE) for more information.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
 <!-- CONTACT -->
 ## Contact
 
-Contact Inimi if you have any questions or need help with something. For additional, help you can open a ticket on the server.
+For any questions or concerns, don't hesitate to contact Inimi ([@theinimi](https://discord.inimicalpart.com)) on Discord or open a ticket in [Kennevo's server](https://discord.gg/WfesBJAYYd).
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<hr>
+
+<p align="center">(<a href="#readme-top">Go to the top</a>)</p>
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
