@@ -215,7 +215,7 @@ declare const global: IRISGlobal;
     PermissionsBitField.Flags.ViewChannel,
   ]
   process.on('uncaughtException', function(err) {
-    global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-");
+    global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-ERR");
   });
   const onExit = (a: string | number) => {
     if (a==2) return
