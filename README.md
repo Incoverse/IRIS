@@ -151,6 +151,10 @@ The following roles are required for IRIS to function as intended: `New Member`,
    ```
    /admin iris logs
    ```
+#### Restart IRIS (also updates IRIS)
+   ```
+   /admin iris restart
+   ```
 
 <p align="right">(<a href="#readme-top">Go to the top</a>)</p>
 
