@@ -124,9 +124,13 @@ export async function runEvent(client: Discord.Client, RM: object) {
               channel.type == Discord.ChannelType.GuildText
             ) {
               let birthdayMessages = [
-                "It's <mention>'<s> [ord][ ]birthday! Happy birthday!"
+                "It's <mention>'<s> [ord][ ]birthday! Happy birthday!",
+                "Happy birthday to <mention>! Wishing them a fantastic [ord][ ]birthday!",
+                "Sending you warm birthday wishes <mention>, it's your [ord][ ]birthday!",
+                "Happy birthday, <mention>! May your heart be filled with pure joy and your dreams come true on your [ord][ ]birthday.", 
               ]
-              let birthdayMessage = birthdayMessages[0]
+              let randomIndex = Math.floor(Math.random() * birthdayMessages.length);
+              let birthdayMessage = birthdayMessages[randomIndex]
                 .replace("<mention>", "<@"+birthday.id+">")
                 .replace("<s>",(user.displayName.toLowerCase().endsWith("s") ? "" : "s"))
                 .replace("[ord]", (birthday.birthday.split(/\W+/g)[0] !== "0000"? getOrdinalNum(new Date().getUTCFullYear() -new Date(birthday.birthday).getUTCFullYear()): ""))
