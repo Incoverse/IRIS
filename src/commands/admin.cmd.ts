@@ -275,7 +275,7 @@ export async function runCommand(
     } else if (subcommandGroup == "system") {
       if (subcommand == "checkcert") {
         await checkCertificate.runSubCommand(interaction, RM);
-      } else if (subcommand == "restartMongo") {
+      } else if (subcommand == "restartmongo") {
         await restartMongoDB.runSubCommand(interaction, RM);
       }
     } else if (subcommandGroup == "iris") {
