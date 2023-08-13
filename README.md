@@ -83,7 +83,7 @@ Follow these steps to get a copy of IRIS up and running on your machine!
 
 ### Prerequisites
 
-* [Node.JS](https://nodejs.org/en) (19.9.0 (latest one has bugs)) 
+* [Node.JS](https://nodejs.org/en) (latest) 
 * [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 * [VSCode](https://code.visualstudio.com/download) (optional)
 * [MongoDB Compass](https://www.mongodb.com/try/download/compass) (optional)
