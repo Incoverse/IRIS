@@ -125,16 +125,30 @@ export async function runEvent(client: Discord.Client, RM: object) {
             ) {
               let birthdayMessages = [
                 "It's <mention>'<s> [ord][ ]birthday! Happy birthday!",
-                "Happy birthday to <mention>! Wishing them a fantastic [ord][ ]birthday!",
-                "Sending you warm birthday wishes <mention>, it's your [ord][ ]birthday!",
-                "Happy birthday, <mention>! May your heart be filled with pure joy and your dreams come true on your [ord][ ]birthday.", 
+                "Happy [ord][ ]birthday to <mention>! Hope you have a fantastic birthday!",
+                "Happy [ord][ ]birthday, <mention>! Enjoy your special day!",
+                "Happy birthday, <mention>! May <your|this> [ord][ ]year be as amazing as you are.",
+                "Happy birthday, <mention>! It's your [ord][ ]birthday today!",
+                "Celebrating <mention> as they turn <[age]|another year> today! Happy birthday!"
               ]
               let randomIndex = Math.floor(Math.random() * birthdayMessages.length);
               let birthdayMessage = birthdayMessages[randomIndex]
                 .replace("<mention>", "<@"+birthday.id+">")
                 .replace("<s>",(user.displayName.toLowerCase().endsWith("s") ? "" : "s"))
                 .replace("[ord]", (birthday.birthday.split(/\W+/g)[0] !== "0000"? getOrdinalNum(new Date().getUTCFullYear() -new Date(birthday.birthday).getUTCFullYear()): ""))
+                .replace("[age]", (birthday.birthday.split(/\W+/g)[0] !== "0000"?(new Date().getUTCFullYear() -new Date(birthday.birthday).getUTCFullYear()).toString():""))
                 .replace("[ ]", birthday.birthday.split(/\W+/g)[0] !== "0000"? " " : "")
+
+              // check if the "birthdayMessage" includes "<.*?|.*?>", if so, check if 'birthday.birthday.split(/\W+/g)[0] !== "0000"' is true, if it is, replace "<.*?|.*?>" with the contents of the first .*?, else, replace it with the contents of the second .*?, keep in mind that the're might be many of "<.*?|.*?>"
+              if (/<.*?\|.*?>/.test(birthdayMessage)) {
+                let allFindings = birthdayMessage.match(/<.*?\|.*?>/gim)
+                allFindings.forEach((finding) => {
+                  let first = finding.match(/<.*?\|/gim)[0].replace("<","").replace("|","")
+                  let second = finding.match(/\|.*?>/gim)[0].replace("|","").replace(">","")
+                  birthdayMessage = birthdayMessage.replace(finding, (birthday.birthday.split(/\W+/g)[0] !== "0000"? first : second))
+                })
+              }
+
               await channel.send(
                 {
                   content: birthdayMessage
