@@ -49,14 +49,6 @@
       "development": [
         { "selector": "&IRIS Development", "canUse": true }
       ]
-    },
-    "admin iris restart": {
-      "main": [
-        { "selector": "&Development Team", "canUse": true }
-      ],
-      "development": [
-        { "selector": "&IRIS Development", "canUse": true }
-      ]
     }
   },
 

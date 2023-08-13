@@ -43,7 +43,9 @@ export async function runEvent(message: Discord.Message, RM: object) {
     /* prettier-ignore */
     global.logger.debug(`Timezone message registered by ${chalk.yellow(user)}.`, returnFileName())
     let time: any = message.content
+      .replace(/<.*?>/gim, "")
       .toLowerCase()
+      .trim()
       .match(
         /([0-9]{1,2}:[0-9]{2}( |)(am|pm))|([0-9]{1,2}:[0-9]{2})|[0-9]{4}|[0-9]{1,2}( |)(am|pm)/gim
       );
