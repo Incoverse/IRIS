@@ -259,7 +259,7 @@ declare const global: IRISGlobal;
   global.games = {};
   global.dirName = __dirname;
   if (process.env.DBUSERNAME == "iris" && global.app.config.development) {
-    global.logger.log("Hold on! You are attempting to run IRIS in development mode, but are using the main credentials, which is not allowed. Please change the DBUSERNAME and DBPASSWD in the .env file to the development credentials.", returnFileName());
+    global.logger.log("Hold on! You are attempting to run IRIS in development mode, but are using the main database credentials, which is not allowed. Please change the DBUSERNAME and DBPASSWD in the .env file to the development credentials.", returnFileName());
     process.exit(1);
   }
   global.mongoConnectionString =

@@ -1866,15 +1866,15 @@ export async function runCommand(
         )
       );
       if (shouldSaveSettings) {
+        const db = new MongoClient(global.mongoConnectionString);
         try {
-          const db = new MongoClient(global.mongoConnectionString);
           const collection = db
             .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
             .collection(
               global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
             );
 
-          collection
+          await collection
             .updateOne(
               { id: interaction.user.id },
               {
@@ -1885,10 +1885,11 @@ export async function runCommand(
                 },
               }
             )
-            .then(() => {
-              db.close();
-            });
-        } catch (e) {}
+        } catch (e) {
+          global.logger.debugError(e, returnFileName());
+        } finally {
+          await db.close();
+        }
       }
       return await i.channel.send({
         content:

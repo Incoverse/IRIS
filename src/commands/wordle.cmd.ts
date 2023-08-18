@@ -164,6 +164,12 @@ export async function runCommand(
         true
       ) == "start"
     ) {
+      if (global.app.config.development) {
+        global.logger.log(
+          "Someone started a wordle game in development mode, keep in mind that the bot might not be in the necessary server that contains all of the emojis!",
+          returnFileName(),
+        )
+      }
       if (Object.keys(wordle.currentlyPlaying).includes(interaction.user.id)) {
         return await interaction.reply({
           content: "You are already playing a game of Wordle!",

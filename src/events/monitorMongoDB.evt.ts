@@ -19,7 +19,6 @@ import Discord from "discord.js";
 import { existsSync, unlinkSync } from "fs";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
-import moment from "moment-timezone";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { IRISGlobal } from "../interfaces/global.js";
@@ -40,8 +39,8 @@ export let running = false;
 export async function runEvent(client: Discord.Client, RM: object) {
   running = true;
   // -----------
-  if (existsSync("./mongodb.status")) {
-    unlinkSync("./mongodb.status");
+  if (existsSync("./mongodb.restart")) {
+    unlinkSync("./mongodb.restart");
     global.mongoStatus = global.mongoStatuses.RESTARTING;
     global.logger.debug(
       `Restart of MongoDB has been requested and is in progress.`, returnFileName()

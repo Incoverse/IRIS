@@ -108,6 +108,18 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
           });
           return;
         }
+        let usersBirthday = global.birthdays.find((bd) => bd.id === user.id);
+        if (usersBirthday) {
+          const dSB = howManyDaysSinceBirthday(
+            usersBirthday.birthday,
+            timezone,
+          );
+          usersBirthday.timezone = timezone;
+          usersBirthday.passed = dSB >= 0 && dSB < 2; 
+          let birthdaysCopy = global.birthdays.filter((obj) => obj.id !== user.id);
+          birthdaysCopy.push(usersBirthday);
+          global.birthdays = birthdaysCopy;
+        }
         await interaction.reply({
           content:
             user.username +
@@ -122,3 +134,11 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
 }
 
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+function howManyDaysSinceBirthday(birthday: string, timezone: string) {
+  return Math.floor(
+    moment
+      .tz(timezone)
+      .diff(moment.tz(birthday, timezone).year(moment.tz(timezone).year())) /
+      (24 * 60 * 60 * 1000)
+  );
+}
