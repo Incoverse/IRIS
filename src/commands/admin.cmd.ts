@@ -251,12 +251,6 @@ export async function runCommand(
   RM: object
 ) {
   try {
-    /*
-        * Check if the user has the required permissions to use this command
-
-        * Get the allowed roles from the config file, if the bot is in development mode, use the development roles, else use the main roles
-        * If the development roles are null, use the main roles
-    */
     const subcommandGroup = (
       interaction.options as CommandInteractionOptionResolver
     ).getSubcommandGroup(true);
