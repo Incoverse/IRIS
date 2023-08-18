@@ -1,6 +1,6 @@
 {
   "name": "iris",
-  "version": "1.6.4",
+  "version": "2-STABLE-4BCD3FGH",
   "description": "IRIS (Intelligent Response Interface System) is a Discord bot created by and for the Chaos Crew Community.",
   "main": "index.js",
   "scripts": {
@@ -8,8 +8,9 @@
     "build": "tsc",
     "cleanup": "rm -rf dist || del dist /f /s /q",
     "compile": "npm run cleanup && npm run build",
+    "versionControl": "node -e \"let e=require('fs'),n=require('path'),r=require('dotenv');r.config();const getAllFiles=function(r,i){const o=e.readdirSync(r);return i=i||[],o.forEach((function(o){e.statSync(r+'/'+o).isDirectory()?i=getAllFiles(r+'/'+o,i):i.push(n.join(r.toString(),'/',o))})),i};let o=getAllFiles('./src'),t=o.join(''),c='';for(let n of o)c+=e.readFileSync(n,'utf-8');const s=JSON.parse(e.readFileSync('./package.json',{encoding:'utf-8'})),a=`${s.version.replace(/-.*/,'')}-${'YES'==process.env.DEVELOPMENT?'DEV':'STABLE'}-${require('md5')(t+'|'+c).substring(0,8)}`;s.version=a,e.writeFileSync('./package.json',JSON.stringify(s,null,2),{encoding:'utf-8'});\"",
     "start": "node --no-warnings ./dist/index.js",
-    "CnR": "npm run cleanup && npm run build && npm run start"
+    "CnR": "npm run cleanup && npm install && npm run versionControl && npm run build && npm run start"
   },
   "repository": {
     "type": "git",
@@ -35,6 +36,7 @@
     "express": "^4.18.2",
     "join-images": "^1.1.5",
     "jsonc-parser": "^3.2.0",
+    "md5": "^2.3.0",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.41",
     "mongodb": "5.1",
