@@ -39,7 +39,7 @@
     "md5": "^2.3.0",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.41",
-    "mongodb": "5.1",
+    "mongodb": "5.8",
     "pretty-ms": "^8.0.0",
     "uno-game-engine": "^3.2.1",
     "uuid4": "^2.0.3"
