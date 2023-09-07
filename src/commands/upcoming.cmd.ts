@@ -43,6 +43,7 @@ export async function runCommand(
     const getBirthdays = (birthdays: any[]) => {
       const now = moment.tz();
       const next5Birthdays = birthdays
+        .filter(a=>!a.passed)
         .map((birthday: { birthday: string; timezone: string; id: string }) => {
           const birthdayMoment = moment(birthday.birthday).tz(
             birthday.timezone ?? "Europe/Berlin"
