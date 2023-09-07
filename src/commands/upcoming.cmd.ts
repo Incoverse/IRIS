@@ -27,13 +27,10 @@ const commandInfo = {
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("upcoming")
     .setDescription("Get the next 5 upcoming birthdays.")
-    .setDMPermission(false)
-    .addBooleanOption((option) =>
-      option.setName("timezones").setDescription("Show peoples timezones.")
-    ),
+    .setDMPermission(false),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
   settings: {
-    devOnly: true,
+    devOnly: false,
     mainOnly: false,
   },
 };
@@ -43,37 +40,34 @@ export async function runCommand(
   RM: object
 ) {
   try {
-    // make a function that sorts the global.birthdays array (which is made up out of objects) by how long is left until that birthday from today. if the birthday has already passed this year, change the year to the next year. The users timezone is in birthday.timezone, if its null, make it "Europe/London". This is an example of a birthday object:
-    // {
-    //     id: '247068471144349696',
-    //     birthday: '2001-06-16',
-    //     timezone: 'Europe/Berlin',
-    //     passed: false
-    // }
-    // The "birthday" property can start with 0000- if the user didnt want to show their age
-    // Please use the 'moment' variable which is the 'moment-timezone' library
-    const upcoming = () => {
-      const upcomingBirthdays = [];
-      for (let i = 0; i < global.birthdays.length; i++) {
-        let birthday = global.birthdays[i];
-        let daysLeft = howManyDaysUntilBirthday(
-          birthday.birthday,
-          undefined,
-          true
+    const getBirthdays = (birthdays: any[]) => {
+      const now = moment.tz();
+      const next5Birthdays = birthdays
+        .map((birthday: { birthday: string; timezone: string; id: string }) => {
+          const birthdayMoment = moment(birthday.birthday).tz(
+            birthday.timezone ?? "Europe/Berlin"
+          );
+          const nextBirthday = birthdayMoment.year(now.year());
+          if (nextBirthday.isBefore(now)) {
+            nextBirthday.add(1, "year");
+          }
+          return {
+            ...birthday,
+            nextBirthday,
+          };
+        })
+        .sort(
+          (
+            a: { nextBirthday: { diff: (arg0: any) => any } },
+            b: { nextBirthday: any }
+          ) => a.nextBirthday.diff(b.nextBirthday)
         );
-        if (daysLeft >= 0 && !birthday.passed) upcomingBirthdays.push(birthday);
-      }
-      upcomingBirthdays.sort((a, b) => {
-        let aDaysLeft = howManyDaysUntilBirthday(a.birthday, undefined, true);
-        let bDaysLeft = howManyDaysUntilBirthday(b.birthday, undefined, true);
-        if (aDaysLeft < bDaysLeft) return -1;
-        if (aDaysLeft > bDaysLeft) return 1;
-        return 0;
-        // return aDaysLeft - bDaysLeft < 0 ? -1 : 1;
-      });
-      return upcomingBirthdays;
+      return next5Birthdays
+        .slice(0, 5)
+        .map(({ nextBirthday, ...rest }) => rest);
     };
-    let upcomingBirthdaysArray = upcoming();
+
+    let upcomingBirthdaysArray = getBirthdays(global.birthdays);
     if (upcomingBirthdaysArray.length == 0) {
       await interaction.reply({
         content: "*No upcoming birthdays.*",
@@ -90,10 +84,7 @@ export async function runCommand(
         text: "Days are calculated using the timezone that IRIS' server is in.",
         iconURL: "https://i.imgur.com/QRoFlvu.png",
       });
-    for (let i = 0; i < 5; i++) {
-      if (!upcomingBirthdaysArray[i]) break;
-      let birthday = upcomingBirthdaysArray[i];
-
+    for (let birthday of upcomingBirthdaysArray) {
       // Fetch the user using client.users.fetch() and store it to a 'user' variable.
       // This will return a Promise, so we need to await it.
       const user = await interaction.guild.members.fetch(birthday.id);
@@ -101,22 +92,14 @@ export async function runCommand(
       // How many days is it left until users birthday? (keep in mind to use the timezone property)
       let daysLeft = howManyDaysUntilBirthday(birthday.birthday);
       embed.addFields({
-        name:
-          `${
-            user.user.discriminator !== "0" && user.user.discriminator
-              ? user.user.tag
-              : user.user.username
-          }${user.nickname ? ` (${user.nickname})` : ""}` +
-          (interaction.options.get("timezones")?.value == true
-            ? ` - ${birthday.timezone ?? "Europe/London"}`
-            : ""),
-        value: `${DateFormatter.formatDate(
+        name: user.displayName + " (" + user.user.username + ")",
+        value: (turnsAge(birthday.birthday) == null ? "Turns another year on **" : ("Turns **" + turnsAge(birthday.birthday) + " years old** on **")) + `${DateFormatter.formatDate(
           new Date(birthday.birthday),
           `MMMM ????`
         ).replace(
           "????",
           getOrdinalNum(new Date(birthday.birthday).getDate())
-        )} (*${daysLeft} day${daysLeft == 0 || daysLeft > 1 ? "s" : ""} left*)`,
+        )}** (*${daysLeft} day${daysLeft == 0 || daysLeft > 1 ? "s" : ""} left*)`,
       });
     }
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -153,12 +136,19 @@ export async function runCommand(
   }
 }
 /* prettier-ignore */
-function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
+function getOrdinalNum(n: number) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
 /* prettier-ignore */
-const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e, t) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e, t, r) { return e.replace(t, (function (e) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e) { return (e + 24) % 12 || 12 }, getAmPm: function (e) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e, t, r, g) { return e.replace(t, (function (e) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
+const DateFormatter = {monthNames: ["January","February","March","April","May","June","July","August","September","October","November","December",],dayNames: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday",],formatDate: function (e: {getDate: () => any;getMonth: () => number;getFullYear: () => any;getHours: () => any;getMinutes: () => any;getSeconds: () => any;getDay: () => any;}, t: any) {var r = this;t = r.getProperDigits(t, /d+/gi, e.getDate());t = r.getProperDigits(t, /M+/g, e.getMonth() + 1);t = t.replace(/y+/gi, function (match: string) {var r = match.length,g = e.getFullYear();return 2 == r ? (g + "").slice(-2) : 4 == r ? g : match;});t = r.getProperDigits(t, /H+/g, e.getHours());t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours()));t = r.getProperDigits(t, /m+/g, e.getMinutes());t = t.replace(/s+/gi, function (match: string) {return r.getProperDigits(match, /s+/gi, e.getSeconds());});t = t.replace(/a/gi, function (match: string) {var g = r.getAmPm(e.getHours());return "A" === match ? g.toUpperCase() : g;});t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay());t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth());return t;},getProperDigits: function (e: string, t: any, r: string) {return e.replace(t, function (match: string) {var t = match.length;return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : match;});},getHours12: function (e: number) {return ((e + 24) % 12) || 12;},getAmPm: function (e: number) {return e >= 12 ? "pm" : "am";},getFullOr3Letters: function (e: string, t: any, r: { [x: string]: any }, g: string | number) {return e.replace(t, function (match: string) {var t = match.length;return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : match;})}};
+
+function turnsAge(birthday) {
+  const currentYear = new Date().getFullYear();
+  const birthdayYear = new Date(birthday).getFullYear();
+  if (birthdayYear == 0) return null;
+  return currentYear - birthdayYear;
+}
 
 function howManyDaysUntilBirthday(
-  birthday,
+  birthday: any,
   timezone = moment.tz.guess(),
   precise = false
 ) {
