@@ -28,8 +28,10 @@ interface IRISGlobal extends NodeJS.Global {
   logger: {
     log: (message: any, sender: string) => void;
     error: (message: any, sender: string) => void;
+    warn: (message: any, sender: string) => void;
     debug: (message: any, sender: string) => void;
     debugError: (message: any, sender: string) => void;
+    debugWarn: (message: any, sender: string) => void;
   }
 
   bannedUsers: Array<string>;

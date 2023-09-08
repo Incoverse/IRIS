@@ -36,6 +36,15 @@ const __filename = fileURLToPath(import.meta.url);
 export let running = false;
 declare const global: IRISGlobal;
 
+export const setup = async (client:Discord.Client, RM: object) => {
+  const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
+  // check if there is a role that includes "new member" in it's name
+  if (!roles.some((role) => role.name.toLowerCase().includes("new member"))) {
+    global.logger.debugError(`A role with 'new member' in the name could not be found. Cannot continue.`, returnFileName())
+    return false
+  }
+  return true
+}
 export async function runEvent(client: Discord.Client, RM: object) {
   running = true;
   // -----------

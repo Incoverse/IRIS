@@ -26,6 +26,7 @@ interface IRISEvent {
     priority: () => number;
     getMS: () => number;
     runImmediately: () => boolean;
+    setup: (client: Discord.Client, RM: object) => boolean;
     runEvent: (message: Discord.Message, RM: object) => Promise<void>;
     runEvent: (interaction: Discord.CommandInteraction, RM: object) => Promise<void>;
     runEvent: (RM: object, ...args: Array<Discord.GuildMember>) => Promise<void>;

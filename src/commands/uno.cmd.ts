@@ -56,6 +56,7 @@ const commandInfo = {
   },
 };
 
+export const setup = async (client:Discord.Client, RM: object) => true
 export async function runCommand(
   interaction: Discord.CommandInteraction,
   _RM: object

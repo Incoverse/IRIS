@@ -47,6 +47,7 @@ global.communicationChannel.once("authInquiry", async (message) => {
         }
     })
 })
+export const setup = async (client:Discord.Client, RM: object) => true
 export async function runEvent(client: Discord.Client, RM: object) {
 
     

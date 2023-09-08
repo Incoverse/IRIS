@@ -33,6 +33,7 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
+export const setup = async (client:Discord.Client, RM: object) => true
 export async function runEvent(
   RM: object,
   ...args: Array<Discord.GuildMember>
@@ -49,7 +50,8 @@ export async function runEvent(
       }
     });
   });
-  args[0].roles.add(newMembersRole);
+  if (newMembersRole)
+    args[0].roles.add(newMembersRole);
   if (!global.newMembers.includes(args[0].id))
     global.newMembers.push(args[0].id);
   const dbclient = new MongoClient(global.mongoConnectionString);
