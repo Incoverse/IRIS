@@ -36,6 +36,7 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export let running = false;
+export const setup = async (client:Discord.Client, RM: object) => true
 export async function runEvent(client: Discord.Client, RM: object) {
   running = true;
   // -----------

@@ -35,6 +35,20 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export let running = false;
+export const setup = async (client:Discord.Client, RM: object) => {
+  const channels = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.channels.fetch())
+  const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
+  // check if there is a channel that includes "birthdays" in it's name
+  if (!roles.some((role) => role.name.toLowerCase().includes("birthday"))) {
+    global.logger.debugWarn(`A role with 'birthday' in the name could not be found.`, returnFileName())
+  }
+  if (!channels.some((channel) => channel.name.includes("birthdays") && channel.type == Discord.ChannelType.GuildText)) {
+    global.logger.debugError(`A channel with 'birthdays' in the name could not be found. Cannot continue.`, returnFileName())
+    return false
+  }
+
+  return true
+}
 export async function runEvent(client: Discord.Client, RM: object) {
   running = true;
   // -----------
@@ -116,7 +130,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
         /* prettier-ignore */
         global.logger.debug(`It's ${chalk.yellow(username)}'s ${ordinalAgeorNot} birthday! In ${chalk.yellow(birthday.timezone)} it's currently ${chalk.yellow(timeInTimezone)}.`,returnFileName())
         const user = await guild.members.fetch(birthday.id);
-        await user.roles.add(birthdayRole);
+        if (birthdayRole)
+          await user.roles.add(birthdayRole);
         guild.channels.fetch().then((channels) => {
           channels.every(async (channel) => {
             if (

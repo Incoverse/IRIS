@@ -33,6 +33,7 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 let tokenExpirySec = Number.MAX_SAFE_INTEGER;
+export const setup = async (client:Discord.Client, RM: object) => true
 export async function runEvent(client: Discord.Client, RM: object) {
   global.communicationChannel.on("authInquiryResp", async (message) => {
     if (message.data.authMade) tokenExpirySec = message.data.expires_in;

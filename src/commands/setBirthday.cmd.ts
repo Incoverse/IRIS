@@ -44,6 +44,7 @@ const commandInfo = {
   },
 };
 
+export const setup = async (client:Discord.Client, RM: object) => true
 export async function runCommand(
   interaction: Discord.CommandInteraction,
   RM: object
@@ -104,12 +105,8 @@ export async function runCommand(
               ? `MMMM ????`
               : `MMMM ????, YYYY`
           ).replace("????", getOrdinalNum(new Date(date).getDate())) +
-          "``." +
-          (openATicketChannel !== null
-            ? " If you have accidentally made a mistake when setting your birthday, please <#" +
-              openATicketChannel.id +
-              ">."
-            : ""),
+          "``. If you have accidentally made a mistake when setting your birthday, please " +(openATicketChannel !== undefined  ? `<#${openATicketChannel.id}>.`
+            : "contact a staff member."),
         ephemeral: true,
       });
       client.close();

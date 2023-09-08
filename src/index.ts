@@ -144,6 +144,27 @@ declare const global: IRISGlobal;
         "\n"
       );
     },
+    warn: (message: any, sender: string) => {
+      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      console.log(
+        chalk.white.bold(
+          "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] ")+chalk.yellow("[" +
+          sender +
+          "]"), message
+      );
+      message = message.replace(/\u001b\[.*?m/g, "");
+      logStream.write(
+        "[" +
+        moment().format("M/D/y HH:mm:ss") +
+        "] [WRN] [" +
+        sender +
+        "] " +
+        message +
+        "\n"
+      );
+    },
     debug: (message: any, sender: string) => {
       if (config.debugging) {
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
@@ -182,7 +203,30 @@ declare const global: IRISGlobal;
       logStream.write(
           "[" +
           moment().format("M/D/y HH:mm:ss") +
-          "] [DBG-ERR] [" +
+          "] [DER] [" +
+          sender +
+          "] " +
+          message +
+          "\n"
+        );
+      }
+    },
+    debugWarn: (message: any, sender: string) => {
+      if (config.debugging) {
+      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      console.log(
+          chalk.white.bold(
+            "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] ")+chalk.yellow("[" +
+            sender +
+            "]"), message
+        );
+      message = message.replace(/\u001b\[.*?m/g, "");
+      logStream.write(
+          "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] [DWR] [" +
           sender +
           "] " +
           message +
@@ -426,12 +470,13 @@ declare const global: IRISGlobal;
         fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommand()}`;
       }
       
-      
+      let found = false
       for (let command in requiredModules) {
         if (command.startsWith("cmd")) {
           if (
             interaction.commandName == command.replace("cmd", "").toLowerCase()
           ) {
+            found = true
             if (await checkPermissions(interaction, fullCmd)) {
               requiredModules[command].runCommand(interaction, requiredModules);
             } else {
@@ -450,6 +495,16 @@ declare const global: IRISGlobal;
             }
           }
         }
+      }
+      if (!found) {
+        await interaction.reply({
+          embeds: [
+            new EmbedBuilder().setTitle("Command failed").setDescription(
+              "We're sorry, this command could currently not be processed by IRIS, please try again later."
+            ).setColor("Red")
+          ],
+          ephemeral: true,
+        })
       }
     });
 
@@ -482,13 +537,13 @@ declare const global: IRISGlobal;
           hasAllPerms = false
         } else {
           performance.pause("fullRun")
-performance.pause("permissionCheck"); // pause the timer so that the log time isn't included //! <---
+          performance.pause("permissionCheck"); // pause the timer so that the log time isn't included //! <---
           global.logger.debug(
             `${chalk.yellowBright(client.user.username)} has permission ${chalk.yellowBright(new PermissionsBitField(i).toArray()[0])}.`,
             returnFileName()
           )
           performance.resume("fullRun")
-performance.resume("permissionCheck");//! <---
+          performance.resume("permissionCheck");//! <---
         }
       }
       const finalPermissionCheckTime = performance.end("permissionCheck", { //1.234ms //! <---
@@ -533,12 +588,24 @@ performance.resume("permissionCheck");//! <---
         if (global.app.config.development && command.commandSettings().mainOnly)
           continue;
 
+        
         performance.pause("fullRun")
         performance.pause("commandRegistration");
         /* prettier-ignore */
         global.logger.debug(`Registering command: ${chalk.blueBright(file)}`,returnFileName());
         performance.resume("fullRun")
         performance.resume("commandRegistration");
+
+        if (!(await command.setup(client, requiredModules))) {
+          performance.pause("fullRun")
+          performance.pause("commandRegistration");
+          global.logger.debugError(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
+          performance.resume("fullRun")
+          performance.resume("commandRegistration");
+          continue
+
+        }
+
         requiredModules[
           "cmd" +
             command.getSlashCommand().name[0].toUpperCase() +
@@ -574,7 +641,32 @@ performance.resume("permissionCheck");//! <---
           continue;
           if (global.app.config.development && event.eventSettings().mainOnly)
           continue;
+        } else {
+          
+          performance.pause("fullRun")
+          performance.pause("eventLoader");
+          /* prettier-ignore */
+          global.logger.debugError(`Error while loading event: ${chalk.redBright(file)} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
+          performance.resume("fullRun")
+          performance.resume("eventLoader");
+          continue;
         }
+
+        global.logger.debug(
+          `Registering event: ${chalk.blueBright(file)}`,
+          returnFileName()
+        );
+
+        if (!(await event.setup(client, requiredModules))) {
+          performance.pause("fullRun")
+          performance.pause("eventLoader");
+          global.logger.debugError(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
+          performance.resume("fullRun")
+          performance.resume("eventLoader");
+          continue
+        }
+
+        
         requiredModules[
           "event" +
             file.replace(".evt.js", "")[0].toUpperCase() +
@@ -582,6 +674,7 @@ performance.resume("permissionCheck");//! <---
         ] = event;
       }
       const finalEventLoaderTime = performance.end("eventLoader", {silent: true})
+      global.logger.log("------------------------", returnFileName());
       global.rest = new REST({
         version: "9",
       }).setToken(process.env.TOKEN);
