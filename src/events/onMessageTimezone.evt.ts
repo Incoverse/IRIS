@@ -169,8 +169,10 @@ export async function runEvent(message: Discord.Message, RM: object) {
       // Query for a movie that has the title 'Back to the Future'
       const query = { id: message.author.id };
       let userInfo = await userdata.findOne(query);
+      if (userInfo?.settings?.changeTimezone) {
 
-      let timezones = [...userInfo.timezones, approximatedTimezone];
+        
+        let timezones = [...userInfo.timezones, approximatedTimezone];
       if (timezones.length >= 5) timezones.shift();
       let moded = mode(timezones);
       const approximatedPlusOffset = `${moded} (${getOffset(moded)})`
@@ -204,10 +206,15 @@ export async function runEvent(message: Discord.Message, RM: object) {
         birthday.timezone = moded;
         let copy = global.birthdays.filter(
           (obj) => obj.id !== message.author.id
-        );
-        copy.push(birthday);
+          );
+          copy.push(birthday);
         global.birthdays = copy;
       }
+     } else {
+        /* prettier-ignore */
+        global.logger.debug(`${chalk.yellow(user)} has manually set their timezone, we will not be changing it.`, returnFileName())
+        
+     }
     } finally {
       // Ensures that the client will close when you finish/error
       await client.close();

@@ -478,8 +478,24 @@ declare const global: IRISGlobal;
           ) {
             found = true
             if (await checkPermissions(interaction, fullCmd)) {
-              requiredModules[command].runCommand(interaction, requiredModules);
-            } else {
+                requiredModules[command].runCommand(interaction, requiredModules).then(async ()=>{
+
+                  if (!interaction.replied && !interaction.deferred) {
+                    global.logger.debugWarn(
+                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(requiredModules[command].returnFileName())}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
+                      returnFileName()
+                    );
+                    await interaction.reply({
+                      embeds: [
+                        new EmbedBuilder().setTitle("Command failed").setDescription(
+                        "We're sorry, this command could currently not be processed by IRIS, please try again later."
+                      ).setColor("Red")
+                    ],
+                    ephemeral: true,
+                  })
+                }
+              })
+              } else {
               // global.logger.debugError(`${interaction.user.username} tried to run command '/${fullCmd}' but was denied access.`, returnFileName())
               await interaction.reply({
                 embeds: [
@@ -500,7 +516,7 @@ declare const global: IRISGlobal;
         await interaction.reply({
           embeds: [
             new EmbedBuilder().setTitle("Command failed").setDescription(
-              "We're sorry, this command could currently not be processed by IRIS, please try again later."
+              "We're sorry, a handler for this command could not be located, please try again later."
             ).setColor("Red")
           ],
           ephemeral: true,
@@ -853,6 +869,25 @@ declare const global: IRISGlobal;
 
       fullyReady = true;
     });
+    async function getFullCMD(interaction: CommandInteraction) {
+      let fullCmd = interaction.commandName;
+      // turn all passed in arguments into a single string as well
+      if ((
+        interaction.options as CommandInteractionOptionResolver
+      ).getSubcommandGroup(false)) {
+        fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommandGroup()}`;
+      }
+      if ((
+        interaction.options as CommandInteractionOptionResolver
+      ).getSubcommand(false)) {
+        fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommand()}`;
+      }
+
+      for (let option of interaction.options.data) {
+        fullCmd += ` ${option.name}:${option.value}`;
+      }
+      return fullCmd.trim();
+    }
     async function userAffectedByPermSet(user: GuildMember, permissionSet: any[]) {
       const rolesSorted = Array.from((user.roles as GuildMemberRoleManager).cache.values())
       const roles = rolesSorted.map((r:Role)=>r.id)
