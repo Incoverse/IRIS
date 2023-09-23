@@ -27,7 +27,7 @@ const commandInfo = {
   category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("timezone")
-    .setDescription("Check what timezone IRIS has predicted that you're in."),
+    .setDescription("Check what timezone IRIS has set you in."),
   settings: {
     devOnly: false,
     mainOnly: false,
@@ -53,7 +53,7 @@ export async function runCommand(
         client.close();
         await interaction.editReply({
           content:
-            "IRIS has not predicted a timezone for you. Each time you type a message like 'timezone 12:34 am', IRIS will predict your timezone by checking which timezone matches the time that you provided.",
+            "IRIS has not a timezone set for you. Each time you type a message like `timezone 12:34 am`, IRIS will predict your timezone by checking which timezone matches the time that you provided.\n\nYou can also set your timezone manually using `/settimezone`",
         });
         return;
       }
@@ -62,7 +62,7 @@ export async function runCommand(
 
       await interaction.editReply({
         content:
-          "IRIS has estimated your timezone to be: ``" +
+          "IRIS has your timezone set to: ``" +
           usersTimezone +
           " (" +
           offset +
