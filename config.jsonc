@@ -63,7 +63,10 @@
     "birthday": null,
     "birthdayPassed": false,
     "isNew": false,
-    "gameData": {}
+    "gameData": {},
+    "settings": {
+      "changeTimezone": true
+    }
   },
 
   //? This specifies resources for the bot to use, such as links to wordle answers and guesses. (Make sure to use raw links if using GitHub!)
