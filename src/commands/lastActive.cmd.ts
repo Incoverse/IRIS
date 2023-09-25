@@ -159,11 +159,11 @@ function getFormattedDate(
 
   if (hideYear) {
     // 10. January at 10:20
-    return `${month} ${day}. at ${hours}:${minutes}${AMPM} UTC`;
+    return `${month} ${day}, at ${hours}:${minutes}${AMPM} UTC`;
   }
 
   // 10. January 2017. at 10:20
-  return `${month} ${day}, ${year}. at ${hours}:${minutes}${AMPM} UTC`;
+  return `${month} ${day}, ${year} at ${hours}:${minutes}${AMPM} UTC`;
 }
 
 // --- Main function
