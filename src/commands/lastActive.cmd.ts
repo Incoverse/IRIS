@@ -131,7 +131,7 @@ function getFormattedDate(
   prefomattedDate: any = false,
   hideYear: any = false
 ) {
-  const day = date.getUTCDate();
+  const day = getOrdinalNum(date.getUTCDate());
   const month = MONTH_NAMES[date.getUTCMonth()];
   const year = date.getUTCFullYear();
   let hours = date.getUTCHours();
@@ -159,11 +159,11 @@ function getFormattedDate(
 
   if (hideYear) {
     // 10. January at 10:20
-    return `${day}. ${month} at ${hours}:${minutes}${AMPM} UTC`;
+    return `${month} ${day}. at ${hours}:${minutes}${AMPM} UTC`;
   }
 
   // 10. January 2017. at 10:20
-  return `${day}. ${month} ${year}. at ${hours}:${minutes}${AMPM} UTC`;
+  return `${month} ${day}, ${year}. at ${hours}:${minutes}${AMPM} UTC`;
 }
 
 // --- Main function
@@ -200,7 +200,8 @@ function timeAgo(dateParam) {
 
   return getFormattedDate(date); // 10. January 2017. at 10:20
 }
-
+/* prettier-ignore */
+function getOrdinalNum(n:number) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
 export const returnFileName = () =>
   __filename.split(process.platform == "linux" ? "/" : "\\")[
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
