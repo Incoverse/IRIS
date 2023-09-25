@@ -124,6 +124,7 @@ declare const global: IRISGlobal;
       );
     },
     error: (message: any, sender: string) => {
+      message = (message && message.stack) ? message.stack : message
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
       console.log(
         chalk.white.bold(
@@ -190,6 +191,7 @@ declare const global: IRISGlobal;
     },
     debugError: (message: any, sender: string) => {
       if (config.debugging) {
+        message = (message && message.stack) ? message.stack : message
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
       console.log(
           chalk.white.bold(
