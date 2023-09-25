@@ -32,7 +32,15 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client: Discord.Client, RM: object) => true;
+export const setup = async (client:Discord.Client, RM: object) => {
+  const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
+  // check if there is a role that includes "new member" in it's name
+  if (!roles.some((role) => role.name.toLowerCase().includes("new member"))) {
+    global.logger.debugError(`A role with 'new member' in the name could not be found. Cannot continue.`, returnFileName())
+    return false
+  }
+  return true
+}
 export async function runEvent(client: Discord.Client, RM: object) {
   const guild = await client.guilds.fetch(global.app.config.mainServer);
   const dbclient = new MongoClient(global.mongoConnectionString);
@@ -150,7 +158,14 @@ export async function runEvent(client: Discord.Client, RM: object) {
           7 * 24 * 60 * 60 * 1000 &&
         !member.user.bot
       ) {
-        member.roles.add(newMembersRole);
+
+        if (!member.roles.cache.has(newMembersRole.id)) {
+            member.roles.add(newMembersRole);
+            global.logger.debug(
+              `Adding ${chalk.yellow(member.user.username)} to '${chalk.yellow(newMembersRole.name)}' (role).`,
+              returnFileName()
+            );
+          }
         if (!global.newMembers.includes(member.id))
           global.newMembers.push(member.id);
       }
