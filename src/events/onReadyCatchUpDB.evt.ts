@@ -52,7 +52,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
      */
     const allDocuments = await userdata.find().toArray();
     let newMembersRole = null;
-    guild.roles.fetch().then(async (roles) => {
+    await guild.roles.fetch().then(async (roles) => {
       roles.forEach((role) => {
         if (role.name.toLowerCase().includes("new member")) {
           newMembersRole = role;
