@@ -221,12 +221,14 @@ export async function runCommand(
         .reply({
           content: "Started!",
           ephemeral: true,
+          allowedMentions: { parse: [], repliedUser: false, users: [] },
         })
         .then(async (msg) => {
           await msg.delete();
         });
       wordle.currentlyPlaying[interaction.user.id].boardMessage =
         await message.fetch();
+      return false // tell index.ts that we handled the interaction as intended
     } else if (
       (interaction.options as CommandInteractionOptionResolver).getSubcommand(
         true
@@ -282,7 +284,7 @@ export async function runCommand(
             .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
-          content: "Your guess must be 5 letters long!",
+          content: "Your guess must be 5 letters long!\n\n"+generateBoard(),
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -303,7 +305,7 @@ export async function runCommand(
             .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
-          content: "You have already guessed that word!",
+          content: "You have already guessed that word!\n\n"+generateBoard(),
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -325,7 +327,7 @@ export async function runCommand(
             .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
-          content: "That is not a valid word!",
+          content: "That is not a valid word!\n\n"+generateBoard(),
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -361,7 +363,7 @@ export async function runCommand(
               generateBoard(undefined, true, true),
           });
           await interaction.reply({
-            content: "You're out of guesses :(\n" + generateBoard(),
+            content: "You're out of guesses :(\nThe word was: [**"+wordle.word+"**](<https://www.dictionary.com/browse/"+wordle.word+">)\n\n" + generateBoard(),
             ephemeral: true,
           });
           await generateStats(true);
@@ -385,7 +387,7 @@ export async function runCommand(
             (6 -
               global.games.wordle.currentlyPlaying[interaction.user.id].guesses
                 .length) +
-            "** guesses remaining!\n" +
+            "** guesses remaining!\n\n" +
             generateBoard(),
           ephemeral: true,
         });
@@ -417,7 +419,7 @@ export async function runCommand(
         });
         await interaction.reply({
           content:
-            "Congratulatons! You guessed the word!\n" +
+            "Congratulatons! You guessed the word!\n[Definition of **"+wordle.word+"**](<https://www.dictionary.com/browse/"+wordle.word+">)\n\n" +
             generateBoard(undefined, true, false),
           ephemeral: true,
         });

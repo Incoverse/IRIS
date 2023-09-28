@@ -480,8 +480,8 @@ declare const global: IRISGlobal;
           ) {
             found = true
             if (await checkPermissions(interaction, fullCmd)) {
-                requiredModules[command].runCommand(interaction, requiredModules).then(async ()=>{
-
+                requiredModules[command].runCommand(interaction, requiredModules).then(async (res)=>{
+                  if (res == false) return
                   if (!interaction.replied && !interaction.deferred) {
                     global.logger.debugWarn(
                       `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(requiredModules[command].returnFileName())}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
@@ -886,6 +886,7 @@ declare const global: IRISGlobal;
       }
 
       for (let option of interaction.options.data) {
+        if (!option.value) continue;
         fullCmd += ` ${option.name}:${option.value}`;
       }
       return fullCmd.trim();
