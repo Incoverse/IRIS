@@ -213,7 +213,7 @@ export async function runCommand(
           ((interaction.member as GuildMember).displayName.endsWith("s")
             ? "'"
             : "'s") +
-          " daily wordle game\n\n``/wordle guess [word]`` to guess\n\n" +
+          " daily wordle game\n\n``/wordle guess [word]`` to guess\n``/wordle board`` to view your board\n\n" +
           generateBoard(undefined, true, true),
         allowedMentions: { parse: [] },
       });
