@@ -65,6 +65,7 @@ export async function runCommand(
     const maxPlayers = 4;
     let shouldSaveSettings = false;
     let game;
+    let settingsMsg=null;
     const drawChoice: {
       [key: string]: number;
     } = {};
@@ -296,7 +297,7 @@ export async function runCommand(
         mainMessage = await startMSG.fetch();
         collector2.stop();
         collector.stop();
-        const collector3 = mainMessage.createMessageComponentCollector({
+        const collector3 = (await mainMessage.fetch()).createMessageComponentCollector({
           filter: (interaction) =>
             interaction.customId == "showhand" || interaction.customId == "end",
         });
@@ -326,7 +327,7 @@ export async function runCommand(
                 ),
               ],
             });
-            const collector4 = msg.createMessageComponentCollector({
+            const collector4 = (await msg.fetch()).createMessageComponentCollector({
               filter: (interaction) =>
                 interaction.customId == "end" ||
                 interaction.customId == "cancel",
@@ -426,19 +427,19 @@ export async function runCommand(
           },
           {
             name: "Cross Stacking (+4 on +2, +2 on +4)",
-            value: settings.crossStacking.toString(),
+            value: settings.crossStacking ? "Yes" : "No",
             // inline: true,
           },
           {
             name: "Draw Until Playable",
-            value: settings.drawTillPlayable.toString(),
+            value: settings.drawTillPlayable ? "Yes" : "No",
             // inline: true,
           }
         );
       if (inter.user.id == interaction.user.id)
         embed.addFields({
           name: "Save Settings",
-          value: shouldSaveSettings.toString(),
+          value: shouldSaveSettings ? "Yes" : "No",
           // inline: true,
         });
       const data = {
@@ -481,14 +482,13 @@ export async function runCommand(
               ],
         ephemeral: true,
       };
-      let settingsMsg;
       if (Settings.updateInteraction) {
         settingsMsg = await Settings.toUpdate.update(data);
       } else {
         settingsMsg = await inter.reply(data);
       }
       if (inter.user.id != interaction.user.id) return;
-      const collector5 = settingsMsg.createMessageComponentCollector({
+      const collector5 = (await settingsMsg.fetch()).createMessageComponentCollector({
         filter: (interaction) => interaction.customId == "settings",
         max: 1,
       });
@@ -541,7 +541,7 @@ export async function runCommand(
               ],
             });
             const collector6 =
-              initialCardCountMsg.createMessageComponentCollector({
+              (await initialCardCountMsg.fetch()).createMessageComponentCollector({
                 filter: (interaction) =>
                   interaction.customId == "initialCardCount",
                 max: 1,
@@ -805,7 +805,7 @@ export async function runCommand(
         // components = (inter as Message).components.map(a=>a.components).reduce((a,b)=>a.concat(b), []);
       }
       if (stage == "selectCardColor") {
-        const collector = inter.createMessageComponentCollector({
+        const collector = (await inter.fetch()).createMessageComponentCollector({
           filter: (ddd) =>
             components
               .filter((a) => a.customId != "discarded")
@@ -994,7 +994,7 @@ export async function runCommand(
           }
         });
       } else if (stage == "selectCard") {
-        const collector = inter.createMessageComponentCollector({
+        const collector = (await inter.fetch()).createMessageComponentCollector({
           filter: (ddd) =>
             components
               .filter((a) => a.customId != "discarded")
@@ -1086,7 +1086,7 @@ export async function runCommand(
           }
         });
       } else if (stage == "selectWildColor") {
-        const collector = inter.createMessageComponentCollector({
+        const collector = (await inter.fetch()).createMessageComponentCollector({
           filter: (ddd) =>
             components
               .filter((a) => a.customId != "discarded")
@@ -1763,6 +1763,11 @@ export async function runCommand(
       try {
         i.message.delete();
       } catch (e) {}
+      if (settingsMsg) {
+        try {
+          settingsMsg.delete();
+        } catch (e) {}
+      }
       const config = new Config().setInitialCards(settings.initialCardCount);
       config.override.classes.Deck = CustomizedDeck;
       config.override.classes.Player = CustomizedPlayer;

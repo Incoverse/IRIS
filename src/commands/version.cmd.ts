@@ -37,7 +37,7 @@ export async function runCommand(
   RM: object
 ) {
   try {
-    interaction.reply({
+    await interaction.reply({
       content:
         "IRIS is currently running ``v" +
         JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
