@@ -85,6 +85,7 @@ export async function runCommand(
     let settings = {
       crossStacking: false,
       initialCardCount: 7,
+      noUNOCallPenalty: 3,
       drawTillPlayable: false,
       playAfterDraw: false,
       createThread: true
@@ -199,7 +200,7 @@ export async function runCommand(
     );
     const deleteOnNextTurn = [];
     const players = new Map();
-    let mainMessageCollector = null;
+    let mainMessageButtonCollector = null;
     players.set(interaction.user.id, interaction.user);
 
     try {
@@ -233,7 +234,7 @@ export async function runCommand(
     await lobbyMessage.react("🚪");
     const queue = new Map();
     let mainMessage: Message = null;
-    const collector = lobbyMessage.createReactionCollector({
+    const lobbyReactionCollector = lobbyMessage.createReactionCollector({
       filter: (reaction, user) =>
         reaction.emoji.name == "🚪" &&
         user.id != interaction.user.id &&
@@ -241,7 +242,7 @@ export async function runCommand(
       dispose: true,
       time: 14 * 60 * 1000,
     });
-    collector.on("end", async (_collected, reason) => {
+    lobbyReactionCollector.on("end", async (_collected, reason) => {
       if (reason == "time") {
         await lobbyMessage.edit({
           content: "Time-out! Game cancelled.",
@@ -253,7 +254,7 @@ export async function runCommand(
         return;
       }
     });
-    collector.on("collect", async (_reaction, user) => {
+    lobbyReactionCollector.on("collect", async (_reaction, user) => {
       if (players.size >= maxPlayers) {
         queue.set(user.id, user);
         return;
@@ -264,7 +265,7 @@ export async function runCommand(
         components: [row],
       });
     });
-    collector.on("remove", async (_reaction, user) => {
+    lobbyReactionCollector.on("remove", async (_reaction, user) => {
       if (queue.has(user.id)) queue.delete(user.id);
       if (players.has(user.id)) players.delete(user.id);
       //if there is a user in the queue, add them to the players list
@@ -298,8 +299,17 @@ export async function runCommand(
         if (!startMSG) return;
         mainMessage = await startMSG.fetch();
         if (mainMessage.content.includes("Too few players")) return;
+        // try stopping the settings collector
+        if (Object.keys(collectors).includes(interaction.user.id)) {
+          if (Object.keys(collectors[interaction.user.id]).includes("settings")) {
+            try {
+              collectors[interaction.user.id]["settings"].stop();
+            } catch (e) {}
+            delete collectors[interaction.user.id]["settings"];
+          }
+        }
         lobbyButtonsCollector.stop();
-        collector.stop();
+        lobbyReactionCollector.stop();
         if (settings.createThread) {
           chatThread = await mainMessage.startThread({
             name: interaction.user.username +"'" + (interaction.user.username.endsWith("s") ? "" : "s") + " UNO Chat Thread",
@@ -307,31 +317,32 @@ export async function runCommand(
           });
 
           for (let player of players.keys()) {
+            if (player == game.currentPlayer.name) continue;
             await chatThread.members.add(player);
           }
 
-          await chatThread.send({ // send image in ./src/resources/uno/threadInstructions.png
+          await chatThread.send({
             content: "Players! Welcome to your personal chat thread. This thread allows you to chat with each other while the game is in progress without moving the game message.\n\nTo open up this thread to the side of your screen, please click the blue text below the game message (see image below). May the best player win!",
             files: ["./resources/uno/threadInstructions.png"]
           })
         }
 
 
-        mainMessageCollector = (await mainMessage.fetch()).createMessageComponentCollector({
+        mainMessageButtonCollector = (await mainMessage.fetch()).createMessageComponentCollector({
           filter: (interaction) =>
             interaction.customId == "showhand" || interaction.customId == "end",
         });
-        mainMessageCollector.on("collect", async (intt) => {
-          if (intt.customId == "end") {
-            if (intt.user.id != interaction.user.id) {
-              await intt.reply({
+        mainMessageButtonCollector.on("collect", async (buttonInteraction) => {
+          if (buttonInteraction.customId == "end") {
+            if (buttonInteraction.user.id != interaction.user.id) {
+              await buttonInteraction.reply({
                 content: "Only the game host can end the game!",
                 ephemeral: true,
               });
               return;
             }
 
-            const msg = await intt.reply({
+            const endGameConfirmationMsg = await buttonInteraction.reply({
               content: "Are you sure you want to end the game?",
               ephemeral: true,
               components: [
@@ -347,23 +358,23 @@ export async function runCommand(
                 ),
               ],
             });
-            const collector4 = (await msg.fetch()).createMessageComponentCollector({
+            const endConfirmationCollector = (await endGameConfirmationMsg.fetch()).createMessageComponentCollector({
               filter: (interaction) =>
                 interaction.customId == "end" ||
                 interaction.customId == "cancel",
               max: 1,
             });
-            if (!Object.keys(collectors).includes(intt.user.id))
-              collectors[intt.user.id] = {};
-            if (Object.keys(collectors[intt.user.id]).includes("endGame"))
-              collectors[intt.user.id]["endGame"].stop();
-            collectors[intt.user.id]["endGame"] = collector4;
-            collector4.on("collect", async (inttt) => {
-              if (inttt.customId == "end") {
+            if (!Object.keys(collectors).includes(buttonInteraction.user.id))
+              collectors[buttonInteraction.user.id] = {};
+            if (Object.keys(collectors[buttonInteraction.user.id]).includes("endGame"))
+              collectors[buttonInteraction.user.id]["endGame"].stop();
+            collectors[buttonInteraction.user.id]["endGame"] = endConfirmationCollector;
+            endConfirmationCollector.on("collect", async (buttonInteraction) => {
+              if (buttonInteraction.customId == "end") {
                 await interaction.deleteReply().catch((_e) => {});
-                await intt.deleteReply().catch((_e) => {});
+                await buttonInteraction.deleteReply().catch((_e) => {});
                 await mainMessage.delete().catch((_e) => {});
-                mainMessageCollector.stop();
+                mainMessageButtonCollector.stop();
                 for (let interactionIndex of Object.keys(interactions)) {
                   if (
                     interactions[interactionIndex] instanceof
@@ -400,7 +411,7 @@ export async function runCommand(
                   } catch (e) {}
                   delete interactionTimers[timerIndex];
                 }
-                mainMessageCollector.stop();
+                mainMessageButtonCollector.stop();
                 if (chatThread) {
                   await chatThread.send({
                     content: "Game ended! This thread will be deleted in 30 seconds.",
@@ -412,26 +423,26 @@ export async function runCommand(
 
 
                 return;
-              } else if (inttt.customId == "cancel") {
-                intt.deleteReply().catch((_e) => {});
+              } else if (buttonInteraction.customId == "cancel") {
+                buttonInteraction.deleteReply().catch((_e) => {});
               }
             });
             return;
           }
           if (
-            interactions[intt.user.id] instanceof Discord.InteractionResponse
+            interactions[buttonInteraction.user.id] instanceof Discord.InteractionResponse
           ) {
             try {
-              interactions[intt.user.id].delete();
+              interactions[buttonInteraction.user.id].delete();
             } catch (e) {}
-            delete interactions[intt.user.id];
+            delete interactions[buttonInteraction.user.id];
           }
-          await showHand(intt);
+          await showHand(buttonInteraction);
         });
       } else if (buttonInteraction.customId == "cancel") {
         // stop the game
         await lobbyMessage.delete();
-        collector.stop();
+        lobbyReactionCollector.stop();
         lobbyButtonsCollector.stop();
         try {
           await buttonInteraction.reply({
@@ -472,6 +483,11 @@ export async function runCommand(
           {
             name: "Initial Hand Size",
             value: settings.initialCardCount.toString(),
+            // inline: true,
+          },
+          {
+            name: "No UNO Call Penalty",
+            value: settings.noUNOCallPenalty.toString() + " card" + (settings.noUNOCallPenalty>1?"s":""),
             // inline: true,
           },
           {
@@ -528,6 +544,12 @@ export async function runCommand(
                         )
                         .setValue("initialCardCount"),
                       new StringSelectMenuOptionBuilder()
+                        .setLabel("No UNO Call Penalty")
+                        .setDescription(
+                          "The number of cards a player will draw if they fail to call UNO"
+                        )
+                        .setValue("noUNOCallPenalty"),
+                      new StringSelectMenuOptionBuilder()
                         .setLabel("Cross Stacking")
                         .setDescription(
                           "Whether +4s can be stacked on +2s and vice versa"
@@ -548,7 +570,7 @@ export async function runCommand(
                       new StringSelectMenuOptionBuilder()
                         .setLabel("Save Settings")
                         .setDescription(
-                          "Settings will be saved when the game starts"
+                          "Settings will be saved when the game starts and applied at every UNO game you host"
                         )
                         .setValue("saveSettings")
                     )
@@ -575,10 +597,12 @@ export async function runCommand(
             components: [],
           });
           } catch (e) {
-          settingsMsgs.delete(settingsMessage.user.id);
+          settingsMsgs.delete(user);
+          // console.log("Deleted settings message for " + user)
         }
       }}
       settingsMsgs.set(inter.user.id, settingsMsg);
+      // console.log("Set settings message (" + settingsMsg.id + ") for " + inter.user.id)
       if (inter.user.id != interaction.user.id) return;
       const collector5 = (await settingsMsg.fetch()).createMessageComponentCollector({
         filter: (interaction) => interaction.customId == "settings",
@@ -660,6 +684,76 @@ export async function runCommand(
                 }
               }
             );
+          } else if (intt.values[0] == "noUNOCallPenalty") {
+              
+            const choices = new StringSelectMenuBuilder()
+            .setCustomId("noUNOCallPenalty")
+            .setPlaceholder("Select a value");
+          const options = [];
+          for (let i = 1; i <= 20; i++) {
+            const option = new StringSelectMenuOptionBuilder()
+              .setLabel(i.toString())
+              .setValue(i.toString());
+            options.push(option);
+          }
+          choices.addOptions(...options);
+          const noUNOCallPenaltyMsg = await intt.update({
+            embeds: [
+              new EmbedBuilder()
+              .setTitle("No UNO Call Penalty")
+              .setDescription(
+                "The number of cards a player will draw if they fail to call UNO"
+              )
+                .setColor("Default")
+                .addFields(
+                  {
+                    name: "Current Value",
+                    value: settings.noUNOCallPenalty.toString() + " card" + (settings.noUNOCallPenalty>1?"s":""),
+                  }
+                  // {
+                  //   name: "Minimum Value",
+                  //   value: "1",
+                  // },
+                  // {
+                  //   name: "Maximum Value",
+                  //   value: "20",
+                  // }
+                ),
+            ],
+            components: [
+              new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+                choices
+              ),
+            ],
+          });
+          const collector6 =
+            (await noUNOCallPenaltyMsg.fetch()).createMessageComponentCollector({
+              filter: (interaction) =>
+                interaction.customId == "noUNOCallPenalty",
+              max: 1,
+            });
+          if (!Object.keys(collectors).includes(inter.user.id))
+            collectors[inter.user.id] = {};
+          if (
+            Object.keys(collectors[inter.user.id]).includes(
+              "noUNOCallPenalty"
+            )
+          )
+            collectors[inter.user.id]["noUNOCallPenalty"].stop();
+          collectors[inter.user.id]["noUNOCallPenalty"] = collector6;
+          collector6.on(
+            "collect",
+            async (inttt: StringSelectMenuInteraction) => {
+              if (inttt.customId == "noUNOCallPenalty") {
+                settings.noUNOCallPenalty = parseInt(inttt.values[0]);
+                await showSettings(inter, {
+                  updateInteraction: true,
+                  toUpdate: inttt,
+                  whatChanged: "noUNOCallPenalty"
+                });
+              }
+            }
+          );
           } else if (intt.values[0] == "crossStacking") {
             settings.crossStacking = !settings.crossStacking;
             await showSettings(inter, {
@@ -970,7 +1064,7 @@ export async function runCommand(
             // previous player
             const previousPlayer = getPreviousPlayer();
             if (!unoCallTable.includes(previousPlayer.name)) {
-              game.draw(previousPlayer, 3, false);
+              game.draw(previousPlayer, settings.noUNOCallPenalty, false);
               await int.update({
                 components: [
                   ...(await generateShowHandButtons(int, "selectCardColor", {
@@ -992,7 +1086,7 @@ export async function runCommand(
               }
               deleteOnNextTurn.push(
                 await inter.interaction.channel.send({
-                  content: `<@${previousPlayer.name}> failed to call UNO and were caught by <@${player.name}>. They have drawn **3** cards.`,
+                  content: `<@${previousPlayer.name}> failed to call UNO and were caught by <@${player.name}>. They have drawn **${settings.noUNOCallPenalty}** card${settings.noUNOCallPenalty>1?"s":""}.`,
                   allowedMentions: { parse: [] },
                 })
               );
@@ -1018,7 +1112,7 @@ export async function runCommand(
                   players.get(previousPlayer.name).discriminator
                     ? players.get(previousPlayer.name).tag
                     : players.get(previousPlayer.name).username) +
-                  "** for not calling UNO and they have drawn **3** cards!",
+                  "** for not calling UNO and they have drawn **"+settings.noUNOCallPenalty+"** card"+(settings.noUNOCallPenalty>1?"s":"")+"!",
                 files: [cardToImage(game.discardedCards.cards[0])],
                 // allowedMentions: { parse: [] },
               });
@@ -2188,7 +2282,7 @@ export async function runCommand(
         } catch (e) {}
         delete interactionTimers[timerIndex];
       }
-      mainMessageCollector.stop();
+      mainMessageButtonCollector.stop();
       mainMessage.edit({
         components: [],
       }); 
