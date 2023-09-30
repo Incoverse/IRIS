@@ -29,8 +29,7 @@ import { MongoClient } from "mongodb";
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
-  category: "fun/music/mod/misc/economy",
-  slashCommand: new Discord.SlashCommandBuilder()
+    slashCommand: new Discord.SlashCommandBuilder()
     .setName("wordle")
     .setDescription("Play a game of wordle!")
     .addSubcommand((subcommand) =>
@@ -284,7 +283,7 @@ export async function runCommand(
             .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
-          content: "Your guess must be 5 letters long!\n\n"+generateBoard(),
+          content: generateBoard()+ "\n\nYour guess must be 5 letters long!",
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -305,7 +304,7 @@ export async function runCommand(
             .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
-          content: "You have already guessed that word!\n\n"+generateBoard(),
+          content: generateBoard()+"\n\nYou have already guessed that word!",
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -327,7 +326,7 @@ export async function runCommand(
             .catch(() => {});
         } catch {}
         const msg = await interaction.reply({
-          content: "That is not a valid word!\n\n"+generateBoard(),
+          content: generateBoard()+"\n\nThat is not a valid word!",
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -378,7 +377,7 @@ export async function runCommand(
             ((interaction.member as GuildMember).displayName.endsWith("s")
               ? "'"
               : "'s") +
-            " daily wordle game\n\n``/wordle guess [word]`` to guess\n\n" +
+            " daily wordle game\n\n``/wordle guess [word]`` to guess\n``/wordle board`` to view your board\n\n" +
             generateBoard(undefined, true, true),
         });
         const msg = await interaction.reply({
@@ -698,5 +697,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
-export const commandCategory = () => commandInfo.category;
+
 export const commandSettings = () => commandInfo.settings;

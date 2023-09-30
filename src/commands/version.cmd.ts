@@ -22,8 +22,7 @@ import { readFileSync } from "fs";
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
-  category: "fun/music/mod/misc/economy",
-  slashCommand: new Discord.SlashCommandBuilder()
+    slashCommand: new Discord.SlashCommandBuilder()
     .setName("version")
     .setDescription("Check which version IRIS is running."),
   settings: {
@@ -82,5 +81,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
-export const commandCategory = () => commandInfo.category;
+
 export const commandSettings = () => commandInfo.settings;
