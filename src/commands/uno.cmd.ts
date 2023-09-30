@@ -1542,7 +1542,7 @@ export async function runCommand(
             (players.get(player.name).discriminator !== "0" &&
             players.get(player.name).discriminator
               ? players.get(player.name).tag
-              : players.get(player.name).username) +
+              : players.get(player.name).username).replace("_", "\\_") +
             "** " +
             (drawChoice[player.name]
               ? "drew **" +
@@ -2147,7 +2147,7 @@ export async function runCommand(
           (players.get(player.name).discriminator !== "0" &&
           players.get(player.name).discriminator
             ? players.get(player.name).tag
-            : players.get(player.name).username) +
+            : players.get(player.name).username).replace("_", "\\_") +
           (game.currentPlayer.name == player.name ? "**" : "") +
           " " +
           seperator +
@@ -2204,7 +2204,7 @@ export async function runCommand(
           "- *" +
           (value.discriminator !== "0" && value.discriminator
             ? value.tag
-            : value.username) +
+            : value.username).replace("_", "\\_") +
           "*" +
           (key == interaction.user.id ? " (**HOST**)" : "") +
           "\n";
