@@ -38,7 +38,7 @@ export async function runCommand(
 ) {
   try {
     // cmd stuff here
-    interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
+    await interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
   } catch (e) {
     global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();
