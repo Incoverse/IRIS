@@ -26,8 +26,7 @@ declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const commandInfo = {
-  category: "fun/music/mod/misc/economy",
-  slashCommand: new Discord.SlashCommandBuilder()
+    slashCommand: new Discord.SlashCommandBuilder()
     .setName("stats")
     .setDescription("Get IRIS' statistics!"),
   settings: {
@@ -152,5 +151,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
-export const commandCategory = () => commandInfo.category;
+
 export const commandSettings = () => commandInfo.settings;

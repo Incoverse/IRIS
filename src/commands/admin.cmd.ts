@@ -37,8 +37,7 @@ import * as logs from "./command-lib/admin-logs.cmdlib.js";
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
-  category: "fun/music/mod/misc/economy",
-  slashCommand: new Discord.SlashCommandBuilder()
+    slashCommand: new Discord.SlashCommandBuilder()
     .setName("admin")
     .setDescription("Admin Commands")
     .addSubcommandGroup((subcommandGroup) =>
@@ -328,5 +327,5 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
-export const commandCategory = () => commandInfo.category;
+
 export const commandSettings = () => commandInfo.settings;

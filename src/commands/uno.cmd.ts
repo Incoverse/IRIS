@@ -29,6 +29,7 @@ import Discord, {
   StringSelectMenuInteraction,
   StringSelectMenuOptionBuilder,
   Team,
+  ThreadChannel,
 } from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
@@ -46,12 +47,11 @@ import { MongoClient } from "mongodb";
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
-  category: "fun/music/mod/misc/economy",
   slashCommand: new Discord.SlashCommandBuilder()
     .setName("uno")
-    .setDescription("UNOOOO!"),
+    .setDescription("Play UNO with your friends! (max 4)"),
   settings: {
-    devOnly: true,
+    devOnly: false,
     mainOnly: false,
   },
 };
@@ -65,7 +65,8 @@ export async function runCommand(
     const maxPlayers = 4;
     let shouldSaveSettings = false;
     let game;
-    let settingsMsg=null;
+    let chatThread: null | ThreadChannel = null;
+    let settingsMsgs = new Map();
     const drawChoice: {
       [key: string]: number;
     } = {};
@@ -86,6 +87,7 @@ export async function runCommand(
       initialCardCount: 7,
       drawTillPlayable: false,
       playAfterDraw: false,
+      createThread: true
     };
     const collectors: {
       [key: string]: { [key: string]: Discord.InteractionCollector<any> };
@@ -178,7 +180,6 @@ export async function runCommand(
       YELLOW_WILD_DRAW_FOUR: "./resources/uno/yellow_draw4.png",
     };
 
-    const channelMode = false; // put the users in a separate channel for the game
     const start = new ButtonBuilder()
       .setCustomId("start")
       .setLabel("Start Game")
@@ -198,6 +199,7 @@ export async function runCommand(
     );
     const deleteOnNextTurn = [];
     const players = new Map();
+    let mainMessageCollector = null;
     players.set(interaction.user.id, interaction.user);
 
     try {
@@ -222,16 +224,16 @@ export async function runCommand(
         });
     } catch (e) {}
 
-    const msg = await (
+    const lobbyMessage = await (
       await interaction.reply({
         content: "React with 🚪 to join!\n" + generatePlayerList(),
         components: [row],
       })
     ).fetch();
-    await msg.react("🚪");
+    await lobbyMessage.react("🚪");
     const queue = new Map();
     let mainMessage: Message = null;
-    const collector = msg.createReactionCollector({
+    const collector = lobbyMessage.createReactionCollector({
       filter: (reaction, user) =>
         reaction.emoji.name == "🚪" &&
         user.id != interaction.user.id &&
@@ -241,12 +243,12 @@ export async function runCommand(
     });
     collector.on("end", async (_collected, reason) => {
       if (reason == "time") {
-        await msg.edit({
+        await lobbyMessage.edit({
           content: "Time-out! Game cancelled.",
           components: [],
         });
         setTimeout(() => {
-          msg.delete().catch(() => {});
+          lobbyMessage.delete().catch(() => {});
         }, 10000);
         return;
       }
@@ -257,7 +259,7 @@ export async function runCommand(
         return;
       }
       players.set(user.id, user);
-      await msg.edit({
+      await lobbyMessage.edit({
         content: "React with 🚪 to join!\n" + generatePlayerList(),
         components: [row],
       });
@@ -270,38 +272,56 @@ export async function runCommand(
         players.set(queue.keys().next().value, queue.values().next().value);
         queue.delete(queue.keys().next().value);
       }
-      await msg.edit({
+      await lobbyMessage.edit({
         content: "React with 🚪 to join!\n" + generatePlayerList(),
         components: [row],
       });
     });
-    const collector2 = msg.createMessageComponentCollector({
+    const lobbyButtonsCollector = lobbyMessage.createMessageComponentCollector({
       filter: (interaction) =>
         interaction.customId == "start" ||
         interaction.customId == "cancel" ||
         interaction.customId == "settings",
       time: 14.5 * 60 * 1000, // 14.5 minutes
     });
-    collector2.on("collect", async (int) => {
-      if (interaction.user.id != int.user.id && int.customId != "settings") {
-        await int.reply({
-          content: "Only the game host can " + int.customId + " the game!",
+    lobbyButtonsCollector.on("collect", async (buttonInteraction) => {
+      if (interaction.user.id != buttonInteraction.user.id && buttonInteraction.customId != "settings") {
+        await buttonInteraction.reply({
+          content: "Only the game host can " + buttonInteraction.customId + " the game!",
           ephemeral: true,
         });
         return;
       }
-      if (int.customId == "start") {
+      if (buttonInteraction.customId == "start") {
         // start the game
-        const startMSG = await startGame(int);
+        const startMSG = await startGame(buttonInteraction);
         if (!startMSG) return;
         mainMessage = await startMSG.fetch();
-        collector2.stop();
+        if (mainMessage.content.includes("Too few players")) return;
+        lobbyButtonsCollector.stop();
         collector.stop();
-        const collector3 = (await mainMessage.fetch()).createMessageComponentCollector({
+        if (settings.createThread) {
+          chatThread = await mainMessage.startThread({
+            name: interaction.user.username +"'" + (interaction.user.username.endsWith("s") ? "" : "s") + " UNO Chat Thread",
+            autoArchiveDuration: 1440,
+          });
+
+          for (let player of players.keys()) {
+            await chatThread.members.add(player);
+          }
+
+          await chatThread.send({ // send image in ./src/resources/uno/threadInstructions.png
+            content: "Players! Welcome to your personal chat thread. This thread allows you to chat with each other while the game is in progress without moving the game message.\n\nTo open up this thread to the side of your screen, please click the blue text below the game message (see image below). May the best player win!",
+            files: ["./resources/uno/threadInstructions.png"]
+          })
+        }
+
+
+        mainMessageCollector = (await mainMessage.fetch()).createMessageComponentCollector({
           filter: (interaction) =>
             interaction.customId == "showhand" || interaction.customId == "end",
         });
-        collector3.on("collect", async (intt) => {
+        mainMessageCollector.on("collect", async (intt) => {
           if (intt.customId == "end") {
             if (intt.user.id != interaction.user.id) {
               await intt.reply({
@@ -343,7 +363,7 @@ export async function runCommand(
                 await interaction.deleteReply().catch((_e) => {});
                 await intt.deleteReply().catch((_e) => {});
                 await mainMessage.delete().catch((_e) => {});
-                collector3.stop();
+                mainMessageCollector.stop();
                 for (let interactionIndex of Object.keys(interactions)) {
                   if (
                     interactions[interactionIndex] instanceof
@@ -372,6 +392,25 @@ export async function runCommand(
                   }
                   delete collectors[collectorIndex];
                 }
+                // interaction timers
+                for (let timerIndex of Object.keys(interactionTimers)) {
+                  try {
+                    clearTimeout(interactionTimers[timerIndex].close);
+                    clearTimeout(interactionTimers[timerIndex].warn);
+                  } catch (e) {}
+                  delete interactionTimers[timerIndex];
+                }
+                mainMessageCollector.stop();
+                if (chatThread) {
+                  await chatThread.send({
+                    content: "Game ended! This thread will be deleted in 30 seconds.",
+                  });
+                  setTimeout(() => {
+                    chatThread.delete().catch((_e) => {});
+                  }, 30000);
+                }
+
+
                 return;
               } else if (inttt.customId == "cancel") {
                 intt.deleteReply().catch((_e) => {});
@@ -389,13 +428,13 @@ export async function runCommand(
           }
           await showHand(intt);
         });
-      } else if (int.customId == "cancel") {
+      } else if (buttonInteraction.customId == "cancel") {
         // stop the game
-        await msg.delete();
+        await lobbyMessage.delete();
         collector.stop();
-        collector2.stop();
+        lobbyButtonsCollector.stop();
         try {
-          await int.reply({
+          await buttonInteraction.reply({
             content: "Game cancelled!",
             ephemeral: true,
           });
@@ -404,15 +443,25 @@ export async function runCommand(
           return;
         }
         return;
-      } else if (int.customId == "settings") {
-        await showSettings(int);
+      } else if (buttonInteraction.customId == "settings") {
+        await showSettings(buttonInteraction);
       }
     });
+    lobbyButtonsCollector.on("end", async (_collected, reason) => {
+      if (reason == "time") {
+        await lobbyMessage.edit({
+          content: "Time-out! Game cancelled.",
+          components: [],
+        });
+        return;
+      }
+    })
     async function showSettings(
       inter: MessageComponentInteraction,
       Settings: {
         updateInteraction?: boolean;
         toUpdate?: MessageComponentInteraction;
+        whatChanged?: string;
       } = {}
     ) {
       const embed = new EmbedBuilder()
@@ -434,14 +483,33 @@ export async function runCommand(
             name: "Draw Until Playable",
             value: settings.drawTillPlayable ? "Yes" : "No",
             // inline: true,
+          },
+          {
+            name: "Create Chat Thread",
+            value: settings.createThread ? "Yes" : "No",
+            // inline: true,
           }
         );
-      if (inter.user.id == interaction.user.id)
+
+        //clone embed to "publicEmbed"
+        const publicEmbed = EmbedBuilder.from(embed.toJSON())
+        publicEmbed.setFooter({
+          text: "Only the game host can change the settings | Changes are shown in real-time.",
+          // iconURL: "https://i.imgur.com/JzXgiW3.png"
+        })
+      if (inter.user.id == interaction.user.id) {
+
         embed.addFields({
           name: "Save Settings",
           value: shouldSaveSettings ? "Yes" : "No",
           // inline: true,
         });
+      } else {
+        embed.setFooter({
+          text: "Only the game host can change the settings | Changes are shown in real-time.",
+          // iconURL: "https://i.imgur.com/JzXgiW3.png"
+        })
+      }
       const data = {
         embeds: [embed],
         components:
@@ -472,6 +540,12 @@ export async function runCommand(
                         )
                         .setValue("drawTillPlayable"),
                       new StringSelectMenuOptionBuilder()
+                        .setLabel("Create Chat Thread")
+                        .setDescription(
+                          "Whether to create a chat thread for the game"
+                        )
+                        .setValue("createThread"),
+                      new StringSelectMenuOptionBuilder()
                         .setLabel("Save Settings")
                         .setDescription(
                           "Settings will be saved when the game starts"
@@ -482,11 +556,29 @@ export async function runCommand(
               ],
         ephemeral: true,
       };
+      let settingsMsg
       if (Settings.updateInteraction) {
         settingsMsg = await Settings.toUpdate.update(data);
       } else {
+        if (settingsMsgs.has(inter.user.id))
+          settingsMsgs.get(inter.user.id).delete().catch((_e) => {});
         settingsMsg = await inter.reply(data);
       }
+      if (Settings.whatChanged && Settings.whatChanged!= "saveSettings") {
+      for (let entry of settingsMsgs.entries()) {
+        let user = entry[0];
+        let settingsMessage = entry[1];
+        if (interaction.user.id == user) continue;
+        try {
+          settingsMessage.edit({
+            embeds: [publicEmbed],
+            components: [],
+          });
+          } catch (e) {
+          settingsMsgs.delete(settingsMessage.user.id);
+        }
+      }}
+      settingsMsgs.set(inter.user.id, settingsMsg);
       if (inter.user.id != interaction.user.id) return;
       const collector5 = (await settingsMsg.fetch()).createMessageComponentCollector({
         filter: (interaction) => interaction.customId == "settings",
@@ -563,6 +655,7 @@ export async function runCommand(
                   await showSettings(inter, {
                     updateInteraction: true,
                     toUpdate: inttt,
+                    whatChanged: "initialCardCount"
                   });
                 }
               }
@@ -572,18 +665,30 @@ export async function runCommand(
             await showSettings(inter, {
               updateInteraction: true,
               toUpdate: intt,
+              whatChanged: "crossStacking"
             });
           } else if (intt.values[0] == "drawTillPlayable") {
             settings.drawTillPlayable = !settings.drawTillPlayable;
             await showSettings(inter, {
               updateInteraction: true,
               toUpdate: intt,
+              whatChanged: "drawTillPlayable"
             });
+            
+          } else if (intt.values[0] == "createThread") {
+            settings.createThread = !settings.createThread;
+            await showSettings(inter, {
+              updateInteraction: true,
+              toUpdate: intt,
+              whatChanged: "createThread"
+            });
+          
           } else if (intt.values[0] == "saveSettings") {
             shouldSaveSettings = !shouldSaveSettings;
             await showSettings(inter, {
               updateInteraction: true,
               toUpdate: intt,
+              whatChanged: "saveSettings"
             });
           }
         }
@@ -1351,9 +1456,9 @@ export async function runCommand(
                 "** card" +
                 (drawChoice[player.name] > 1 ? "s" : "") +
                 " and played a"
-              : "played") +
-            " " +
-            cardToText(card) +
+              : "played a") +
+            " **" +
+            cardToText(card, true) + "**" +
             ((card.value.value == "DRAW_TWO" && card.customData.cards > 2) ||
             (card.value.value == "WILD_DRAW_FOUR" && card.customData.cards > 4)
               ? " (" + card.customData.cards + " cards)"
@@ -1363,7 +1468,7 @@ export async function runCommand(
           // allowedMentions: { parse: [] },
         });
       } else {
-        console.error(
+        global.logger.debugError(
           "Failed to play card " +
             cardToText(card) +
             " by " +
@@ -1373,7 +1478,7 @@ export async function runCommand(
               : players.get(player.name).username) +
             " on a " +
             cardToText(game.discardedCards.cards[0])
-        );
+        , returnFileName());
       }
     }
     async function generateCardCount() {
@@ -1420,7 +1525,7 @@ export async function runCommand(
           .setCustomId("discarded")
           .setLabel(
             "Discarded Card: " +
-              cardToText(game.discardedCards.cards[0]).replace("_", " ")
+              cardToText(game.discardedCards.cards[0], true)
           )
           .setStyle(ButtonStyle.Primary)
           .setDisabled(true);
@@ -1593,7 +1698,7 @@ export async function runCommand(
           .setCustomId("discarded")
           .setLabel(
             "Discarded Card: " +
-              cardToText(game.discardedCards.cards[0]).replace("_", " ")
+              cardToText(game.discardedCards.cards[0], true)
           )
           .setStyle(ButtonStyle.Primary)
           .setDisabled(true);
@@ -1658,7 +1763,7 @@ export async function runCommand(
           .setCustomId("discarded")
           .setLabel(
             "Discarded Card: " +
-              cardToText(game.discardedCards.cards[0]).replace("_", " ")
+              cardToText(game.discardedCards.cards[0], true)
           )
           .setStyle(ButtonStyle.Primary)
           .setDisabled(true);
@@ -1753,20 +1858,20 @@ export async function runCommand(
         "WILD_DRAW_FOUR",
       ].indexOf(value);
     }
-    async function startGame(i: MessageComponentInteraction) {
+    async function startGame(buttonInteraction: MessageComponentInteraction) {
       if (players.size == 1) {
-        return await i.reply({
+        return await buttonInteraction.reply({
           content: "Too few players! (min 2)",
           ephemeral: true,
         });
       }
       try {
-        i.message.delete();
+        buttonInteraction.message.delete();
       } catch (e) {}
-      if (settingsMsg) {
-        try {
-          settingsMsg.delete();
-        } catch (e) {}
+      if (settingsMsgs.size > 0) {
+        for (let settingsMsg of settingsMsgs.values()) {
+          (settingsMsg as Message).delete().catch(() => {});
+        }
       }
       const config = new Config().setInitialCards(settings.initialCardCount);
       config.override.classes.Deck = CustomizedDeck;
@@ -1897,7 +2002,7 @@ export async function runCommand(
           await db.close();
         }
       }
-      return await i.channel.send({
+      return await buttonInteraction.channel.send({
         content:
           "It's <@" +
           game.currentPlayer.name +
@@ -1963,7 +2068,19 @@ export async function runCommand(
       }
       return final;
     }
-    function cardToText(card: Card) {
+    function cardToText(card: Card, pretty=false) {
+      if (pretty) {
+        let color = card.color.color.toLowerCase();
+        let value = card.value.value.toLowerCase();
+
+        if (value == "draw_two")
+          value = "DRAW TWO";
+        else if (value == "wild_draw_four")
+          value = "DRAW FOUR";
+
+        return color.toUpperCase() + " " + value.toUpperCase();
+
+      }
       return card.color.color + "_" + card.value.value;
     }
     function cardToImage(card: Card) {
@@ -2045,6 +2162,43 @@ export async function runCommand(
             components: [],
           });
         } catch (error) {}
+      }
+      // look through all collectors and stop them
+      for (let collectorIndex of Object.keys(collectors)) {
+        for (let collectorIndex2 of Object.keys(
+          collectors[collectorIndex]
+        )) {
+          if (
+            collectors[collectorIndex][collectorIndex2] instanceof
+            Discord.InteractionCollector
+          ) {
+            try {
+              collectors[collectorIndex][collectorIndex2].stop();
+            } catch (e) {}
+            delete collectors[collectorIndex][collectorIndex2];
+          }
+        }
+        delete collectors[collectorIndex];
+      }
+      // interaction timers
+      for (let timerIndex of Object.keys(interactionTimers)) {
+        try {
+          clearTimeout(interactionTimers[timerIndex].close);
+          clearTimeout(interactionTimers[timerIndex].warn);
+        } catch (e) {}
+        delete interactionTimers[timerIndex];
+      }
+      mainMessageCollector.stop();
+      mainMessage.edit({
+        components: [],
+      }); 
+      if (chatThread) {
+        await chatThread.send({
+          content: "Game ended! This thread will be deleted in 30 seconds.",
+        })
+        setTimeout(async () => {
+            chatThread.delete().catch((_e) => {});
+        }, 30000);
       }
       return;
     }
@@ -2261,5 +2415,4 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
-export const commandCategory = () => commandInfo.category;
 export const commandSettings = () => commandInfo.settings;

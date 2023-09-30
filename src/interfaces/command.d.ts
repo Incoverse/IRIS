@@ -18,7 +18,6 @@
 interface IRISCommand {
     returnFileName: () => string;
     getSlashCommand: () => Discord.SlashCommandBuilder;
-    commandCategory: () => string;
     commandSettings: () => {
         devOnly: boolean;
         mainOnly: boolean;
