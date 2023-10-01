@@ -44,8 +44,11 @@ interface IRISGlobal extends NodeJS.Global {
       NOT_AVAILABLE: number,
     }
   overrides: {
-    reloadCommands: () => Promise<boolean>;
-    removeCommand: (commandName: string, guildId: string)=> Promise<boolean>;
+    reloadCommands?: () => Promise<boolean>;
+    removeCommand?: (commandName: string, guildId: string)=> Promise<boolean>;
+    reloadConfig?: () => Promise<boolean>;
+    changeConfig?: (key: string, value: any) => Promise<boolean>;
+    setMaxUNOPlayers?: (maxPlayers: number) => Promise<boolean>;
   }
   rest: REST;
   birthdays: Array<{
@@ -79,5 +82,8 @@ interface IRISGlobal extends NodeJS.Global {
         };
       };
     };
+    uno?: {
+      maxPlayers: number;
+    }
   };
 }

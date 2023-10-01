@@ -62,7 +62,7 @@ export async function runCommand(
   _RM: object
 ) {
   try {
-    const maxPlayers = 4;
+    const maxPlayers = global.games.uno.maxPlayers;
     let shouldSaveSettings = false;
     let game;
     let chatThread: null | ThreadChannel = null;

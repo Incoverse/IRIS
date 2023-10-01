@@ -23,6 +23,8 @@ import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
+import JsonCParser from "jsonc-parser";
+import { readFileSync } from "fs";
 
 const eventInfo = {
   type: "onStart",
@@ -90,10 +92,27 @@ export async function runEvent(client: Discord.Client, RM: object) {
     }
 
 
+    global.overrides.reloadConfig = async () => {
+      return new Promise<boolean>(async (resolve, reject) => {
+        const config = JsonCParser.parse(
+          readFileSync("./config.jsonc", { encoding: "utf-8" })
+        );
+        global.app.config = config;
+        resolve(true);
+      })}
+
+      global.overrides.changeConfig = async (key:string, value:any) => {
+        return new Promise<boolean>(async (resolve, reject) => {
+          global.app.config[key] = value;
+          resolve(true);
+        })}
 
 
-
-
+        global.overrides.setMaxUNOPlayers = async (maxPlayers:number) => {
+          return new Promise<boolean>(async (resolve, reject) => {
+            global.games.uno.maxPlayers = maxPlayers;
+            resolve(true);
+          })}
 
 
 }
