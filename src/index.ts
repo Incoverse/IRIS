@@ -287,9 +287,7 @@ declare const global: IRISGlobal;
   global.reload = {
     commands: []
   };
-  global.overrides = {
-    reloadCommands: ()=>{return new Promise<boolean>((_a, reject) => reject(false))},
-    removeCommand: (_commandName: string, _guildId: string) =>{return new Promise<boolean>((_a, reject) => reject(false))}
+  global.overrides = { //! These overrides get replaced by the event onReadySetupOVRD.evt.ts
     }
   global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
   global.app.config.development = process.env.DEVELOPMENT == "YES";
@@ -302,7 +300,11 @@ declare const global: IRISGlobal;
       global.mongoStatus = global.mongoStatuses.STOPPED
     }
   }
-  global.games = {};
+  global.games = {
+    uno: {
+      maxPlayers: 4
+    },
+  };
   global.dirName = __dirname;
   if (process.env.DBUSERNAME == "iris" && global.app.config.development) {
     global.logger.log("Hold on! You are attempting to run IRIS in development mode, but are using the main database credentials, which is not allowed. Please change the DBUSERNAME and DBPASSWD in the .env file to the development credentials.", returnFileName());
