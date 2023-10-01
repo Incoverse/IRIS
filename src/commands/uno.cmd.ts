@@ -80,6 +80,7 @@ export async function runCommand(
       ...UGE.constants.values,
       ...{
         WILD_DRAW_FOUR: "DRAW FOUR",
+        DRAW_TWO: "DRAW TWO",
       },
     };
     let settings = {
