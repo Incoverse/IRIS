@@ -322,7 +322,7 @@ export async function runCommand(
           }
 
           await chatThread.send({
-            content: "Players! Welcome to your personal chat thread. This thread allows you to chat with each other while the game is in progress without moving the game message.\n\nTo open up this thread to the side of your screen, please click the blue text below the game message (see image below). May the best player win!",
+            content: "Players! Welcome to your personal chat thread. This thread allows you to chat with each other while the game is in progress without moving the game message.\n\nTo open up this thread to the side of your screen, please click the blue text below the game message (see image below). May the best player win!\n\n**Note: You can not play the game from this thread, you have to do it in the channel that the game was started in.**",
             files: ["./resources/uno/threadInstructions.png"]
           })
         }
