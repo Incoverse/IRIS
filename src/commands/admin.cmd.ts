@@ -33,6 +33,7 @@ import * as changeTimezone from "./command-lib/admin-changeTimezone.cmdlib.js";
 import * as entryManagement from "./command-lib/admin-entrymgmt.cmdlib.js";
 import * as setPresence from "./command-lib/admin-setPresence.cmdlib.js";
 import * as logs from "./command-lib/admin-logs.cmdlib.js";
+import * as editMessage from "./command-lib/admin-editMessage.cmdlib.js"
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -114,6 +115,23 @@ const commandInfo = {
             subcommand
               .setName("logs").setDescription("Get IRIS' logs.")
           )
+          .addSubcommand((subcommand) =>
+          subcommand
+            .setName("editmessage")
+            .setDescription("Edit a message sent by IRIS.")
+            .addStringOption((option) =>
+              option
+                .setName("message-id")
+                .setDescription("The message ID of the message you want to edit.")
+                .setRequired(true)
+            )
+            .addStringOption((option) =>
+              option
+                .setName("text")
+                .setDescription("The new text of the message.")
+                .setRequired(true)
+            )
+        )
       // .addSubcommand((subcommand) =>
       // subcommand.setName("setpresence").setDescription("Set IRIS's presence.")
       //       .addStringOption((option) =>
@@ -287,6 +305,8 @@ export async function runCommand(
         //await setPresence.runSubCommand(interaction, RM);
       } else if (subcommand == "logs") {
         await logs.runSubCommand(interaction, RM);
+      } else {
+        await editMessage.runSubCommand(interaction, RM);
       }
     }
   } catch (e) {
