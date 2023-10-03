@@ -142,9 +142,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 "It's <mention>'<s> [ord][ ]birthday! Happy birthday!",
                 "Happy [ord][ ]birthday to <mention>! Hope you have a fantastic birthday!",
                 "Happy [ord][ ]birthday, <mention>! Enjoy your special day!",
-                "Happy birthday, <mention>! May <your|this> [ord][ ]year be as amazing as you are.",
+                "Happy birthday, <mention>! May <<your|this>> [ord][ ]year be as amazing as you are.",
                 "Happy birthday, <mention>! It's your [ord][ ]birthday today!",
-                "Celebrating <mention> as they turn <[age]|another year> today! Happy birthday!"
+                "Celebrating <mention> as they turn <<[age]|another year>> today! Happy birthday!"
               ]
               let randomIndex = Math.floor(Math.random() * birthdayMessages.length);
               let birthdayMessage = birthdayMessages[randomIndex]
@@ -155,11 +155,11 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 .replace("[ ]", birthday.birthday.split(/\W+/g)[0] !== "0000"? " " : "")
 
               // check if the "birthdayMessage" includes "<.*?|.*?>", if so, check if 'birthday.birthday.split(/\W+/g)[0] !== "0000"' is true, if it is, replace "<.*?|.*?>" with the contents of the first .*?, else, replace it with the contents of the second .*?, keep in mind that the're might be many of "<.*?|.*?>"
-              if (/<.*?\|.*?>/.test(birthdayMessage)) {
-                let allFindings = birthdayMessage.match(/<.*?\|.*?>/gim)
+              if (/<<.*?\|.*?>>/.test(birthdayMessage)) {
+                let allFindings = birthdayMessage.match(/<<.*?\|.*?>>/gim)
                 allFindings.forEach((finding) => {
-                  let first = finding.match(/<.*?\|/gim)[0].replace("<","").replace("|","")
-                  let second = finding.match(/\|.*?>/gim)[0].replace("|","").replace(">","")
+                  let first = finding.match(/<<.*?\|/gim)[0].replace("<<","").replace("|","")
+                  let second = finding.match(/\|.*?>>/gim)[0].replace("|","").replace(">>","")
                   birthdayMessage = birthdayMessage.replace(finding, (birthday.birthday.split(/\W+/g)[0] !== "0000"? first : second))
                 })
               }
