@@ -84,6 +84,11 @@ interface IRISGlobal extends NodeJS.Global {
           guesses: Array<string>;
           startTime: number;
           lastEphemeralMessage: InteractionResponse | Message | null;
+          timers: {
+            gameEndWarning: NodeJS.Timeout | null;
+            updateMessageTimer: NodeJS.Timeout | null;
+            gameEndTimer: NodeJS.Timeout | null;
+          }
         };
       };
     };
