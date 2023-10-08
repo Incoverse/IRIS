@@ -293,7 +293,7 @@ declare const global: IRISGlobal;
   global.loggingData = {
     joins: [],
     leaves: [],
-    messages: [],
+    messages: 0,
   };
 
   global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
