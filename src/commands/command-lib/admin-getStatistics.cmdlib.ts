@@ -78,8 +78,13 @@ export async function runSubCommand(
   const endDate = new Date(`${year}-12-31T23:59:59.999Z`);
   let currentDate = startDate;
   while (currentDate <= endDate) {
-    if (!data[currentDate.toISOString()])
-        data[currentDate.toISOString()] = null; // data will show up as missing in the chart
+    // if (Math.floor(Math.random() * 5) + 1 == 1) {
+      if (!data[currentDate.toISOString()])
+      data[currentDate.toISOString()] = null // data will show up as missing in the chart
+    // } else {
+    //   if (!data[currentDate.toISOString()])
+    //   data[currentDate.toISOString()] = 800 + Math.floor(Math.random() * 10); // data will show up as missing in the chart
+    // }
     currentDate = new Date(currentDate.getTime() + 1800000 * 1);
   }
 
@@ -204,16 +209,57 @@ export async function runSubCommand(
     .attr("transform", "translate(50," + 100 + ")")
     .call(yAxis);
 
-  // add the line
-  chart.append("path")
-    .datum(data)
+
+  // convert data into clumps of data separated by null values, e.g [1,243,234,23,53,4,null,null,432423,null,52345,52353] -> [[1,243,234,23,53,4],[432423],[52345,52353]]
+  let dataClumps = []
+  let currentClump = []
+  for (let i = 0; i < (data as Array<object>).length; i++) {
+      if (data[i].value != null) currentClump.push(data[i])
+      else if (currentClump.length>0) { dataClumps.push(currentClump); currentClump = [] }
+  }
+  if (currentClump.length>0) dataClumps.push(currentClump)
+
+
+  // for each clump of data, get the last value if its the first clump, then the first and last of the other clumps, and last but not least only the first value if its the last clump. but these points into a seperate clump
+  // e.g [[1,243,234,23,53,4],[432423],[52345,52353]] -> [[4,432423],[432423,52345]]
+  let missingDataBridges = []
+  if (dataClumps.length > 1) {
+    for (let i = 0; i < dataClumps.length; i++) {
+      if (i == 0) missingDataBridges.push([dataClumps[i][dataClumps[i].length-1], dataClumps[i+1][0]])
+      else if (i == dataClumps.length-1) continue
+    else missingDataBridges.push([dataClumps[i][dataClumps[i].length-1], dataClumps[i+1][0]])
+  }
+}
+
+
+
+  // add the connection lines
+  // dataClumps
+  for (let i = 0; i < dataClumps.length; i++) {
+    if (dataClumps[i].length == 1) continue
+    chart.append("path")
+    .datum(dataClumps[i])
     .attr("class", "line")
     .attr("transform", "translate(50," + 100 + ")")
     .attr("fill", "none")
     .attr("stroke", "steelblue")
     .attr("stroke-width", 2.5)
     .attr("d", line);
+  }
 
+  for (let i = 0; i < missingDataBridges.length; i++) {
+  chart.append("path")
+    .datum(missingDataBridges[i])
+    .attr("class", "line")
+    .attr("transform", "translate(50," + 100 + ")")
+    .attr("fill", "none")
+    .attr("stroke", "steelblue")
+    // opacity
+    .attr("stroke-opacity", 0.95)
+    .attr("stroke-dasharray", "5,5")
+    .attr("stroke-width", 2)
+    .attr("d", line);
+  }
   let period = timeframe == "1d" ? "24h" : timeframe=="1w"?"week": timeframe == "1m" ? "month" : timeframe == "1y" ? "year" : "day"
 
   // add title
