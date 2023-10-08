@@ -71,7 +71,7 @@ interface IRISGlobal extends NodeJS.Global {
   loggingData: {
     joins: Array<string>;
     leaves: Array<string>;
-    messages: Array<string>;
+    messages: number;
   };
   games: {
     wordle?: {

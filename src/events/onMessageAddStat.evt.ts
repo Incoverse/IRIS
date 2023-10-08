@@ -36,8 +36,7 @@ export async function runEvent(RM: object, message: Discord.Message) {
   if (message.author.bot) return;
   if (!message.guild) return; // No DMs
 
-  if (!global.loggingData.messages.includes(message.id))
-  global.loggingData.messages.push(message.id);
+  global.loggingData.messages++
 }
 
 export const returnFileName = () =>

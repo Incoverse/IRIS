@@ -87,7 +87,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     if (!data[dateString]) data[dateString] = {};
     const joins = global.loggingData.joins.length
     const leaves = global.loggingData.leaves.length
-    const messages = global.loggingData.messages.length
+    const messages = global.loggingData.messages
     const members = await client.guilds.fetch(global.app.config.mainServer).then((guild) => guild.memberCount)
     const online = await client.guilds.fetch(global.app.config.mainServer).then(async (guild) => (await guild.members.fetch()).filter((member) => member?.presence?.status && member?.presence?.status !== Discord.PresenceUpdateStatus.Offline).size)
     // if previous data for this date exists, add to it
@@ -116,7 +116,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     // clear logging data
     global.loggingData.joins = [];
     global.loggingData.leaves = [];
-    global.loggingData.messages = [];
+    global.loggingData.messages = 0;
 
     // hours in a year: 8760, 30 minutes in an hour: 2, 8760 * 2 = 17520
     //
