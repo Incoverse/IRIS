@@ -133,6 +133,17 @@ export async function runEvent(client: Discord.Client, RM: object) {
         const user = await guild.members.fetch(birthday.id);
         if (birthdayRole)
           await user.roles.add(birthdayRole);
+
+        let usersPronouns = "they/their";
+        // go through all of the users roles
+        const userRoles = Array.from(user.roles.cache.values())
+        const pronounRoles = userRoles.filter((role) => ["they/them","she/her","he/him"].includes(role.name.toLowerCase()))
+        if (pronounRoles.length == 1) {
+          // change he/him to he/his, they/them to they/their
+          if (pronounRoles[0].name.toLowerCase() == "he/him") usersPronouns = "he/his"
+          else if (pronounRoles[0].name.toLowerCase() == "they/them") usersPronouns = "they/their"
+          else usersPronouns = "she/her"
+        }
         guild.channels.fetch().then((channels) => {
           channels.every(async (channel) => {
             if (
@@ -145,7 +156,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 "Happy [ord][ ]birthday, <mention>! Enjoy your special day!",
                 "Happy birthday, <mention>! May <<your|this>> [ord][ ]year be as amazing as you are.",
                 "Happy birthday, <mention>! It's your [ord][ ]birthday today!",
-                "Celebrating <mention> as they turn <<[age]|another year>> today! Happy birthday!"
+                "Let's celebrate <mention> as [pronoun A] turn[prn-s] <<[age]|another year>> today! Happy birthday!",
+                "Happy birthday to <mention>! It's [pronoun B] [ord][ ]birthday today!",
               ]
               let randomIndex = Math.floor(Math.random() * birthdayMessages.length);
               let birthdayMessage = birthdayMessages[randomIndex]
@@ -154,6 +166,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 .replace("[ord]", (birthday.birthday.split(/\W+/g)[0] !== "0000"? getOrdinalNum(new Date().getUTCFullYear() -new Date(birthday.birthday).getUTCFullYear()): ""))
                 .replace("[age]", (birthday.birthday.split(/\W+/g)[0] !== "0000"?(new Date().getUTCFullYear() -new Date(birthday.birthday).getUTCFullYear()).toString():""))
                 .replace("[ ]", birthday.birthday.split(/\W+/g)[0] !== "0000"? " " : "")
+                .replace("[pronoun A]", usersPronouns.split("/")[0])
+                .replace("[pronoun B]", usersPronouns.split("/")[1])
+                .replace("[prn-s]", usersPronouns.split("/")[0] == "they" ? "" : "s")
 
               // check if the "birthdayMessage" includes "<.*?|.*?>", if so, check if 'birthday.birthday.split(/\W+/g)[0] !== "0000"' is true, if it is, replace "<.*?|.*?>" with the contents of the first .*?, else, replace it with the contents of the second .*?, keep in mind that the're might be many of "<.*?|.*?>"
               if (/<<.*?\|.*?>>/.test(birthdayMessage)) {
