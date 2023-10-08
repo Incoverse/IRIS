@@ -577,6 +577,12 @@ declare const global: IRISGlobal;
 
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
+        performance.pause("fullRun")
+        performance.pause("commandRegistration");
+        /* prettier-ignore */
+        global.logger.debug(`Loading command: ${chalk.blueBright(file)}`,returnFileName());
+        performance.resume("fullRun")
+        performance.resume("commandRegistration");
         const command: IRISCommand = await import(`./commands/${file}`);
         if (
           command.commandSettings().devOnly &&
