@@ -287,8 +287,15 @@ declare const global: IRISGlobal;
   global.reload = {
     commands: []
   };
-  global.overrides = { //! These overrides get replaced by the event onReadySetupOVRD.evt.ts
-    }
+  global.overrides = {
+     //! These overrides get replaced by the event onReadySetupOVRD.evt.ts 
+  }
+  global.loggingData = {
+    joins: [],
+    leaves: [],
+    messages: [],
+  };
+
   global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
   global.app.config.development = process.env.DEVELOPMENT == "YES";
   if (!global.app.config.development) {
@@ -376,26 +383,6 @@ declare const global: IRISGlobal;
     const requiredModules: { [key: string]: any } = {};
 
     global.logger.log(`${chalk.white("[I]")} ${chalk.yellow("Logging in...")} ${chalk.white("[I]")}`, returnFileName());
-    client.on(Events.MessageCreate, async (message: Message) => {
-      const prioritizedTable: { [key: string]: any } = {};
-      for (let i of Object.keys(requiredModules)) {
-        if (i.startsWith("event")) {
-          const priority = requiredModules[i].priority() ?? 0;
-          const priorityKey = Number(priority).toString();
-          prioritizedTable[priorityKey] = prioritizedTable[priorityKey] ?? [];
-          prioritizedTable[priorityKey].push(i);
-        }
-      }
-      for (const prio of Object.keys(prioritizedTable).sort(
-        (a: string, b: string) => parseInt(b) - parseInt(a)
-      )) {
-        for (let i of prioritizedTable[prio]) {
-          if (requiredModules[i].eventType() === "onMessage") {
-            requiredModules[i].runEvent(message, requiredModules);
-          }
-        }
-      }
-    });
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
       if (!fullyReady) {
@@ -542,12 +529,12 @@ declare const global: IRISGlobal;
       const perms = me.permissions;
       let hasAllPerms = true
       global.logger.debug(
-        // check permissions for <server name>
+        // check permissions in <server name>
         `Checking permissions in ${chalk.cyanBright(guild.name)}`,
         returnFileName()
       )
       global.logger.log("------------------------", returnFileName());
-      performance.start("permissionCheck"); //! <---
+      performance.start("permissionCheck"); 
       for (let i of requiredPermissions) {
         if (!perms.has(i)) {
           global.logger.debugError(
@@ -557,16 +544,16 @@ declare const global: IRISGlobal;
           hasAllPerms = false
         } else {
           performance.pause("fullRun")
-          performance.pause("permissionCheck"); // pause the timer so that the log time isn't included //! <---
+          performance.pause("permissionCheck"); // pause the timer so that the log time isn't included 
           global.logger.debug(
             `${chalk.yellowBright(client.user.username)} has permission ${chalk.yellowBright(new PermissionsBitField(i).toArray()[0])}.`,
             returnFileName()
           )
           performance.resume("fullRun")
-          performance.resume("permissionCheck");//! <---
+          performance.resume("permissionCheck");
         }
       }
-      const finalPermissionCheckTime = performance.end("permissionCheck", { //1.234ms //! <---
+      const finalPermissionCheckTime = performance.end("permissionCheck", { //1.234ms 
         silent: true,
       })
       
@@ -826,7 +813,8 @@ declare const global: IRISGlobal;
               requiredModules[i].getListenerKey(),
               async (...args: any) => {
                 /* prettier-ignore */
-                global.logger.debug(`Running '${eventType} (${listenerKey})' event: ${eventName}`,returnFileName());
+                if (requiredModules[i].getListenerKey() != Events.MessageCreate)
+                  global.logger.debug(`Running '${eventType} (${listenerKey})' event: ${eventName}`,returnFileName());
                 await requiredModules[i].runEvent(requiredModules, ...args);
               }
             );

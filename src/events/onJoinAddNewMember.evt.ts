@@ -41,6 +41,10 @@ export async function runEvent(
   if (args[0].user.bot) return;
   if (args[0].guild.id !== global.app.config.mainServer) return;
 
+  // Add user to global.loggingData.joins if they are not already in it
+  if (!global.loggingData.joins.includes(args[0].id))
+    global.loggingData.joins.push(args[0].id);
+
   const guild = await args[0].client.guilds.fetch(global.app.config.mainServer);
   let newMembersRole = null;
   await guild.roles.fetch().then(async (roles) => {

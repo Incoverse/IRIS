@@ -35,6 +35,7 @@ declare const global: IRISGlobal;
 let tokenExpirySec = Number.MAX_SAFE_INTEGER;
 export const setup = async (client:Discord.Client, RM: object) => true
 export async function runEvent(client: Discord.Client, RM: object) {
+  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
   global.communicationChannel.on("authInquiryResp", async (message) => {
     if (message.data.authMade) tokenExpirySec = message.data.expires_in;
 

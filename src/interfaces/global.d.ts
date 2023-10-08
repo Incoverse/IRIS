@@ -68,6 +68,11 @@ interface IRISGlobal extends NodeJS.Global {
       validWords: Array<string>;
     };
   };
+  loggingData: {
+    joins: Array<string>;
+    leaves: Array<string>;
+    messages: Array<string>;
+  };
   games: {
     wordle?: {
       word: string;
