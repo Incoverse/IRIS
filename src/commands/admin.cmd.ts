@@ -23,21 +23,38 @@ import Discord, {
 } from "discord.js";
 import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
+import chalk from "chalk";
+const __filename = fileURLToPath(import.meta.url);
 
+const localReturnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
+
+global.logger.debug("Loading admin module '"+chalk.yellowBright("restartMongoDB")+"'...", localReturnFileName());
 import * as restartMongoDB from "./command-lib/admin-restartMongo.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("restartIRIS")+"'...", localReturnFileName());
 import * as restartIRIS from "./command-lib/admin-restart.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("checkCertificate")+"'...", localReturnFileName());
 import * as checkCertificate from "./command-lib/admin-checkcert.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("stopIRIS")+"'...", localReturnFileName());
 import * as stopIRIS from "./command-lib/admin-stop.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("changeBirthday")+"'...", localReturnFileName());
 import * as changeBirthday from "./command-lib/admin-changeBirthday.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("changeTimezone")+"'...", localReturnFileName());
 import * as changeTimezone from "./command-lib/admin-changeTimezone.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("entryManagement")+"'...", localReturnFileName());
 import * as entryManagement from "./command-lib/admin-entrymgmt.cmdlib.js";
-import * as setPresence from "./command-lib/admin-setPresence.cmdlib.js";
+// global.logger.debug("Loading admin module '"+chalk.yellowBright("restartMongoDB")+"'...", localReturnFileName());
+//import * as setPresence from "./command-lib/admin-setPresence.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("logs")+"'...", localReturnFileName());
 import * as logs from "./command-lib/admin-logs.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("editMessage")+"'...", localReturnFileName());
 import * as editMessage from "./command-lib/admin-editMessage.cmdlib.js"
+global.logger.debug("Loading admin module '"+chalk.yellowBright("getStats")+"'...", localReturnFileName());
 import * as getStats from "./command-lib/admin-getStatistics.cmdlib.js"
 
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
     slashCommand: new Discord.SlashCommandBuilder()
     .setName("admin")
@@ -349,5 +366,4 @@ export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
 export const getSlashCommand = () => commandInfo.slashCommand;
-
 export const commandSettings = () => commandInfo.settings;
