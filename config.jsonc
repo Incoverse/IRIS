@@ -49,6 +49,14 @@
       "development": [
         { "selector": "&IRIS Development", "canUse": true }
       ]
+    },
+    "admin iris getstats": {
+      "main": [
+        { "selector": "&Development Team", "canUse": true }
+      ],
+      "development": [
+        { "selector": "&IRIS Development", "canUse": true }
+      ]
     }
   },
 
