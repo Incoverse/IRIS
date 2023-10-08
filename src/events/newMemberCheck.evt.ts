@@ -17,7 +17,7 @@
 
 const eventInfo = {
   type: "runEvery",
-  ms: 12 * 60 * 60 * 1000, //12h
+  ms: 6 * 60 * 60 * 1000, //6h, 4 times a day
   runImmediately: true,
   settings: {
     devOnly: false,
@@ -46,6 +46,8 @@ export const setup = async (client:Discord.Client, RM: object) => {
   return true
 }
 export async function runEvent(client: Discord.Client, RM: object) {
+  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
+
   running = true;
   // -----------
   const guild = await client.guilds.fetch(global.app.config.mainServer);

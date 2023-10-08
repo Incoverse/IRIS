@@ -1,6 +1,6 @@
 {
   "name": "iris",
-  "version": "2-DEV-5997d532",
+  "version": "2-DEV-4ef83d2b",
   "description": "IRIS (Intelligent Response Interface System) is a Discord bot created by and for the Chaos Crew Community.",
   "main": "index.js",
   "scripts": {
@@ -31,10 +31,14 @@
   "homepage": "https://github.com/Incoverse/IRIS#readme",
   "dependencies": {
     "chalk": "^5.2.0",
+    "convert-svg-to-png": "^0.6.4",
+    "d3": "^7.8.5",
     "discord.js": "^14.13.0",
+    "diskusage": "^1.2.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "join-images": "^1.1.5",
+    "jsdom": "^22.1.0",
     "jsonc-parser": "^3.2.0",
     "md5": "^2.3.0",
     "moment": "^2.29.4",

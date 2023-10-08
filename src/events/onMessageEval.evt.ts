@@ -20,7 +20,8 @@ import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 import { inspect } from "util";
 const eventInfo = {
-  type: "onMessage",
+  type: "discordEvent",
+  listenerkey: Discord.Events.MessageCreate,
   settings: {
     devOnly: false,
     mainOnly: false,
@@ -30,7 +31,7 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(message: Discord.Message, RM: object) {
+export async function runEvent(RM: object, message: Discord.Message) {
   if (message.guildId != global.app.config.mainServer) return;
   if (message.content.startsWith(".IRIS-EVAL ")) {
     await message.client.application.fetch();
@@ -101,3 +102,4 @@ export const returnFileName = () =>
 export const eventType = () => eventInfo.type;
 export const eventSettings = () => eventInfo.settings;
 export const priority = () => 0;
+export const getListenerKey = () => eventInfo.listenerkey;
