@@ -580,7 +580,7 @@ declare const global: IRISGlobal;
         performance.pause("fullRun")
         performance.pause("commandRegistration");
         /* prettier-ignore */
-        global.logger.debug(`Loading command: ${chalk.blueBright(file)}`,returnFileName());
+        // global.logger.debug(`Loading command: ${chalk.blueBright(file)}`,returnFileName());
         performance.resume("fullRun")
         performance.resume("commandRegistration");
         const command: IRISCommand = await import(`./commands/${file}`);
