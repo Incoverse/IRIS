@@ -189,10 +189,10 @@ export async function runCommand(
         dbclient.close();
         return await interaction.reply({
           content:
-            "You have already played the daily wordle! The daily wordle will reset in **" +
-            prettyMilliseconds(
+            "You have already played the daily wordle! The daily wordle will reset " +
+            (new Date(wordle.expires).getTime() - Date.now() < 60000 ? "**soon" : "in **" + prettyMilliseconds(
               new Date(wordle.expires).getTime() - Date.now()
-            ) +
+            )) +
             "**.",
           ephemeral: true,
         });
@@ -203,7 +203,47 @@ export async function runCommand(
         guesses: [],
         startTime: Date.now(),
         lastEphemeralMessage: null,
+        timers: {
+          gameEndWarning: setTimeout(() => {
+            if (wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage) {
+              wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage.edit({
+                content: "**Warning!** This daily wordle will expire in **5 minutes**! If you do not finish the game in time, your game will end and count as a loss!\n\n" + generateBoard(),
+              }).catch(() => wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage = null)
+            }
+            wordle.currentlyPlaying[interaction.user.id].timers.updateMessageTimer = setInterval(() => {
+              const timeLeft = prettyMilliseconds(new Date(wordle.expires).getTime() - Date.now()+50000, {
+                compact: true,
+                verbose: true,
+              })
+              if (wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage) {
+                wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage.edit({
+                  content: "**Warning!** This daily wordle will expire in **"+timeLeft+"**! If you do not finish the game in time, your game will end and count as a loss!\n\n" + generateBoard(),
+                }).catch(() => wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage = null)
+              }
+            }, 60000)
+          }, new Date(wordle.expires).getTime() - Date.now() - 300000),
+          updateMessageTimer: null,
+          gameEndTimer: setTimeout(async () => {
+
+              clearInterval(wordle.currentlyPlaying[interaction.user.id].timers.updateMessageTimer)
+              await wordle.currentlyPlaying[interaction.user.id].boardMessage.edit({
+                content:
+                  "The daily wordle expired before **" +
+                  (interaction.member as GuildMember).displayName +
+                  "** could finish!\n" +
+                  generateBoard(undefined, true, true),
+              });
+              await wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage.edit({
+                content: "The wordle has expired! :(\nThe word was: [**"+wordle.word+"**](<https://www.dictionary.com/browse/"+wordle.word+">)\n\n" + generateBoard(),
+              }).catch(() => wordle.currentlyPlaying[interaction.user.id].lastEphemeralMessage = null)
+              await generateStats(true);
+              delete global.games.wordle.currentlyPlaying[interaction.user.id];
+              return;
+
+          }, new Date(wordle.expires).getTime() - Date.now()),
+        },
       };
+      
       const message = await interaction.channel.send({
         content:
           "<@" +
@@ -246,8 +286,12 @@ export async function runCommand(
           .delete()
           .catch(() => {});
       } catch (e) {}
+      const warningMessage = new Date(wordle.expires).getTime() - Date.now() < 300000 ? "**Warning!** This daily wordle will expire in **"+prettyMilliseconds(new Date(wordle.expires).getTime() - Date.now()+50000, {
+        compact: true,
+        verbose: true,
+      })+"**! If you do not finish the game in time, your game will end and count as a loss!\n\n" : ""
       const msg = await interaction.reply({
-        content:
+        content: warningMessage +
           "**" +
           (6 -
             global.games.wordle.currentlyPlaying[interaction.user.id].guesses
@@ -282,8 +326,12 @@ export async function runCommand(
             .delete()
             .catch(() => {});
         } catch {}
+        const warningMessage = new Date(wordle.expires).getTime() - Date.now() < 300000 ? "**Warning!** This daily wordle will expire in **"+prettyMilliseconds(new Date(wordle.expires).getTime() - Date.now()+50000, {
+          compact: true,
+          verbose: true,
+        })+"**! If you do not finish the game in time, your game will end and count as a loss!\n\n" : ""
         const msg = await interaction.reply({
-          content: generateBoard()+ "\n\nYour guess must be 5 letters long!",
+          content: warningMessage + generateBoard() + "\n\nYour guess must be 5 letters long!",
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -303,8 +351,12 @@ export async function runCommand(
             .delete()
             .catch(() => {});
         } catch {}
+        const warningMessage = new Date(wordle.expires).getTime() - Date.now() < 300000 ? "**Warning!** This daily wordle will expire in **"+prettyMilliseconds(new Date(wordle.expires).getTime() - Date.now()+50000, {
+          compact: true,
+          verbose: true,
+        })+"**! If you do not finish the game in time, your game will end and count as a loss!\n\n" : ""
         const msg = await interaction.reply({
-          content: generateBoard()+"\n\nYou have already guessed that word!",
+          content: warningMessage + generateBoard()+"\n\nYou have already guessed that word!",
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -325,8 +377,12 @@ export async function runCommand(
             .delete()
             .catch(() => {});
         } catch {}
+        const warningMessage = new Date(wordle.expires).getTime() - Date.now() < 300000 ? "**Warning!** This daily wordle will expire in **"+prettyMilliseconds(new Date(wordle.expires).getTime() - Date.now() + 50000, {
+          compact: true,
+          verbose: true,
+        })+"**! If you do not finish the game in time, your game will end and count as a loss!\n\n" : ""
         const msg = await interaction.reply({
-          content: generateBoard()+"\n\nThat is not a valid word!",
+          content: warningMessage + generateBoard()+"\n\nThat is not a valid word!",
           ephemeral: true,
         });
         global.games.wordle.currentlyPlaying[
@@ -353,6 +409,18 @@ export async function runCommand(
           endTime =
             Date.now() -
             global.games.wordle.currentlyPlaying[interaction.user.id].startTime;
+          clearInterval(
+            global.games.wordle.currentlyPlaying[interaction.user.id].timers
+              .updateMessageTimer
+          );
+          clearTimeout(
+            global.games.wordle.currentlyPlaying[interaction.user.id].timers
+              .gameEndTimer
+          );
+          clearTimeout(
+            global.games.wordle.currentlyPlaying[interaction.user.id].timers
+              .gameEndWarning
+          );
           await wordle.currentlyPlaying[interaction.user.id].boardMessage.edit({
             content:
               "**" +
@@ -380,8 +448,13 @@ export async function runCommand(
             " daily wordle game\n\n``/wordle guess [word]`` to guess\n``/wordle board`` to view your board\n\n" +
             generateBoard(undefined, true, true),
         });
+        const warningMessage = new Date(wordle.expires).getTime() - Date.now() < 300000 ? "**Warning!** This daily wordle will expire in **"+prettyMilliseconds(new Date(wordle.expires).getTime() - Date.now()+50000, {
+          compact: true,
+          verbose: true,
+        })+"**! If you do not finish the game in time, your game will end and count as a loss!\n\n" : ""
         const msg = await interaction.reply({
           content:
+            warningMessage +
             "**" +
             (6 -
               global.games.wordle.currentlyPlaying[interaction.user.id].guesses
@@ -398,6 +471,18 @@ export async function runCommand(
         endTime =
           Date.now() -
           global.games.wordle.currentlyPlaying[interaction.user.id].startTime;
+          clearInterval(
+            global.games.wordle.currentlyPlaying[interaction.user.id].timers
+              .updateMessageTimer
+          );
+          clearTimeout(
+            global.games.wordle.currentlyPlaying[interaction.user.id].timers
+              .gameEndTimer
+          );
+          clearTimeout(
+            global.games.wordle.currentlyPlaying[interaction.user.id].timers
+              .gameEndWarning
+          );
         await wordle.currentlyPlaying[interaction.user.id].boardMessage.edit({
           content:
             "**" +
