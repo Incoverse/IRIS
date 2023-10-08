@@ -23,7 +23,7 @@ import { IRISGlobal } from "../interfaces/global.js";
 import { check } from "diskusage";
 const eventInfo = {
   type: "runEvery",
-  ms: 1800000, // 30 minutes
+  ms: 900000, // 15 minutes
   runImmediately: false,
   settings: {
     devOnly: false,
