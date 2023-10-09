@@ -79,7 +79,7 @@ export async function runSubCommand(
   let currentDate = startDate;
   while (currentDate <= endDate) {
     // if (Math.floor(Math.random() * 5) + 1 == 1) {
-      if (Object.keys(data).includes(currentDate.toISOString()))
+      if (!Object.keys(data).includes(currentDate.toISOString()))
       data[currentDate.toISOString()] = null // data will show up as missing in the chart
     // } else {
     //   if (!data[currentDate.toISOString()])
