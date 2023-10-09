@@ -70,7 +70,7 @@ export async function runSubCommand(
   let data: object | Array<object> = JSON.parse(readFileSync(`./data/${year}.json`, "utf-8"));
 
   for (let key of Object.keys(data)) {
-    data[key] = data[key][type] || null;
+    data[key] = !data[key][type] && data[key][type] !== 0 ? null : data[key][type];
   }
 
   // add missing dates
