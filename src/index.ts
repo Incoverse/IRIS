@@ -126,7 +126,7 @@ declare const global: IRISGlobal;
     error: (message: any, sender: string) => {
       message = (message && message.stack) ? message.stack : message
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.log(
+      console.error(
         chalk.white.bold(
           "[" +
           moment().format("M/D/y HH:mm:ss") +
@@ -193,7 +193,7 @@ declare const global: IRISGlobal;
       if (config.debugging) {
         message = (message && message.stack) ? message.stack : message
       if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.log(
+      console.error(
           chalk.white.bold(
             "[" +
             moment().format("M/D/y HH:mm:ss") +
@@ -261,6 +261,7 @@ declare const global: IRISGlobal;
     PermissionsBitField.Flags.ViewChannel,
   ]
   process.on('uncaughtException', function(err) {
+    console.error(err)
     global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-ERR");
   });
   const onExit = (a: string | number) => {
@@ -322,7 +323,7 @@ declare const global: IRISGlobal;
     process.env.DBUSERNAME
     + ":" +
     process.env.DBPASSWD +
-    "@ext.kennevo.com:27017/?authMechanism=DEFAULT&tls=true&family=4";
+    "@inimicalpart.com:27017/?authMechanism=DEFAULT&tls=true&family=4";
   global.resources = {
     wordle: {
       validGuesses: (

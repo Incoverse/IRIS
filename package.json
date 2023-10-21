@@ -1,6 +1,6 @@
 {
   "name": "iris",
-  "version": "2-DEV-4ef83d2b",
+  "version": "2-STABLE-efaa3c42",
   "description": "IRIS (Intelligent Response Interface System) is a Discord bot created by and for the Chaos Crew Community.",
   "main": "index.js",
   "scripts": {
