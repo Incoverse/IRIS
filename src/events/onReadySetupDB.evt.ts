@@ -38,20 +38,16 @@ export async function runEvent(client: Discord.Client, RM: object) {
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
     const database = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-    try {
+    const collections = (await database.listCollections().toArray()).map((c) => c.name);
+    if (!collections.includes(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")) {
         await database.createCollection(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")
         /* prettier-ignore */
         global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")}`,returnFileName());
-
-    } catch {
-        /* Nothing to worry about, collection already exists */
-    }
-    try {
-        await database.createCollection(global.app.config.development ? "DEVSRV_GD_"+global.app.config.mainServer : "gamedata")
-        /* prettier-ignore */
-        global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_GD_"+global.app.config.mainServer : "gamedata")}`,returnFileName());
-    } catch {
-        /* Nothing to worry about, collection already exists */
+      }
+    if (!collections.includes(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")) {
+      await database.createCollection(global.app.config.development ? "DEVSRV_GD_"+global.app.config.mainServer : "gamedata")
+      /* prettier-ignore */
+      global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_GD_"+global.app.config.mainServer : "gamedata")}`,returnFileName());
     }
   } finally {
     // Ensures that the client will close when you finish/error

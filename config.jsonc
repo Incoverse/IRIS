@@ -10,7 +10,7 @@
   "debugging": true,
   //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env
   //! Development Team members, this main server will never be used, so you can leave this as it is or clear it.
-  "mainServer": "786013884216639509", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
+  "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
   //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env
   //! Development Team members, put your server ID here.
   "developmentServer": "931616832668958748",
@@ -28,35 +28,25 @@
   "permissions": {
     "admin": {
       "main": [
-        { "selector": "&Engineer", "canSee": true, "canUse": true },
-        { "selector": "&Moderator", "canSee": true, "canUse": true },
-        { "selector": "&Support Team", "canSee": true, "canUse": true },
-        { "selector": "&Development Team", "canSee": true, "canUse": false },
-        { "selector": "&everyone", "canSee": false, "canUse": false }
-      ],
-      "development": [
         { "selector": "&Administrator", "canSee": true, "canUse": true },
         { "selector": "&Moderator", "canSee": true, "canUse": true },
         { "selector": "&Support Team", "canSee": true, "canUse": true },
         { "selector": "&IRIS Development", "canSee": true, "canUse": false },
         { "selector": "&everyone", "canSee": false, "canUse": false }
-      ]
+      ],
+      "development": []
     },
     "admin iris logs": {
       "main": [
-        { "selector": "&Development Team", "canUse": true }
-      ],
-      "development": [
         { "selector": "&IRIS Development", "canUse": true }
-      ]
+      ],
+      "development": []
     },
     "admin iris getstats": {
       "main": [
-        { "selector": "&Development Team", "canUse": true }
-      ],
-      "development": [
         { "selector": "&IRIS Development", "canUse": true }
-      ]
+      ],
+      "development": []
     }
   },
 
