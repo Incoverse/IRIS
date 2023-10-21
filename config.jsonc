@@ -8,9 +8,17 @@
   "showErrors": true,
   //? This option shows messages like "registered command xyz", "running event xyz", etc. recommended to be on for satisfication purposes.
   "debugging": true,
+<<<<<<< HEAD
   //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
   "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
   //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
+=======
+  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env
+  //! Development Team members, this main server will never be used, so you can leave this as it is or clear it.
+  "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
+  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env
+  //! Development Team members, put your server ID here.
+>>>>>>> bdab0ed (Changing to my server)
   "developmentServer": "931616832668958748",
 
   //? This is the MongoDB server that IRIS will connect to and use for data storage.
