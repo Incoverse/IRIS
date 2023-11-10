@@ -89,7 +89,8 @@ export async function runCommand(
       noUNOCallPenalty: 3,
       drawTillPlayable: false,
       playAfterDraw: false,
-      createThread: true
+      createThread: true,
+      spoilerMode: false
     };
     const collectors: {
       [key: string]: { [key: string]: Discord.InteractionCollector<any> };
@@ -505,6 +506,10 @@ export async function runCommand(
             name: "Create Chat Thread",
             value: settings.createThread ? "Yes" : "No",
             // inline: true,
+          },
+          {
+            name: "Spoiler Mode",
+            value: settings.spoilerMode ? "Yes" : "No",
           }
         );
 
@@ -568,6 +573,12 @@ export async function runCommand(
                           "Whether to create a chat thread for the game"
                         )
                         .setValue("createThread"),
+                      new StringSelectMenuOptionBuilder()
+                        .setLabel("Spoiler Mode")
+                        .setDescription(
+                          "Whether to mark hand cards as a spoiler"
+                        )
+                        .setValue("spoilerMode"),
                       new StringSelectMenuOptionBuilder()
                         .setLabel("Save Settings")
                         .setDescription(
@@ -777,6 +788,14 @@ export async function runCommand(
               toUpdate: intt,
               whatChanged: "createThread"
             });
+          } else if (intt.values[0] == "spoilerMode") {
+
+            settings.spoilerMode = !settings.spoilerMode;
+            await showSettings(inter, {
+              updateInteraction: true,
+              toUpdate: intt,
+              whatChanged: "spoilerMode"
+            });
           
           } else if (intt.values[0] == "saveSettings") {
             shouldSaveSettings = !shouldSaveSettings;
@@ -791,7 +810,7 @@ export async function runCommand(
     }
     async function showHand(
       inter: MessageComponentInteraction,
-      settings: {
+      settings2: {
         updateInteraction?: boolean;
         toUpdate?: InteractionResponse;
       } = {
@@ -801,8 +820,8 @@ export async function runCommand(
     ) {
       if (
         !game.getPlayerByName(
-          settings.updateInteraction
-            ? settings.toUpdate.interaction.user.id
+          settings2.updateInteraction
+            ? settings2.toUpdate.interaction.user.id
             : inter.user.id
         )
       ) {
@@ -819,8 +838,8 @@ export async function runCommand(
       }
       if (
         game.getPlayerByName(
-          settings.updateInteraction
-            ? settings.toUpdate.interaction.user.id
+          settings2.updateInteraction
+            ? settings2.toUpdate.interaction.user.id
             : inter.user.id
         ).hand.cards.length == 0
       ) {
@@ -839,8 +858,8 @@ export async function runCommand(
 
       if (
         !Object.keys(drawChoice).includes(
-          settings.updateInteraction
-            ? settings.toUpdate.interaction.user.id
+          settings2.updateInteraction
+            ? settings2.toUpdate.interaction.user.id
             : inter.user.id
         )
       ) {
@@ -849,8 +868,8 @@ export async function runCommand(
           handToImages({
             cards: game
               .getPlayerByName(
-                settings.updateInteraction
-                  ? settings.toUpdate.interaction.user.id
+                settings2.updateInteraction
+                  ? settings2.toUpdate.interaction.user.id
                   : inter.user.id
               )
               .hand.cards.sort((a: Card, b: Card) => {
@@ -867,8 +886,8 @@ export async function runCommand(
         );
       } else {
         let playableCard = game.getPlayerByName(
-          settings.updateInteraction
-            ? settings.toUpdate.interaction.user.id
+          settings2.updateInteraction
+            ? settings2.toUpdate.interaction.user.id
             : inter.user.id
         ).hand.cards[0];
         // if (drawnCards.length == 0) {
@@ -887,10 +906,10 @@ export async function runCommand(
       }
 
       const attachment = new AttachmentBuilder(combinedCards, {
-        name: "hand.png",
+        name: settings.spoilerMode ? "SPOILER_FILE.png" : "hand.png",
       });
-      const id = settings.updateInteraction
-        ? settings.toUpdate.interaction.user.id
+      const id = settings2.updateInteraction
+        ? settings2.toUpdate.interaction.user.id
         : inter.user.id;
       let response:
         | Discord.InteractionResponse<boolean>
@@ -908,7 +927,7 @@ export async function runCommand(
         components: !game.ended
           ? [
               ...(await generateShowHandButtons(
-                settings.updateInteraction ? settings.toUpdate : inter,
+                settings2.updateInteraction ? settings2.toUpdate : inter,
                 "selectCardColor",
                 {
                   packToRows: true,
@@ -918,15 +937,15 @@ export async function runCommand(
           : [],
       };
       try {
-        if (settings?.updateInteraction && settings?.toUpdate) {
+        if (settings2?.updateInteraction && settings2?.toUpdate) {
           delete toSendData.ephemeral;
           try {
-            await settings.toUpdate.edit(toSendData);
+            await settings2.toUpdate.edit(toSendData);
           } catch (e) {
             global.logger.error(e, returnFileName());
             return;
           }
-          response = settings.toUpdate;
+          response = settings2.toUpdate;
         } else {
           response = await inter.reply(toSendData);
         }
@@ -934,7 +953,7 @@ export async function runCommand(
         global.logger.error(e, returnFileName());
         return false;
       }
-      if (!settings.updateInteraction) {
+      if (!settings2.updateInteraction) {
         // if (inter instanceof MessageComponentInteraction) {
         if (interactionTimers[inter.user.id]) {
           clearTimeout(interactionTimers[inter.user.id].warn);
@@ -976,13 +995,13 @@ export async function runCommand(
       // }
       if (
         game.currentPlayer.name ==
-        (settings.updateInteraction
-          ? settings.toUpdate.interaction.user.id
+        (settings2.updateInteraction
+          ? settings2.toUpdate.interaction.user.id
           : inter.user.id)
       )
         handleShowHandButtons(response, "selectCardColor", {
-          originalMessage: settings.updateInteraction
-            ? settings.toUpdate.interaction
+          originalMessage: settings2.updateInteraction
+            ? settings2.toUpdate.interaction
             : inter,
         });
       return true;
@@ -1407,7 +1426,7 @@ export async function runCommand(
         //     after.map((a) => cardToImage(CustomizedCard.fromJSON(a)))
         //   ),
         //   {
-        //     name: "hand.png",
+        //     name: settings.spoilerMode ? "SPOILER_FILE.png" : "hand.png",
         //   }
         // );
         // await i.reply({
