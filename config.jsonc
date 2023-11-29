@@ -1,7 +1,13 @@
 {
+<<<<<<< HEAD
   //? Any user that will be considered as an "owner" of the bot. (ID)
   //! If you are working in a team, but the bot is not in a Discord Developer team and is only owned by one person, it is recommended to add your team member's user IDs here.
   "externalOwners": [],
+=======
+  //? Any user that will be considered as an "owner" of the bot.
+  //! Development Team members, add your User ID here.
+  "externalOwners": ["616594498369093632"],
+>>>>>>> 43c3537 (Added Fax as a bot owner)
   //? Show errors on "There was an error while executing this command!".
   //? If the user that ran the command is an owner, detailed error information will be shown.
   //! For development purposes, it is recommended to keep this on.
