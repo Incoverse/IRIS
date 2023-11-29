@@ -1,7 +1,7 @@
 {
   //? Any user that will be considered as an "owner" of the bot.
   //! Development Team members, add your User ID here.
-  "externalOwners": [],
+  "externalOwners": ["616594498369093632"],
   //? Show errors on "There was an error while executing this command!".
   //? If the user that ran the command is an owner, detailed error information will be shown.
   //! Development Team members, it is recommended to keep this on.
