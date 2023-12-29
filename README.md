@@ -1,6 +1,7 @@
 <a name="readme-top"></a>
 <!--
 *** This is the readme for the IRIS bot.
+*** Credit to https://github.com/ROBERTGUO19 for making this README!
 -->
 
 
@@ -15,7 +16,7 @@
   <h3 align="center">IRIS (Intelligent Response Interface System)</h3>
 
   <p align="center">
-    IRIS is a Discord bot created by and for the Chaos Crew Community!
+    IRIS is a Discord bot that is focused on fun and utlities, as well as helping people understand TypeScript.
     <br />
     <hr>
   </p>
@@ -55,15 +56,15 @@
 
 
 
-Welcome to the official repository for IRIS, a Discord Bot developed by and for the Kennevo's Chaos Crew community. IRIS stands for Intelligent Response Interface System, and was designed to simplify automation as well as bring fun to the Chaos Crew community.
+Welcome to the official repository for IRIS, a Discord bot focused on fun and utilities with the purpose of helping people understand TypeScript. IRIS stands for Intelligent Response Interface System.
 
-IRIS is coded from scratch and with :heart: by the Development Team. 
+IRIS is coded from scratch and with :heart: by the Incoverse team. 
 
 
 
 ### Built With
 
-There are many frameworks/libraries used to create this project. Here are a few examples.
+There are many frameworks/libraries used to create this project. Here are a few of them.
 
 * [![Discord][Discord.js]][Discord-url]
 * [![.ENV][dotenv]][dotenv-url]
@@ -116,8 +117,8 @@ Follow these steps to get a copy of IRIS up and running on your machine!
 8. Create a `.env` file in the project's root directory and replace the following values to the ones you've written down: `[bot-token]`, `[client-id]`, `[client-secret]`. Leave the rest as it is.
    ```
    TOKEN="[bot-token]"
-   DBUSERNAME="irisdev"
-   DBPASSWD="UQyOxR19Egua3iW0Bi75ORIb2dn6yGT6Cs9ITRbwUK37ADpCyV"
+   DBUSERNAME="<MongoDB username>"
+   DBPASSWD="<MongoDB password>"
    DEVELOPMENT="YES"
    cID="[client-id]"
    cSecret="[client-secret]"
