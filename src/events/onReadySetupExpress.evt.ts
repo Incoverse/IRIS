@@ -72,7 +72,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
       }
     );
 
-    const oauthData = await tokenResponseData.body.json();
+    const oauthData: any = await tokenResponseData.body.json();
 
     // create a function that takes in the .env format and returns an object
 
@@ -121,7 +121,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
         }
     );
     if (tokenResponseData.statusCode == 200) {
-        const oauthData = await tokenResponseData.body.json();
+        const oauthData:any = await tokenResponseData.body.json();
         const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
         parsedDotEnv["ACCESS_TKN"] = '"' + oauthData.access_token + '"';
         parsedDotEnv["REFRESH_TKN"] = '"' + oauthData.refresh_token + '"';
