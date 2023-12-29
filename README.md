@@ -124,6 +124,9 @@ Follow these steps to get a copy of IRIS up and running on your machine!
    npm install
    ```
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> cb3f122 (Added server setup)
 10. Create your discord bot.
     - [Create a new Discord Application](https://discord.com/developers/applications)
     - Go to the `OAuth2` section and write down your client ID and secret
@@ -145,6 +148,7 @@ Follow these steps to get a copy of IRIS up and running on your machine!
    > Follow <a href="#server-creation-notes">Server Creation Notes</a> to create your server.
 13. Write `npm run CnR` in your cmd/terminal (CnR = Compile & Run) and click Enter.
 14. When a link is displayed in the console, open it in your browser and authorize it. This will allow IRIS to properly set up command permissions (defined in `config.jsonc`).
+<<<<<<< HEAD
 =======
    
 7. Create your discord bot.
@@ -166,6 +170,8 @@ Follow these steps to get a copy of IRIS up and running on your machine!
 12. Write `npm run CnR` in your cmd/terminal (CnR = Compile & Run) and click Enter.
 13. When a link is displayed in the console, open it in your browser and authorize it. This will allow IRIS to properly set up command permissions (defined in `config.jsonc`).
 >>>>>>> e755d1b (Removing mentions of Kennevo's CC)
+=======
+>>>>>>> cb3f122 (Added server setup)
 
 
 
