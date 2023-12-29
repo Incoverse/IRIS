@@ -123,6 +123,7 @@ Follow these steps to get a copy of IRIS up and running on your machine!
    ```
    npm install
    ```
+<<<<<<< HEAD
 10. Create your discord bot.
     - [Create a new Discord Application](https://discord.com/developers/applications)
     - Go to the `OAuth2` section and write down your client ID and secret
@@ -144,6 +145,27 @@ Follow these steps to get a copy of IRIS up and running on your machine!
    > Follow <a href="#server-creation-notes">Server Creation Notes</a> to create your server.
 13. Write `npm run CnR` in your cmd/terminal (CnR = Compile & Run) and click Enter.
 14. When a link is displayed in the console, open it in your browser and authorize it. This will allow IRIS to properly set up command permissions (defined in `config.jsonc`).
+=======
+   
+7. Create your discord bot.
+   * [Create a new Discord Application](https://discord.com/developers/applications)
+   * Go to the `OAuth2` section and write down your client ID and secret
+   * Staying on the same page, add the following redirect URI `http://localhost:7380` (Discord may add a slash at the end, make sure to remove it) 
+   * Go to the `Bot` section and turn on all of the intents and write down your bot token (click 'Reset Token' to create the token)
+8. Create a `.env` file in the project's root directory and replace the following values to the ones you've written down: `[bot-token]`, `[client-id]`, `[client-secret]`. Leave the rest as it is.
+   ```
+   TOKEN="[bot-token]"
+   DBUSERNAME="<MongoDB username>"
+   DBPASSWD="<MongoDB password>"
+   DEVELOPMENT="YES"
+   cID="[client-id]"
+   cSecret="[client-secret]"
+   ```   
+9. Now it's time to add your bot to your server. Use the following URL, but replace `[client-id]` with the client ID you wrote down: https://discord.com/api/oauth2/authorize?client_id=[client-id]&permissions=328866327553&scope=bot%20applications.commands 
+11. Follow <a href="#server-creation-notes">Server Creation Notes</a> to create your server.
+12. Write `npm run CnR` in your cmd/terminal (CnR = Compile & Run) and click Enter.
+13. When a link is displayed in the console, open it in your browser and authorize it. This will allow IRIS to properly set up command permissions (defined in `config.jsonc`).
+>>>>>>> e755d1b (Removing mentions of Kennevo's CC)
 
 
 
