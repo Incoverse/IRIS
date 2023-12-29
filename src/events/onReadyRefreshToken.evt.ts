@@ -45,7 +45,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
 
 function startTokenTimer() {
   setTimeout(() => {
-    refreshDiscordToken(process.env.REFRESH_TKN).then((tokenResponse) => {
+    refreshDiscordToken(process.env.REFRESH_TKN).then((tokenResponse: any) => {
       saveNewToken(tokenResponse);
       tokenExpirySec = tokenResponse.expires_in;
       startTokenTimer();
