@@ -319,11 +319,8 @@ declare const global: IRISGlobal;
     process.exit(1);
   }
   global.mongoConnectionString =
-    "mongodb://" +
-    process.env.DBUSERNAME
-    + ":" +
-    process.env.DBPASSWD +
-    "@inimicalpart.com:27017/?authMechanism=DEFAULT&tls=true&family=4";
+    `mongodb://${process.env.DBUSERNAME}:${process.env.DBPASSWD}@${global.app.config.mongoDBServer}:27017/?authMechanism=DEFAULT&tls=true&family=4`;
+  //! Becomes something like: mongodb://username:password@server.com:27017/?authMechanism=DEFAULT&tls=true&family=4
   global.resources = {
     wordle: {
       validGuesses: (
