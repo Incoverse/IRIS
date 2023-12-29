@@ -320,6 +320,7 @@ declare const global: IRISGlobal;
   }
   global.mongoConnectionString =
 <<<<<<< HEAD
+<<<<<<< HEAD
     `mongodb://${process.env.DBUSERNAME}:${process.env.DBPASSWD}@${global.app.config.mongoDBServer}:27017/?authMechanism=DEFAULT&tls=true&family=4`;
   //! Becomes something like: mongodb://username:password@server.com:27017/?authMechanism=DEFAULT&tls=true&family=4
 =======
@@ -329,6 +330,10 @@ declare const global: IRISGlobal;
     process.env.DBPASSWD +
     "@inimicalpart.com:27017/?authMechanism=DEFAULT&tls=true&family=4";
 >>>>>>> bdab0ed (Changing to my server)
+=======
+    `mongodb://${process.env.DBUSERNAME}:${process.env.DBPASSWD}@${global.app.config.mongoDBServer}:27017/?authMechanism=DEFAULT&tls=true&family=4`;
+  //! Becomes something like: mongodb://username:password@server.com:27017/?authMechanism=DEFAULT&tls=true&family=4
+>>>>>>> 02a249c (MongoDB server is now customizable)
   global.resources = {
     wordle: {
       validGuesses: (
