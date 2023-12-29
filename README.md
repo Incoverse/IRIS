@@ -103,30 +103,47 @@ Follow these steps to get a copy of IRIS up and running on your machine!
    ```sh
    npm i -g typescript
    ```
-5. Customize `config.jsonc` to your needs, check comments for guidance. Modify the `developmentServer` field with your test server ID
-6. Install any missing packages
+5. Create your MongoDB server.
+   > If you wish to do it on your computer, follow [this guide (Windows)](https://www.prisma.io/dataguide/mongodb/setting-up-a-local-mongodb-database). For other operating systems, try googling about how to create a MongoDB server for that specific operating system. If done on the machine where IRIS will be running, your "mongoDBServer" in config.jsonc will be "localhost".
+6. Create the following databases on your MongoDB server: (MongoDB Compass is recommended to do this much simpler)
+   - IRIS
+   - IRIS_DEVELOPMENT
+   
+   > It will most likely force you to create a collection with the database, enter something temporary that you will delete later when IRIS is done with configurating the database
+7. Create 2 users. 1 for production, and 1 for development
+   ```
+   use admin
+   db.createUser({user:"iris",pwd:"SomethingThatIsVerySecure", roles: [{role:"dbAdmin", db: "IRIS"},{role:"readWrite", db:"IRIS"}]})
+   db.createUser({user:"irisdev",pwd:"SomethingThatIsAlsoVerySecure", roles: [{role:"dbAdmin", db: "IRIS_DEVELOPMENT"},{role:"readWrite", db:"IRIS_DEVELOPMENT"}]})
+   ```
+   > It is recommended to keep the pre-set usernames as there is 1 internal check to make sure you don't run IRIS in production with development credentials and vice-versa
+   > If you truly want to change the username, go [here](https://github.com/Incoverse/IRIS/blob/main/src/index.ts#L317) locally and edit the production username to your one.
+8. Customize `config.jsonc` to your needs, check comments for guidance. 
+9. Install any missing packages
    ```
    npm install
    ```
-   
-7. Create your discord bot.
-   * [Create a new Discord Application](https://discord.com/developers/applications)
-   * Go to the `OAuth2` section and write down your client ID and secret
-   * Staying on the same page, add the following redirect URI `http://localhost:7380` (Discord may add a slash at the end, make sure to remove it) 
-   * Go to the `Bot` section and turn on all of the intents and write down your bot token (click 'Reset Token' to create the token)
-8. Create a `.env` file in the project's root directory and replace the following values to the ones you've written down: `[bot-token]`, `[client-id]`, `[client-secret]`. Leave the rest as it is.
-   ```
-   TOKEN="[bot-token]"
-   DBUSERNAME="<MongoDB username>"
-   DBPASSWD="<MongoDB password>"
-   DEVELOPMENT="YES"
-   cID="[client-id]"
-   cSecret="[client-secret]"
-   ```   
-9. Now it's time to add your bot to your server. Use the following URL, but replace `[client-id]` with the client ID you wrote down: https://discord.com/api/oauth2/authorize?client_id=[client-id]&permissions=328866327553&scope=bot%20applications.commands 
-11. Follow <a href="#server-creation-notes">Server Creation Notes</a> to create your server.
-12. Write `npm run CnR` in your cmd/terminal (CnR = Compile & Run) and click Enter.
-13. When a link is displayed in the console, open it in your browser and authorize it. This will allow IRIS to properly set up command permissions (defined in `config.jsonc`).
+10. Create your discord bot.
+    - [Create a new Discord Application](https://discord.com/developers/applications)
+    - Go to the `OAuth2` section and write down your client ID and secret
+    - Staying on the same page, add the following redirect URI `http://localhost:7380` (Discord may add a slash at the end, make sure to remove it) 
+    - Go to the `Bot` section and turn on all of the intents and write down your bot token (click 'Reset Token' to create the token)
+
+11. Create a `.env` file in the project's root directory and replace the following values to the ones you've written down: `<bot-token>`, `<client-id>`, `<client-secret>`, `<MongoDB username>`, `<MongoDB password>`. Set DEVELOPMENT to YES or NO depending on what you want to do.
+
+    ```
+    TOKEN="<bot-token>"
+    DBUSERNAME="<MongoDB username>"
+    DBPASSWD="<MongoDB password>"
+    DEVELOPMENT="<YES/NO>"
+    cID="<client-id>"
+    cSecret="<client-secret>"
+    ```
+
+12. Now it's time to add your bot to your server. Use the following URL, but replace `[client-id]` with the client ID you wrote down: https://discord.com/api/oauth2/authorize?client_id=[client-id]&permissions=328866327553&scope=bot%20applications.commands 
+   > Follow <a href="#server-creation-notes">Server Creation Notes</a> to create your server.
+13. Write `npm run CnR` in your cmd/terminal (CnR = Compile & Run) and click Enter.
+14. When a link is displayed in the console, open it in your browser and authorize it. This will allow IRIS to properly set up command permissions (defined in `config.jsonc`).
 
 
 
@@ -147,15 +164,7 @@ The following roles are required for IRIS to function as intended: `New Member`,
 
 <!-- USAGE EXAMPLES -->
 ## Usage
-
-#### Get debugging logs
-   ```
-   /admin iris logs
-   ```
-#### Restart IRIS (also updates IRIS)
-   ```
-   /admin iris restart
-   ```
+Type '/' and all IRIS commands will show up
 
 <p align="right">(<a href="#readme-top">Go to the top</a>)</p>
 
@@ -165,11 +174,13 @@ The following roles are required for IRIS to function as intended: `New Member`,
 ## Contributing
 
 1. [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) of this repository
-3. Clone the fork
+2. Clone the fork
    ```sh
    git clone https://github.com/YOUR_USERNAME/IRIS
    ```
-4. Continue from step 3 in <a href="#installation">Installation</a>
+3. Continue from step 3 in <a href="#installation">Installation</a>
+4. Make changes
+5. Submit a pull request! 
 
 
 
