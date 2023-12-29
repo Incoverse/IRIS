@@ -186,7 +186,7 @@ Distributed under the GPL-3.0 license. See [LICENSE](https://github.com/Incovers
 <!-- CONTACT -->
 ## Contact
 
-For any questions or concerns, don't hesitate to contact Inimi ([@theinimi](https://discord.inimicalpart.com)) on Discord or open a ticket in [Kennevo's server](https://discord.gg/WfesBJAYYd).
+For any questions or concerns, don't hesitate to contact Inimi ([@theinimi](https://discord.inimicalpart.com)) on Discord.
 
 <hr>
 
