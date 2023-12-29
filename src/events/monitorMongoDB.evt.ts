@@ -37,6 +37,15 @@ const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export let running = false;
 export const setup = async (client:Discord.Client, RM: object) => true
+
+/*
+
+This event is probably unnecessary for your purposes, it's purpose is to automatically restart MongoDB on the server if it finds a "mongodb.restart" file in the current directory
+
+This was created because my MongoDB server is running with TLS and when the certificate for TLS gets renewed, MongoDB has to be restarted to use the new one
+
+*/
+
 export async function runEvent(client: Discord.Client, RM: object) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
 
