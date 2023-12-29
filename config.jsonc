@@ -1,42 +1,18 @@
 {
-<<<<<<< HEAD
-<<<<<<< HEAD
   //? Any user that will be considered as an "owner" of the bot. (ID)
   //! If you are working in a team, but the bot is not in a Discord Developer team and is only owned by one person, it is recommended to add your team member's user IDs here.
   "externalOwners": [],
-=======
-  //? Any user that will be considered as an "owner" of the bot.
-  //! Development Team members, add your User ID here.
-  "externalOwners": ["616594498369093632"],
->>>>>>> 43c3537 (Added Fax as a bot owner)
-=======
-  //? Any user that will be considered as an "owner" of the bot. (ID)
-  //! If you are working in a team, but the bot is not in a Discord Developer team and is only owned by one person, it is recommended to add your team member's user IDs here.
-  "externalOwners": [],
->>>>>>> 6408b50 (Updated config.jsonc to contain more information)
+
   //? Show errors on "There was an error while executing this command!".
   //? If the user that ran the command is an owner, detailed error information will be shown.
   //! For development purposes, it is recommended to keep this on.
   "showErrors": true,
   //? This option shows messages like "registered command xyz", "running event xyz", etc. recommended to be on for satisfication purposes.
   "debugging": true,
-<<<<<<< HEAD
-<<<<<<< HEAD
+
   //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
   "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
   //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
-=======
-  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env
-  //! Development Team members, this main server will never be used, so you can leave this as it is or clear it.
-  "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
-  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env
-  //! Development Team members, put your server ID here.
->>>>>>> bdab0ed (Changing to my server)
-=======
-  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
-  "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
-  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
->>>>>>> 6408b50 (Updated config.jsonc to contain more information)
   "developmentServer": "931616832668958748",
 
   //? This is the MongoDB server that IRIS will connect to and use for data storage.
