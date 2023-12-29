@@ -48,8 +48,8 @@ interface AppInterface {
     mainServer: string;
     developmentServer: string;
     development: boolean;
-
-    permissions: Permissions
+    mongoDBServer: string;
+    permissions: Permissions;
 
     defaultEntry: {
       _id?: string | OptionalId<Document> | null;
