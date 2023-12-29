@@ -33,7 +33,7 @@
     "chalk": "^5.2.0",
     "convert-svg-to-png": "^0.6.4",
     "d3": "^7.8.5",
-    "discord.js": "^14.13.0",
+    "discord.js": "^14.14.1",
     "diskusage": "^1.2.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
