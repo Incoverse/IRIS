@@ -1,19 +1,25 @@
 {
-  //? Any user that will be considered as an "owner" of the bot.
-  //! Development Team members, add your User ID here.
-  "externalOwners": ["616594498369093632"],
+  //? Any user that will be considered as an "owner" of the bot. (ID)
+  //! If you are working in a team, but the bot is not in a Discord Developer team and is only owned by one person, it is recommended to add your team member's user IDs here.
+  "externalOwners": [],
   //? Show errors on "There was an error while executing this command!".
   //? If the user that ran the command is an owner, detailed error information will be shown.
-  //! Development Team members, it is recommended to keep this on.
+  //! For development purposes, it is recommended to keep this on.
   "showErrors": true,
   //? This option shows messages like "registered command xyz", "running event xyz", etc. recommended to be on for satisfication purposes.
   "debugging": true,
-  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env
-  //! Development Team members, this main server will never be used, so you can leave this as it is or clear it.
+  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
   "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
-  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env
-  //! Development Team members, put your server ID here.
+  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
   "developmentServer": "931616832668958748",
+
+  //? This is the MongoDB server that IRIS will connect to and use for data storage.
+  //! The database credentials are in .env
+  //! The database needs to have a database called "IRIS" (production) and "IRIS_DEVELOPMENT" (dev). IRIS will automatically fill these databases with the required collections.
+  //?
+  //! Check this guide out on how to make a local MongoDB server: https://www.prisma.io/dataguide/mongodb/setting-up-a-local-mongodb-database
+  "mongoDBServer": "inimicalpart.com",
+
   // "development": true //* 'global.app.config.development' will be automatically set true if 'DEVELOPMENT' is set to 'YES' in .env
 
   //? These permissions are for commands.
@@ -24,7 +30,16 @@
   //? canSee is whether or not the user can see the command when they do /. If the user can't see the command, they can't use it.
   //? Commands that only have the main command name, no subcommand group or subcommand, need a "canSee" value as well as a "canUse" value.
   //? Commands that have more than the main command (subcommand group / subcommand) only need a "canUse" value
-  //! Development Team members, replace the "development" part to your needs.
+  //?  
+  //! "main" takes care of permissions for the main server, meaning that those are the permissions that will be applied to the "mainServer" if "DEVELOPMENT" is set to "NO" in .env
+  //! "development" does the opposite - it will only apply the permissions on the "developmentServer", but only if "DEVELOPMENT" is set to "YES" in .env
+  //?
+  //?
+  //! These permissions are applied in a hierarchical order, from less specific to most specific. 
+  //! For example:
+  //! If "admin" (/admin) has subcommands but permissions are set so that @everyone can't use them, but there also is "admin iris logs" (/admin iris logs) set so that @everyone can use it, this will make it so that @everyone cannot use any /admin commands except for /admin iris logs 
+  //?
+  //! Keep also in mind that for a role/person to be able to use a more specific command, that person needs to have "canSee" set to true in the least specific permission for that command
   "permissions": {
     "admin": {
       "main": [
@@ -51,24 +66,24 @@
   },
 
   //? The default entry that will be created for new users, some fields will be automatically filled in by the bot.
-  //! Development Team members, you can leave this as it is unless you need to add another field to the user database document.
+  //! Do not edit this unless you are adding new fields about a user to the database.
   "defaultEntry": {
-    "id": "",
-    "last_active": null,
-    "timezones": [],
-    "username": "",
-    "approximatedTimezone": null,
-    "birthday": null,
-    "birthdayPassed": false,
-    "isNew": false,
-    "gameData": {},
+    "id": "", //* ID of the user
+    "last_active": null, //* ISO timestamp of when user last ran a command or sent a message in the server 
+    "timezones": [], //* The last 4 timezones that IRIS predicted for a user when they type "timezone 4:32am" (used for birthday messages sent at 12am in their timezone)
+    "username": "", //* The user's username (e.g @theinimi)
+    "approximatedTimezone": null, //* The final timezone that IRIS has determined for the user, this is evaluated by checking what appears the most times in "timezones"
+    "birthday": null, //* User's birth date in yyyy-mm-dd format
+    "birthdayPassed": false, //* If the user had their birthday recently (no need to touch this one)
+    "isNew": false, //* If the user is a new member on the server (lasts for 7 days)
+    "gameData": {}, //* Game data from games like UNO and wordle
     "settings": {
-      "changeTimezone": true
+      "changeTimezone": true //* Whether to change the user's approximatedTimezone when user types "timezone 4:32am" (gets set to false when user manually sets their timezone using /settimezone)
     }
   },
 
   //? This specifies resources for the bot to use, such as links to wordle answers and guesses. (Make sure to use raw links if using GitHub!)
-  //! Development Team members, you can leave this as it is unless you need to add another resource.
+  //! You can access these resources using 'global.app.config.resources.xyz'
   "resources": {
     "wordle": {
       "validGuesses": "https://gist.githubusercontent.com/cfreshman/cdcdf777450c5b5301e439061d29694c/raw/b8375870720504ecf89c1970ea4532454f12de94/wordle-allowed-guesses.txt",
