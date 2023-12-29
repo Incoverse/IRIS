@@ -148,7 +148,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
           },
         }
       );
-      return (await tokenResponseData.body.json()).permissions ?? [];
+      return ((await tokenResponseData.body.json()) as any).permissions ?? [];
     }
     async function convertToPermObject(customobject: any) {
       let type = null;
