@@ -51,8 +51,6 @@ global.logger.debug("Loading admin module '"+chalk.yellowBright("logs")+"'...", 
 import * as logs from "./command-lib/admin-logs.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("editMessage")+"'...", localReturnFileName());
 import * as editMessage from "./command-lib/admin-editMessage.cmdlib.js"
-global.logger.debug("Loading admin module '"+chalk.yellowBright("getStats")+"'...", localReturnFileName());
-import * as getStats from "./command-lib/admin-getStatistics.cmdlib.js"
 
 declare const global: IRISGlobal;
 const commandInfo = {
@@ -150,76 +148,6 @@ const commandInfo = {
                 .setRequired(true)
             )
         )
-        .addSubcommand((subcommand) =>
-            subcommand
-              .setName("getstats")
-              .setDescription("Get server statistics in a graph.")
-              .addStringOption((option) =>
-                option
-                  .setName("type")
-                  .setDescription("The type of graph to get.")
-                  .addChoices({
-                    name: "Members",
-                    value: "members",
-                  },
-                  {
-                    name: "User joins",
-                    value: "joins",
-                  },
-                  {
-                    name: "User leaves",
-                    value: "leaves",
-                  },
-                  {
-                    name: "Online members",
-                    value: "online",
-                  },
-                  {
-                    name: "Messages sent",
-                    value: "messages",
-                  }
-                  )
-                  .setRequired(true)
-              )
-              .addStringOption((option) =>
-                option
-                  .setName("timeframe")
-                  .setDescription("The timeframe of the graph.")
-                  .addChoices(
-                    // 1 day, 1 week, 1 month, 1 year
-                    {
-                      name: "1 day",
-                      value: "1d",
-                    },
-                    {
-                      name: "1 week",
-                      value: "1w",
-                    },
-                    {
-                      name: "1 month",
-                      value: "1m",
-                    },
-                    {
-                      name: "1 year",
-                      value: "1y",
-                    }
-
-                  )
-                  .setRequired(true)
-              )
-              .addIntegerOption((option) =>
-                option
-                  .setName("year")
-                  .setDescription("The year of the data. (only when timeframe is 1y)")
-                  .setRequired(false)
-              )
-              .addBooleanOption((option) =>
-                option
-                  .setName("raw")
-                  .setDescription("Whether to send the data as a JSON file instead of a graph.")
-                  .setRequired(false)
-              )
-              )
     )
 
     .addSubcommandGroup((subcommandGroup) =>
@@ -324,8 +252,6 @@ export async function runCommand(
         await logs.runSubCommand(interaction, RM);
       } else  if (subcommand == "editmessage") {
         await editMessage.runSubCommand(interaction, RM);
-      } else if (subcommand == "getstats") {
-        await getStats.runSubCommand(interaction, RM);
       }
     }
   } catch (e) {
