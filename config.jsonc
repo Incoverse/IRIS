@@ -13,7 +13,7 @@
   //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
   "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
   //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
-  "developmentServer": "931616832668958748",
+  "developmentServer": "1217372927981522994",
 
   //? This is the MongoDB server that IRIS will connect to and use for data storage.
   //! The database credentials are in .env
@@ -51,19 +51,11 @@
         { "selector": "&IRIS Development", "canSee": true, "canUse": false },
         { "selector": "&everyone", "canSee": false, "canUse": false }
       ],
-      "development": []
-    },
-    "admin iris logs": {
-      "main": [
-        { "selector": "&IRIS Development", "canUse": true }
-      ],
-      "development": []
-    },
-    "admin iris getstats": {
-      "main": [
-        { "selector": "&IRIS Development", "canUse": true }
-      ],
-      "development": []
+      "development": [
+        { "selector": "&Administrator", "canSee": true, "canUse": true },
+        { "selector": "&Moderator", "canSee": true, "canUse": true },
+        { "selector": "&everyone", "canSee": false, "canUse": false }
+      ]
     }
   },
 
