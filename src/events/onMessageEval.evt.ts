@@ -74,7 +74,7 @@ export async function runEvent(RM: object, message: Discord.Message) {
       let cleaned;
       try {
         // Evaluate (execute) our input
-        const evaled = eval(input);
+        const evaled = eval("(async()=>{"+input+"})()");
         // Put our eval result through the function
         // we defined above
         cleaned = await clean(evaled);
