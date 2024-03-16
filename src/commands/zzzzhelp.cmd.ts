@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Inimi | InimicalPart | Incoverse
+ * Copyright (c) 2024 Inimi | InimicalPart | Incoverse
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ import { IRISGlobal } from "../interfaces/global.js";
 import { fileURLToPath } from "url";
 import { PathLike, readdirSync, readFileSync, statSync } from "fs";
 import { dirname, join } from "path";
+import { checkPermissions } from "../lib/permissionsCheck.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -36,10 +37,6 @@ const commandInfo = {
                 .addChoices(
                   ...
                   Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help")).map((moduleKey) => {
-                    if (global.requiredModules[moduleKey].getSlashCommand().name == "help") {
-                      return;
-                    }
-          
                     return {
                       name: global.requiredModules[moduleKey].getSlashCommand().name.toLowerCase(),
                       value: global.requiredModules[moduleKey].getSlashCommand().name.toLowerCase()
@@ -68,27 +65,85 @@ export async function runCommand(
     const commandOption = (interaction.options as Discord.CommandInteractionOptionResolver).getString("command", false);
     if (!commandOption?.trim()) {
       const pages = [];
-      let commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help")).map((moduleKey) => {
-      
-        if (global.requiredModules[moduleKey].getSlashCommand().name == "help") {
-          return;
-        }
-
+      let commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help")).filter(a=>{
+        return global.requiredModules[a].getSlashCommand().options.filter((b)=>{
+          return b instanceof Discord.SlashCommandSubcommandBuilder || b instanceof Discord.SlashCommandSubcommandGroupBuilder;
+        }).length == 0;
+      }).map((moduleKey) => {
+        
         return {
           name: global.requiredModules[moduleKey].getSlashCommand().name,
           description: global.requiredModules[moduleKey].getSlashCommand().description
         }
       }).filter(a => a != undefined);
-      for (let i = 0; i < commands.length; i += 5) {
+
+      for (let command of Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help"))) {
+        const hasPotentialSubCommands = global.requiredModules[command].getSlashCommand().options.filter((a)=>{
+          return a instanceof Discord.SlashCommandSubcommandBuilder || a instanceof Discord.SlashCommandSubcommandGroupBuilder;
+        }).length > 0;
+        if (hasPotentialSubCommands) {
+          const groups = global.requiredModules[command].getSlashCommand().options.filter((a)=>{
+            return a instanceof Discord.SlashCommandSubcommandGroupBuilder;
+          }
+          ).map(a => a.name);
+
+          if (groups.length == 0) {
+            const subcommands = global.requiredModules[command].getSlashCommand().options.filter((a)=>{
+              return a instanceof Discord.SlashCommandSubcommandBuilder;
+            }).map(a => {return {name:a.name,description:a.description}});
+            for (let subcommand of subcommands) {
+              commands.push({
+                name: `${global.requiredModules[command].getSlashCommand().name} ${subcommand.name}`,
+                description: subcommand.description
+              });
+            }
+          } else {
+            for (let group in groups) {
+              const subcommands = global.requiredModules[command].getSlashCommand().options[group].options.map(a => {return {name:a.name,description:a.description}});
+              for (let subcommand of subcommands) {
+                commands.push({
+                  name: `${global.requiredModules[command].getSlashCommand().name} ${groups[group]} ${subcommand.name}`,
+                  description: subcommand.description
+                });
+              }
+            }
+          }
+        }
+      }
+
+      commands = commands.sort((a,b) => a.name.localeCompare(b.name));
+
+      for (let command of [...commands]) {
+        if (!await checkPermissions(interaction, command.name)) {
+          commands = commands.filter(a => a.name != command.name);
+        }
+      }
+
+
+      for (let i = 0; i < commands.length; i += 10) {
         const guildCommands = await (await interaction.client.guilds.fetch(global.app.config.mainServer)).commands.fetch();
         const page = new Discord.EmbedBuilder()
           .setTitle("All Commands")
-          .setDescription(commands.slice(i, i + 5).map(command => {
-            const commandId = Array.from(guildCommands.values()).filter(a => a.name == command.name).map(a => a.id)[0];
+          .setDescription(commands.slice(i, i + 10).map(command => {
+            // console.log(command);
+            const commandIsSubcommand = command.name.includes(" ");
+            const mainCommand = {...command}
+            const subcommand = {...command}
+
+            if (commandIsSubcommand) {
+              mainCommand.name = command.name.split(" ")[0];
+              subcommand.name = command.name.split(" ")[command.name.split(" ").length - 1];
+            }
+
+            const commandId = Array.from(guildCommands.values()).filter(a => a.name == mainCommand.name).map(a => a.id)[0];
+
+            // console.log(mainCommand.name, subcommand.name)
+            // console.log(commandId);
+            // console.log(`</${command.name}:${commandId}> - ${command.description}`)
             return `</${command.name}:${commandId}> - ${command.description}`;
           }).join("\n"))
           .setColor("#FFFFFF")
-          .setFooter({ text: `Page ${Math.floor(i / 5) + 1} of ${Math.ceil(commands.length / 5)}` });
+          .setFooter({ text: `Page ${Math.floor(i / 10) + 1} of ${Math.ceil(commands.length / 10)}` });
         pages.push(page);
       }
 
@@ -137,18 +192,6 @@ export async function runCommand(
       const commandObject = Array.from(guildCommands.values()).find(a => a.name == command);
       // go through every file with cmd.ts and check for subcommands
       
-      const files = readdirSync(join(dirname(__filename), "..")).filter((file: string) => {
-        return file.endsWith(".cmd.ts");
-      });
-      let subcommands = [];
-      for (let file of files) {
-        const command = require(join(dirname(__filename), "..", file));
-        if (command.getSlashCommand().name == "help") {
-          continue;
-        }
-        subcommands.push(command.getSlashCommand().name);
-      }
-
       if (!commandObject) {
         await interaction.reply({ content: `Command ${command} not found.`, ephemeral: true });
         return;
@@ -161,10 +204,6 @@ export async function runCommand(
         .addFields({
           name: "Description",
           value: `${commandDesc}`
-        },
-        {
-          name: "Subcommands",
-          value: subcommands.length > 0 ? subcommands.join(', ') : 'None'
         })
         .setColor("#FFFFFF");
       await interaction.reply({
