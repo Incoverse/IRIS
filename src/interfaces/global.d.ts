@@ -51,6 +51,9 @@ interface IRISGlobal extends NodeJS.Global {
     setMaxUNOPlayers?: (maxPlayers: number) => Promise<boolean>;
   }
   rest: REST;
+  requiredModules: {
+    [key: string]: any;
+  };
   birthdays: Array<{
     id: string;
     birthday: string;

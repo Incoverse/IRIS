@@ -378,7 +378,7 @@ declare const global: IRISGlobal;
     global.logger.log("------------------------", returnFileName());
 
     //!--------------------------
-    const requiredModules: { [key: string]: any } = {};
+    global.requiredModules = {};
 
     global.logger.log(`${chalk.white("[I]")} ${chalk.yellow("Logging in...")} ${chalk.white("[I]")}`, returnFileName());
 
@@ -460,18 +460,18 @@ declare const global: IRISGlobal;
       }
       
       let found = false
-      for (let command in requiredModules) {
+      for (let command in global.requiredModules) {
         if (command.startsWith("cmd")) {
           if (
             interaction.commandName == command.replace("cmd", "").toLowerCase()
           ) {
             found = true
             if (await checkPermissions(interaction, fullCmd)) {
-                requiredModules[command].runCommand(interaction, requiredModules).then(async (res)=>{
+                global.requiredModules[command].runCommand(interaction, global.requiredModules).then(async (res)=>{
                   if (res == false) return
                   if (!interaction.replied && !interaction.deferred) {
                     global.logger.debugWarn(
-                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(requiredModules[command].returnFileName())}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
+                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(global.requiredModules[command].returnFileName())}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
                       returnFileName()
                     );
                     await interaction.reply({
@@ -607,7 +607,7 @@ declare const global: IRISGlobal;
         performance.resume("fullRun")
         performance.resume("commandRegistration");
 
-        if (!(await command.setup(client, requiredModules))) {
+        if (!(await command.setup(client, global.requiredModules))) {
           performance.pause("fullRun")
           performance.pause("commandRegistration");
           global.logger.debugError(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
@@ -617,7 +617,7 @@ declare const global: IRISGlobal;
 
         }
 
-        requiredModules[
+        global.requiredModules[
           "cmd" +
             command.getSlashCommand().name[0].toUpperCase() +
             command.getSlashCommand().name.slice(1)
@@ -668,7 +668,7 @@ declare const global: IRISGlobal;
           returnFileName()
         );
 
-        if (!(await event.setup(client, requiredModules))) {
+        if (!(await event.setup(client, global.requiredModules))) {
           performance.pause("fullRun")
           performance.pause("eventLoader");
           global.logger.debugError(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
@@ -678,7 +678,7 @@ declare const global: IRISGlobal;
         }
 
         
-        requiredModules[
+        global.requiredModules[
           "event" +
             file.replace(".evt.js", "")[0].toUpperCase() +
             file.replace(".evt.js", "").slice(1)
@@ -749,9 +749,9 @@ declare const global: IRISGlobal;
         });
 
       const prioritizedTable: { [key: string]: any } = {};
-      for (let i of Object.keys(requiredModules)) {
+      for (let i of Object.keys(global.requiredModules)) {
         if (i.startsWith("event")) {
-          const priority: number = requiredModules[i].priority() ?? 0;
+          const priority: number = global.requiredModules[i].priority() ?? 0;
           const priorityKey: string = Number(priority).toString();
           prioritizedTable[priorityKey] = prioritizedTable[priorityKey] ?? [];
           prioritizedTable[priorityKey].push(i);
@@ -763,22 +763,22 @@ declare const global: IRISGlobal;
         (a: string, b: string) => parseInt(b) - parseInt(a)
       )) {
         for (let i of prioritizedTable[prio]) {
-          const adder = ("discordEvent" === requiredModules[i].eventType()? " (" +chalk.cyan.bold(requiredModules[i].getListenerKey()) +")": (
-            "runEvery" === requiredModules[i].eventType()? " (" +chalk.hex("#FFA500")(prettyMilliseconds(requiredModules[i].getMS(), {verbose: !0,})) +")": ""
+          const adder = ("discordEvent" === global.requiredModules[i].eventType()? " (" +chalk.cyan.bold(global.requiredModules[i].getListenerKey()) +")": (
+            "runEvery" === global.requiredModules[i].eventType()? " (" +chalk.hex("#FFA500")(prettyMilliseconds(global.requiredModules[i].getMS(), {verbose: !0,})) +")": ""
           ))
-          const eventType = chalk.yellowBright(requiredModules[i].eventType())
-          const eventName = chalk.blueBright(requiredModules[i].returnFileName())
+          const eventType = chalk.yellowBright(global.requiredModules[i].eventType())
+          const eventName = chalk.blueBright(global.requiredModules[i].returnFileName())
           if (
-            requiredModules[i].eventSettings().devOnly &&
-            requiredModules[i].eventSettings().mainOnly
+            global.requiredModules[i].eventSettings().devOnly &&
+            global.requiredModules[i].eventSettings().mainOnly
           ) {
             performance.pause("fullRun")
             performance.pause("eventRegistration")
             /* prettier-ignore */
-            global.logger.debugError(`${chalk.redBright("Error while registering")} '${eventType}${adder}' ${chalk.redBright("event")}: ${chalk.redBright(requiredModules[i].returnFileName())} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
+            global.logger.debugError(`${chalk.redBright("Error while registering")} '${eventType}${adder}' ${chalk.redBright("event")}: ${chalk.redBright(global.requiredModules[i].returnFileName())} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
             performance.resume("fullRun")
             performance.resume("eventRegistration")
-            delete requiredModules[i]
+            delete global.requiredModules[i]
             delete prioritizedTable[prio][i]
             continue;
           }
@@ -790,39 +790,39 @@ declare const global: IRISGlobal;
             performance.resume("fullRun")
             performance.resume("eventRegistration")
           }
-          if (requiredModules[i].eventType() === "runEvery") {
-            const prettyInterval = chalk.hex("#FFA500")(prettyMilliseconds(requiredModules[i].getMS(),{verbose: true}))
-            if (requiredModules[i].runImmediately()) {
+          if (global.requiredModules[i].eventType() === "runEvery") {
+            const prettyInterval = chalk.hex("#FFA500")(prettyMilliseconds(global.requiredModules[i].getMS(),{verbose: true}))
+            if (global.requiredModules[i].runImmediately()) {
               performance.pause("fullRun")
               performance.pause("eventRegistration")
               /* prettier-ignore */
               global.logger.debug(`Running '${eventType} (${chalk.cyan.bold("runImmediately")})' event: ${eventName}`, returnFileName());
               performance.resume("fullRun")
               performance.resume("eventRegistration")
-              await requiredModules[i].runEvent(client, requiredModules);
+              await global.requiredModules[i].runEvent(client, global.requiredModules);
             }
             setInterval(async () => {
-              if (!requiredModules[i].running) {
+              if (!global.requiredModules[i].running) {
                 /* prettier-ignore */
                 global.logger.debug(`Running '${eventType} (${prettyInterval})' event: ${eventName}`,returnFileName());
-                await requiredModules[i].runEvent(client, requiredModules);
+                await global.requiredModules[i].runEvent(client, global.requiredModules);
               } else {
                 /* prettier-ignore */
                 global.logger.debugError(`Not running '${eventType} (${prettyInterval})' event: ${eventName} reason: Previous iteration is still running.`, returnFileName());
               }
-            }, requiredModules[i].getMS());
-          } else if (requiredModules[i].eventType() === "discordEvent") {
-            const listenerKey = chalk.cyan.bold(requiredModules[i].getListenerKey())
+            }, global.requiredModules[i].getMS());
+          } else if (global.requiredModules[i].eventType() === "discordEvent") {
+            const listenerKey = chalk.cyan.bold(global.requiredModules[i].getListenerKey())
             client.on(
-              requiredModules[i].getListenerKey(),
+              global.requiredModules[i].getListenerKey(),
               async (...args: any) => {
                 /* prettier-ignore */
-                if (requiredModules[i].getListenerKey() != Events.MessageCreate)
+                if (global.requiredModules[i].getListenerKey() != Events.MessageCreate)
                   global.logger.debug(`Running '${eventType} (${listenerKey})' event: ${eventName}`,returnFileName());
-                await requiredModules[i].runEvent(requiredModules, ...args);
+                await global.requiredModules[i].runEvent(global.requiredModules, ...args);
               }
             );
-          } else if (requiredModules[i].eventType() === "onStart") {
+          } else if (global.requiredModules[i].eventType() === "onStart") {
             performance.pause("fullRun")
             performance.pause("eventRegistration")
             global.logger.debug(
@@ -830,7 +830,7 @@ declare const global: IRISGlobal;
             );
             performance.resume("fullRun")
             performance.resume("eventRegistration")
-            await requiredModules[i].runEvent(client, requiredModules);
+            await global.requiredModules[i].runEvent(client, global.requiredModules);
           }
         }
       }
