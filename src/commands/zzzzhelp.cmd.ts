@@ -28,23 +28,7 @@ const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
     slashCommand: new Discord.SlashCommandBuilder()
         .setName("help")
-        .setDescription("List all commands or info about a specific command.")
-        .addStringOption(option =>
-            option
-                .setName("command")
-                .setDescription("The command to get info about")
-                .setRequired(false)
-                .addChoices(
-                  ...
-                  Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help")).map((moduleKey) => {
-                    return {
-                      name: global.requiredModules[moduleKey].getSlashCommand().name.toLowerCase(),
-                      value: global.requiredModules[moduleKey].getSlashCommand().name.toLowerCase()
-                    }
-                  })
-                )
-                // .setAutocomplete(true)
-        )
+        .setDescription("Shows all commands and their descriptions.")
     .setDMPermission(false),
   // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
   settings: {
@@ -60,10 +44,6 @@ export async function runCommand(
     RM: object
 ) {
   try {
-    // if no command was specified
-    // list all commands in "pages", 5 commands per page 
-    const commandOption = (interaction.options as Discord.CommandInteractionOptionResolver).getString("command", false);
-    if (!commandOption?.trim()) {
       const pages = [];
       let commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help")).filter(a=>{
         return global.requiredModules[a].getSlashCommand().options.filter((b)=>{
@@ -167,50 +147,26 @@ export async function runCommand(
       
       let currentPage = 0;
 
-      collector.on('collect', async i => {
-        if (i.customId === 'previous') {
-          currentPage = currentPage > 0 ? --currentPage : pages.length - 1;
-        } else if (i.customId === 'next') {
-          currentPage = currentPage + 1 < pages.length ? ++currentPage : 0;
-        } else if (i.customId === 'delete') {
-          await message.delete();
-          return;
-        }
-
-        await i.update({
-          embeds: [pages[currentPage]],
-          components: [new Discord.ActionRowBuilder<ButtonBuilder>().addComponents(
-            new Discord.ButtonBuilder().setCustomId('previous').setLabel('Previous').setStyle(ButtonStyle.Secondary),
-            new Discord.ButtonBuilder().setCustomId('next').setLabel('Next').setStyle(ButtonStyle.Secondary),
-            new Discord.ButtonBuilder().setCustomId('delete').setLabel('Delete').setStyle(ButtonStyle.Danger)
-          )]
-        });
-      });
-    } else {
-      const command = (interaction.options as Discord.CommandInteractionOptionResolver).getString("command")
-      const guildCommands = await (await interaction.client.guilds.fetch(global.app.config.mainServer)).commands.fetch();
-      const commandObject = Array.from(guildCommands.values()).find(a => a.name == command);
-      // go through every file with cmd.ts and check for subcommands
-      
-      if (!commandObject) {
-        await interaction.reply({ content: `Command ${command} not found.`, ephemeral: true });
+    collector.on('collect', async i => {
+      if (i.customId === 'previous') {
+        currentPage = currentPage > 0 ? --currentPage : pages.length - 1;
+      } else if (i.customId === 'next') {
+        currentPage = currentPage + 1 < pages.length ? ++currentPage : 0;
+      } else if (i.customId === 'delete') {
+        await message.delete();
         return;
       }
-      const commandId = commandObject.id;
-      const commandDesc = commandObject.description;
-      const commandEmbed = new Discord.EmbedBuilder()
-        .setTitle(`/${command}`)
-        .setDescription(`Usage: </${command}:${commandId}>`)
-        .addFields({
-          name: "Description",
-          value: `${commandDesc}`
-        })
-        .setColor("#FFFFFF");
-      await interaction.reply({
-        embeds: [commandEmbed],
-        ephemeral: true
+
+      await i.update({
+        embeds: [pages[currentPage]],
+        components: [new Discord.ActionRowBuilder<ButtonBuilder>().addComponents(
+          new Discord.ButtonBuilder().setCustomId('previous').setLabel('Previous').setStyle(ButtonStyle.Secondary),
+          new Discord.ButtonBuilder().setCustomId('next').setLabel('Next').setStyle(ButtonStyle.Secondary),
+          new Discord.ButtonBuilder().setCustomId('delete').setLabel('Delete').setStyle(ButtonStyle.Danger)
+        )]
       });
-    }
+    });
+
 
     } catch (e) {
       global.logger.error(e, returnFileName());
