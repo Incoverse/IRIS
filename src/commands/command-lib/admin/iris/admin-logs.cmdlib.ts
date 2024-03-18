@@ -1,5 +1,5 @@
 /*
-  * Copyright (c) 2023 Inimi | InimicalPart | Incoverse
+  * Copyright (c) 2024 Inimi | InimicalPart | Incoverse
   *
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  */
 
 import Discord, { CommandInteractionOptionResolver, StringSelectMenuBuilder, Team } from "discord.js";
-import { IRISGlobal } from "../../interfaces/global.js";
+import { IRISGlobal } from "../../../../interfaces/global.js";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
 import { promisify } from "util";

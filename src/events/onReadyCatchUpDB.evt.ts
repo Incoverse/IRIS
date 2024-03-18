@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Inimi | InimicalPart | Incoverse
+ * Copyright (c) 2024 Inimi | InimicalPart | Incoverse
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,9 +55,30 @@ export async function runEvent(client: Discord.Client, RM: object) {
         ? "DEVSRV_UD_" + global.app.config.mainServer
         : "userdata"
     );
+
+    const serverdata = database.collection(
+      global.app.config.development
+        ? "DEVSRV_SD_" + global.app.config.mainServer
+        : "serverdata"
+    );
+    const serverdataDocument = await serverdata.findOne({});
+    if (!serverdataDocument) {
+      await serverdata.insertOne({
+        id: global.app.config.mainServer,
+        rules: [],
+        games: [],        
+      });
+      global.logger.debug(
+        `Inserted a new serverdata document for the server '${chalk.yellow(
+          global.app.config.mainServer
+        )}'.`,
+        returnFileName()
+      );
+    }
+
     let toBeEdited = [];
     /*
-     * We're awaiting the result of the find() function, because we don't want to accidentally let other modules access and modify the database before we're done cleaning it.
+     * We're awaiting the result of the find() function, because we don't want to accidentally let other modules access and modify the database before we're done catching it up.
      */
     const allDocuments = await userdata.find().toArray();
     let newMembersRole = null;

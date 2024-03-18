@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Inimi | InimicalPart | Incoverse
+ * Copyright (c) 2024 Inimi | InimicalPart | Incoverse
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,32 +32,32 @@ const localReturnFileName = () =>
   ];
 
 global.logger.debug("Loading admin module '"+chalk.yellowBright("restartMongoDB")+"'...", localReturnFileName());
-import * as restartMongoDB from "./command-lib/admin-restartMongo.cmdlib.js";
+import * as restartMongoDB from "./command-lib/admin/system/admin-restartMongo.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("restartIRIS")+"'...", localReturnFileName());
-import * as restartIRIS from "./command-lib/admin-restart.cmdlib.js";
+import * as restartIRIS from "./command-lib/admin/iris/admin-restart.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("checkCertificate")+"'...", localReturnFileName());
-import * as checkCertificate from "./command-lib/admin-checkcert.cmdlib.js";
+import * as checkCertificate from "./command-lib/admin/system/admin-checkcert.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("stopIRIS")+"'...", localReturnFileName());
-import * as stopIRIS from "./command-lib/admin-stop.cmdlib.js";
+import * as stopIRIS from "./command-lib/admin/iris/admin-stop.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("changeBirthday")+"'...", localReturnFileName());
-import * as changeBirthday from "./command-lib/admin-changeBirthday.cmdlib.js";
+import * as changeBirthday from "./command-lib/admin/edit/admin-changeBirthday.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("changeTimezone")+"'...", localReturnFileName());
-import * as changeTimezone from "./command-lib/admin-changeTimezone.cmdlib.js";
+import * as changeTimezone from "./command-lib/admin/edit/admin-changeTimezone.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("entryManagement")+"'...", localReturnFileName());
-import * as entryManagement from "./command-lib/admin-entrymgmt.cmdlib.js";
+import * as entryManagement from "./command-lib/admin/entry/admin-entrymgmt.cmdlib.js";
 // global.logger.debug("Loading admin module '"+chalk.yellowBright("restartMongoDB")+"'...", localReturnFileName());
 //import * as setPresence from "./command-lib/admin-setPresence.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("logs")+"'...", localReturnFileName());
-import * as logs from "./command-lib/admin-logs.cmdlib.js";
+import * as logs from "./command-lib/admin/iris/admin-logs.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("editMessage")+"'...", localReturnFileName());
-import * as editMessage from "./command-lib/admin-editMessage.cmdlib.js"
+import * as editMessage from "./command-lib/admin/iris/admin-editMessage.cmdlib.js"
 
 declare const global: IRISGlobal;
 const commandInfo = {
     slashCommand: new Discord.SlashCommandBuilder()
     .setName("admin")
     .setDescription("Admin Commands")
-    .addSubcommandGroup((subcommandGroup) =>
+    .addSubcommandGroup((subcommandGroup) => //* EDIT
       subcommandGroup
         .setName("edit")
         .setDescription("Commands to manage user's information in the database")
@@ -98,7 +98,7 @@ const commandInfo = {
             )
         )
     )
-    .addSubcommandGroup((subcommandGroup) =>
+    .addSubcommandGroup((subcommandGroup) => //* SYSTEM
       subcommandGroup
         .setName("system")
         .setDescription("Commands to manage the system")
@@ -114,8 +114,7 @@ const commandInfo = {
             .setDescription("Force a restart of MongoDB.")
         )
     )
-    .addSubcommandGroup(
-      (subcommandGroup) =>
+    .addSubcommandGroup((subcommandGroup) => //* IRIS
         subcommandGroup
           .setName("iris")
           .setDescription("Commands to manage IRIS")
@@ -149,8 +148,7 @@ const commandInfo = {
             )
         )
     )
-
-    .addSubcommandGroup((subcommandGroup) =>
+    .addSubcommandGroup((subcommandGroup) => //* ENTRY
       subcommandGroup
         .setName("entry")
         .setDescription("Commands to manage the database entries")
@@ -199,7 +197,82 @@ const commandInfo = {
                 )
             )
         )
+    )
+    .addSubcommandGroup((subcommandGroup) => //* RULES
+
+    /*
+      /admin rules list
+      /admin rules add [index] [title] [description]
+      /admin rules delete <index>
+      /admin rules edit <index> [new-title] [new-description]
+
+      <> - required, [] - optional
+    */
+      subcommandGroup
+        .setName("rules")
+        .setDescription("Commands to manage the rules")
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName("list")
+            .setDescription("List all the rules")
+        )
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName("add")
+            .setDescription("Add a new rule")
+            .addIntegerOption((option) =>
+              option
+                .setName("index")
+                .setDescription("The index of the rule")
+                .setRequired(true)
+            )
+            .addStringOption((option) =>
+              option
+                .setName("title")
+                .setDescription("The title of the rule")
+            )
+            .addStringOption((option) =>
+              option
+                .setName("description")
+                .setDescription("The description of the rule")
+            )
+        )
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName("delete")
+            .setDescription("Delete a rule")
+            .addIntegerOption((option) =>
+              option
+                .setName("index")
+                .setDescription("The index of the rule")
+                .setRequired(true)
+            )
+        )
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName("edit")
+            .setDescription("Edit a rule")
+            .addIntegerOption((option) =>
+              option
+                .setName("index")
+                .setDescription("The index of the rule")
+                .setRequired(true)
+            )
+            .addStringOption((option) =>
+              option
+                .setName("title")
+                .setDescription("The new title of the rule")
+            )
+            .addStringOption((option) =>
+              option
+                .setName("description")
+                .setDescription("The new description of the rule")
+            )
+        )
     ),
+
+
+    
 
     //.setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
   settings: {

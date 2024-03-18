@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Inimi | InimicalPart | Incoverse
+ * Copyright (c) 2024 Inimi | InimicalPart | Incoverse
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,10 +46,13 @@ export async function runEvent(client: Discord.Client, RM: object) {
     );
     const gamedata = database.collection(
       global.app.config.development
-        ? "DEVSRV_GD_" + global.app.config.mainServer
-        : "gamedata"
+        ? "DEVSRV_SD_" + global.app.config.mainServer
+        : "serverdata"
     );
-    const game = await gamedata.findOne({ type: "wordle" });
+    const games = (await gamedata.findOne({})).games
+    const game = games.find(
+      (g) => g.type == "wordle"
+    );
     dbclient.close();
     if (game) {
       game.data.currentlyPlaying = {};
@@ -63,10 +66,10 @@ export async function runEvent(client: Discord.Client, RM: object) {
     const database = dbclient.db(
       global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
     );
-    const gamedata = database.collection(
+    const serverdata = database.collection(
       global.app.config.development
-        ? "DEVSRV_GD_" + global.app.config.mainServer
-        : "gamedata"
+        ? "DEVSRV_SD_" + global.app.config.mainServer
+        : "serverdata"
     );
     // Generate a new wordle
     const newWordle =
@@ -82,20 +85,17 @@ export async function runEvent(client: Discord.Client, RM: object) {
       id: uuid4(),
     };
     global.games.wordle = { ...data, currentlyPlaying: {} };
-    if (!wordle)
-      await gamedata.insertOne({
-        type: "wordle",
-        data,
-      });
-    else
-      await gamedata.updateOne(
-        { type: "wordle" },
-        {
-          $set: {
-            data,
-          },
-        }
-      );
+
+
+    const newGames = (await serverdata.findOne({id:global.app.config.mainServer})).games.filter((a) => a.type != "wordle")
+    newGames.push({ type: "wordle", data });
+    await serverdata.updateOne({
+      id: global.app.config.mainServer,
+    },{
+      $set: {
+        games: newGames,
+      },
+    });
     
     global.logger.debug(`Successfully generated new wordle: ${chalk.green(newWordle)} (Expires: ${chalk.green(moment(new Date(new Date().getTime() + 1000 * 60 * 60 * 24)).format("M/D/y HH:mm:ss"))})`, returnFileName());
     if (!wordle) return dbclient.close();

@@ -855,7 +855,7 @@ declare const global: IRISGlobal;
       
       if (global.app.config.development) {
         global.logger.log(`Database name: ${chalk.cyanBright("IRIS_DEVELOPMENT")}`, returnFileName());
-        global.logger.log(`Database ${chalk.yellowBright("GAMEDATA")} collection: ${chalk.cyanBright("DEVSRV_GD_" + mainServer.id)}`, returnFileName());
+        global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} collection: ${chalk.cyanBright("DEVSRV_SD_" + mainServer.id)}`, returnFileName());
         global.logger.log(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright("DEVSRV_UD_" + mainServer.id)}`, returnFileName());
         global.logger.log(`Log name: ${chalk.cyanBright(global.logName)}`, returnFileName());
       }
