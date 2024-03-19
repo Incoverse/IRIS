@@ -1,5 +1,5 @@
 
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 declare const global: IRISGlobal;
 
 import {readFileSync,writeFileSync } from "fs";

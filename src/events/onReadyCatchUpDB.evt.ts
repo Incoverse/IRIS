@@ -19,7 +19,7 @@ import Discord from "discord.js";
 import { MongoClient } from "mongodb";
 import moment from "moment-timezone";
 import chalk from "chalk";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 
 const eventInfo = {
@@ -61,7 +61,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
         ? "DEVSRV_SD_" + global.app.config.mainServer
         : "serverdata"
     );
-    const serverdataDocument = await serverdata.findOne({});
+    const serverdataDocument = await serverdata.findOne({id:global.app.config.mainServer})
     if (!serverdataDocument) {
       await serverdata.insertOne({
         id: global.app.config.mainServer,

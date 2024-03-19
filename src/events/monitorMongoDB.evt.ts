@@ -21,7 +21,7 @@ import { fileURLToPath } from "url";
 import chalk from "chalk";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 const execPromise = promisify(exec);
 const eventInfo = {
   type: "runEvery",

@@ -31,7 +31,7 @@ import Discord, {
   Team,
   ThreadChannel,
 } from "discord.js";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import UGE, {
   Game,

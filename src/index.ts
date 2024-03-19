@@ -17,34 +17,30 @@
 
 import {
   Collection,
-  Guild,
   GuildMember,
+  CommandInteraction,
+  GuildMemberRoleManager,
   Message,
   Role,
   Snowflake,
-  UserResolvable,
   Client,
   Events,
   GatewayIntentBits,
   REST,
   Routes,
-  ActivityType,
   version,
   Team,
-  CommandInteraction,
+  PermissionsBitField,
   CommandInteractionOptionResolver,
   EmbedBuilder,
-  CacheType,
-  GuildMemberRoleManager,
-  PermissionsBitField,
 } from "discord.js";
-import { AppInterface } from "./interfaces/appInterface.js";
-import { IRISGlobal } from "./interfaces/global.js";
+import { AppInterface } from "@src/interfaces/appInterface.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import prettyMilliseconds from "pretty-ms";
 import chalk from "chalk";
 import { EventEmitter } from "events";
 import JsonCParser from "jsonc-parser";
-import { readFileSync, readdirSync, existsSync, writeFileSync, createWriteStream, mkdirSync,unlinkSync } from "fs";
+import { readFileSync, readdirSync, existsSync, writeFileSync, createWriteStream, mkdirSync, unlinkSync } from "fs";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { MongoClient } from "mongodb";
@@ -70,22 +66,6 @@ declare const global: IRISGlobal;
   let fullyReady = false;
   const config = JsonCParser.parse(
     readFileSync("./config.jsonc", { encoding: "utf-8" })
-  );
-  if (!existsSync("./local_config.json")) {
-    writeFileSync(
-      "./local_config.json",
-      JSON.stringify({
-        presence: {
-          text: "you",
-          type: ActivityType.Watching,
-        },
-        disabledCommands: [],
-        disabledEvents: [],
-      })
-    );
-  }
-  const localConfig = JSON.parse(
-    readFileSync("./local_config.json", { encoding: "utf-8" })
   );
   global.logName = `IRIS-${new Date().getTime()}.log`;
   // if the logs folder doesn't exist, create it. if the log folder has more than 10 files, delete the oldest one. you can check which one is the oldest one by the numbers after IRIS- and before .log. the lower the number, the older it is
@@ -241,7 +221,6 @@ declare const global: IRISGlobal;
   const app: AppInterface = {
     version: JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
       .version,
-    localConfig: localConfig,
     config: config,
     owners: [], // this will be filled in later
   };
@@ -296,6 +275,11 @@ declare const global: IRISGlobal;
     joins: [],
     leaves: [],
     messages: 0,
+  };
+  global.server = {
+    main: {
+      rules: [],
+    },
   };
 
   global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
@@ -403,6 +387,33 @@ declare const global: IRISGlobal;
           ":x: This command can only be used in a server."
         );
       if (interaction.guildId !== global.app.config.mainServer) return;
+
+
+        if (interaction.isAutocomplete()) {
+          const responsibleHandler = global.requiredModules[
+            "cmd" +
+              interaction.commandName[0].toUpperCase() +
+              interaction.commandName.slice(1)
+          ];
+
+          if (!responsibleHandler) return;
+
+          if (responsibleHandler.autocomplete) {
+            try {
+              await responsibleHandler.autocomplete(interaction, global.requiredModules);
+            } catch (e) {
+              global.logger.debugError(
+                `An error occurred while running the autocomplete for command '${interaction.commandName}'!`,
+                returnFileName()
+              );
+              global.logger.debugError(e, returnFileName());
+              return
+            }
+          }
+          return
+        }
+
+
       const client = new MongoClient(global.mongoConnectionString);
       try {
         const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
@@ -706,16 +717,11 @@ declare const global: IRISGlobal;
         }
       })();
       if (!global.app.config.development) {
-        if (
-          !global.app.localConfig.presence.type &&
-          !global.app.localConfig.presence.text
-        )
-          return;
         client.user.setPresence({
           activities: [
             {
-              name: global.app.localConfig.presence.text,
-              type: global.app.localConfig.presence.type,
+              name: "you",
+              type: 3,
             },
           ],
           status: "online",

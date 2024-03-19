@@ -27,19 +27,6 @@ import { Permissions } from "./permissions";
 
 interface AppInterface {
   version: string;
-  localConfig: {
-    presence: {
-      text: string;
-      type:
-        | ActivityType.Playing
-        | ActivityType.Streaming
-        | ActivityType.Listening
-        | ActivityType.Watching
-        | ActivityType.Competing;
-    };
-    disabledCommands: Array<string>;
-    disabledEvents: Array<string>;
-  };
   owners: Array<string>;
   config: {
     externalOwners: Array<string>;

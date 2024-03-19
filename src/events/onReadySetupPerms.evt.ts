@@ -20,7 +20,7 @@ import Discord from "discord.js";
 import undici from "undici";
 import moment from "moment-timezone";
 import chalk from "chalk";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 
 const eventInfo = {

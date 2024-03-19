@@ -21,7 +21,7 @@ import Discord, {
   GuildMemberRoleManager,
   Team,
 } from "discord.js";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
 const __filename = fileURLToPath(import.meta.url);
@@ -45,12 +45,22 @@ global.logger.debug("Loading admin module '"+chalk.yellowBright("changeTimezone"
 import * as changeTimezone from "./command-lib/admin/edit/admin-changeTimezone.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("entryManagement")+"'...", localReturnFileName());
 import * as entryManagement from "./command-lib/admin/entry/admin-entrymgmt.cmdlib.js";
-// global.logger.debug("Loading admin module '"+chalk.yellowBright("restartMongoDB")+"'...", localReturnFileName());
-//import * as setPresence from "./command-lib/admin-setPresence.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("logs")+"'...", localReturnFileName());
 import * as logs from "./command-lib/admin/iris/admin-logs.cmdlib.js";
 global.logger.debug("Loading admin module '"+chalk.yellowBright("editMessage")+"'...", localReturnFileName());
 import * as editMessage from "./command-lib/admin/iris/admin-editMessage.cmdlib.js"
+
+global.logger.debug("Loading admin module '"+chalk.yellowBright("rulesadd")+"'...", localReturnFileName());
+import * as rulesAdd from "./command-lib/admin/rules/admin-rulesadd.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("rulesdel")+"'...", localReturnFileName());
+import * as rulesDelete from "./command-lib/admin/rules/admin-rulesdel.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("rulesedit")+"'...", localReturnFileName());
+import * as rulesEdit from "./command-lib/admin/rules/admin-rulesedit.cmdlib.js";
+global.logger.debug("Loading admin module '"+chalk.yellowBright("rulesshow")+"'...", localReturnFileName());
+import * as rulesshow from "./command-lib/admin/rules/admin-rulesshow.cmdlib.js";
+
+
+
 
 declare const global: IRISGlobal;
 const commandInfo = {
@@ -213,40 +223,57 @@ const commandInfo = {
         .setDescription("Commands to manage the rules")
         .addSubcommand((subcommand) =>
           subcommand
-            .setName("list")
-            .setDescription("List all the rules")
+            .setName("show")
+            .setDescription("Show the rules stored in IRIS database.")
+            .addIntegerOption((option) =>
+              option
+                .setName("index")
+                .setDescription("The index of the rule you want to show")
+            )
+            .addBooleanOption((option) =>
+              option
+                .setName("show-punishments")
+                .setDescription("Whether to show the punishments for each rule")
+            )
         )
         .addSubcommand((subcommand) =>
           subcommand
             .setName("add")
             .setDescription("Add a new rule")
-            .addIntegerOption((option) =>
-              option
-                .setName("index")
-                .setDescription("The index of the rule")
-                .setRequired(true)
-            )
             .addStringOption((option) =>
               option
                 .setName("title")
                 .setDescription("The title of the rule")
+                .setRequired(true)              
             )
             .addStringOption((option) =>
               option
                 .setName("description")
                 .setDescription("The description of the rule")
+                .setRequired(true)
             )
-        )
-        .addSubcommand((subcommand) =>
-          subcommand
-            .setName("delete")
-            .setDescription("Delete a rule")
+            .addStringOption((option) =>
+              option
+                .setName("offenses")
+                .setDescription("The punishment guidelines for the rule. e.g: 'warn,mute:1d,ban:3d,ban'")
+                .setRequired(true)
+              )
             .addIntegerOption((option) =>
               option
                 .setName("index")
                 .setDescription("The index of the rule")
-                .setRequired(true)
             )
+            )
+            .addSubcommand((subcommand) =>
+              subcommand
+              .setName("delete")
+              .setDescription("Delete a rule")
+              .addIntegerOption((option) =>
+                option
+                  .setName("index")
+                  .setDescription("The index of the rule")
+                  .setRequired(true)
+              )
         )
         .addSubcommand((subcommand) =>
           subcommand
@@ -267,6 +294,11 @@ const commandInfo = {
               option
                 .setName("description")
                 .setDescription("The new description of the rule")
+            )
+            .addStringOption((option) =>
+              option
+                .setName("offenses")
+                .setDescription("The new punishment guidelines for the rule. e.g: 'warn,mute:1d,ban:3d,ban'")
             )
         )
     ),
@@ -325,6 +357,16 @@ export async function runCommand(
         await logs.runSubCommand(interaction, RM);
       } else  if (subcommand == "editmessage") {
         await editMessage.runSubCommand(interaction, RM);
+      }
+    } else if (subcommandGroup == "rules") {
+      if (subcommand == "show") {
+        await rulesshow.runSubCommand(interaction, RM);
+      } else if (subcommand == "add") {
+        await rulesAdd.runSubCommand(interaction, RM);
+      } else if (subcommand == "delete") {
+        await rulesDelete.runSubCommand(interaction, RM);
+      } else if (subcommand == "edit") {
+        await rulesEdit.runSubCommand(interaction, RM);
       }
     }
   } catch (e) {

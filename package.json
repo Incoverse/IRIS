@@ -1,16 +1,14 @@
 {
   "name": "iris",
-  "version": "2-DEV-54ee1179",
-  "description": "IRIS (Intelligent Response Interface System) is a Discord bot created by and for the Chaos Crew Community.",
+  "version": "2.6.2",
+  "description": "IRIS (Intelligent Response Interface System) is a Discord bot that is focused on fun and utlities, as well as helping people understand TypeScript.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "cleanup": "rm -rf dist || del dist /f /s /q",
     "compile": "npm run cleanup && npm run build",
-    "versionControl": "node -e \"eval(Buffer.from('bGV0IGU9cmVxdWlyZSgnZnMnKSxuPXJlcXVpcmUoJ3BhdGgnKSxyPXJlcXVpcmUoJ2RvdGVudicpO3IuY29uZmlnKCk7Y29uc3QgZ2V0QWxsRmlsZXM9ZnVuY3Rpb24ocixpKXtjb25zdCBvPWUucmVhZGRpclN5bmMocik7cmV0dXJuIGk9aXx8W10sby5mb3JFYWNoKChmdW5jdGlvbihvKXtlLnN0YXRTeW5jKHIrJy8nK28pLmlzRGlyZWN0b3J5KCk/aT1nZXRBbGxGaWxlcyhyKycvJytvLGkpOmkucHVzaChuLmpvaW4oci50b1N0cmluZygpLCcvJyxvKSl9KSksaX07bGV0IG89Z2V0QWxsRmlsZXMoJy4vc3JjJyksdD1vLmpvaW4oJycpLGM9Jyc7Zm9yKGxldCBuIG9mIG8pYys9ZS5yZWFkRmlsZVN5bmMobiwndXRmLTgnKTtjb25zdCBzPUpTT04ucGFyc2UoZS5yZWFkRmlsZVN5bmMoJy4vcGFja2FnZS5qc29uJyx7ZW5jb2Rpbmc6J3V0Zi04J30pKSxhPWAke3MudmVyc2lvbi5yZXBsYWNlKC8tLiovLCcnKX0tJHsnWUVTJz09cHJvY2Vzcy5lbnYuREVWRUxPUE1FTlQ/J0RFVic6J1NUQUJMRSd9LSR7cmVxdWlyZSgnbWQ1JykodCsnfCcrYykuc3Vic3RyaW5nKDAsOCl9YDtzLnZlcnNpb249YSxlLndyaXRlRmlsZVN5bmMoJy4vcGFja2FnZS5qc29uJyxKU09OLnN0cmluZ2lmeShzLG51bGwsMikse2VuY29kaW5nOid1dGYtOCd9KTtjb25zb2xlLmxvZygnVmVyc2lvbiBjaGFuZ2VkIHRvOicsYSk7', 'base64').toString('ascii')) /* lmao ik this looks sketchy as hell but its the only way to do the version control on both windows and linux without some issues, if you dont trust me, open a base64 decoder and decode it */\"",
     "start": "node --no-warnings ./dist/index.js",
-    "CnR": "npm run cleanup && npm install && npm run versionControl && npm run build && npm run start"
+    "CnR": "npm run cleanup && npm install && npm run build && npm run start"
   },
   "repository": {
     "type": "git",

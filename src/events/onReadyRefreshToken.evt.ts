@@ -19,7 +19,7 @@ import Discord from "discord.js";
 import { MongoClient } from "mongodb";
 import moment from "moment-timezone";
 import chalk from "chalk";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import { readFileSync, writeFileSync } from "fs";
 import { request } from "undici";

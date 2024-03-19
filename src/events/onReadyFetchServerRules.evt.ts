@@ -16,15 +16,14 @@
  */
 
 import Discord from "discord.js";
-import moment from "moment-timezone";
 import { MongoClient } from "mongodb";
+import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 
 const eventInfo = {
-  type: "discordEvent",
-  listenerkey: Discord.Events.GuildMemberRemove,
+  type: "onStart",
   settings: {
     devOnly: false,
     mainOnly: false,
@@ -34,29 +33,35 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(
-  RM: object,
-  ...args: Array<Discord.GuildMember>
-) {
-  if (args[0].user.bot) return;
-  if (args[0].guild.id !== global.app.config.mainServer) return;
-  // Add user to global.loggingData.leaves if they are not in it already
-  if (!global.loggingData.leaves.includes(args[0].id))
-    global.loggingData.leaves.push(args[0].id);
+export async function runEvent(client: Discord.Client, RM: object) {
+  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
+  const dbclient = new MongoClient(global.mongoConnectionString);
 
-  const client = new MongoClient(global.mongoConnectionString);
-  if (global.newMembers.includes(args[0].user.id)) global.newMembers.splice(global.newMembers.indexOf(args[0].user.id),1)
   try {
-    const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-    const userdata = database.collection(
-      global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
+    const database = dbclient.db(
+      global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
     );
-    await userdata.deleteOne({ id: args[0].id });
-    const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
-    /* prettier-ignore */
-    global.logger.debug(`${chalk.yellow(user)} has left the server. Their entry has been removed from the database.`,returnFileName())
-  } finally {
-    await client.close();
+    
+    const serverdata = database.collection(
+      global.app.config.development
+        ? "DEVSRV_SD_" + global.app.config.mainServer
+        : "serverdata"
+    );
+    const serverdataDocument = await serverdata.findOne({id:global.app.config.mainServer})
+    if (!serverdataDocument) {
+      dbclient.close();
+      global.logger.debugError(
+        `ServerData document for '${global.app.config.mainServer}' could not be found. Cannot continue.`,
+        returnFileName()
+      );
+      return;
+    }
+
+    global.server.main.rules = serverdataDocument.rules || [];
+    dbclient.close();
+  } catch (error) {
+    global.logger.error(error, returnFileName());
+    dbclient.close();
   }
 }
 
@@ -66,5 +71,4 @@ export const returnFileName = () =>
   ];
 export const eventType = () => eventInfo.type;
 export const eventSettings = () => eventInfo.settings;
-export const priority = () => 0;
-export const getListenerKey = () => eventInfo.listenerkey;
+export const priority = () => 8;

@@ -17,7 +17,7 @@
 
 import Discord, { Collection } from "discord.js";
 import { MongoClient } from "mongodb";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import uuid4 from "uuid4";
 import moment from "moment-timezone";

@@ -16,7 +16,7 @@
  */
 
 import Discord, { CommandInteractionOptionResolver } from "discord.js";
-import { IRISGlobal } from "@src/interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js"
 import { fileURLToPath } from "url";
 import chalk from "chalk";
 import { MongoClient } from "mongodb";
@@ -27,80 +27,83 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
   
   let ruleNr = (
     interaction.options as CommandInteractionOptionResolver
-  ).getInteger("index", false) || Number.MAX_SAFE_INTEGER;
+  ).getInteger("index", true);
 
-
-  const punishmentType = (
+  let newTitle = (
     interaction.options as CommandInteractionOptionResolver
-  ).getString("offenses", true); // warn,mute:1d,ban:3d,ban
+  ).getString("title", false);
 
-  const title = (
+  let newDescription = (
     interaction.options as CommandInteractionOptionResolver
-  ).getString("title", true);
+  ).getString("description", false);
 
-  const description = (
+  let newPunishments = (
     interaction.options as CommandInteractionOptionResolver
-  ).getString("description", true);
+  ).getString("offenses", false);
 
-  const punishmentTypeArr = punishmentType.toLowerCase().split(",");
-  const punishments = [];
-  let punishmentIndex = 0
-  for (const punishment of punishmentTypeArr) {
-    punishmentIndex++;
-    const punishmentMap = {
-      "warn": "WARNING",
-      "mute": "TIMEOUT",
-      "kick": "KICK",
-      "ban": "BANISHMENT"
-    }
-    const punishmentArr = punishment.split(":");
-    let punishmentType = punishmentMap[punishmentArr[0]];
-    if (!punishmentType) {
-      await interaction.reply({
-        content: `Invalid punishment type: ${punishmentArr[0]}`,
-        ephemeral: true,
-      });
-      return;
-    }
-    const punishmentDuration = punishmentArr[1];
-    if (!punishmentDuration && punishmentType == "BANISHMENT") {
-        punishmentType = "PERMANENT_BANISHMENT";
-      } else if (punishmentType == "BANISHMENT") {
-        punishmentType = "TEMPORARY_BANISHMENT";
-      }
-        
-
-    punishments.push({
-      index:punishmentIndex,
-      type:punishmentType,
-      time:punishmentDuration,
+  if (!newTitle && !newDescription && !newPunishments) {
+    await interaction.reply({
+      content: "You must provide at least one new value to update.",
+      ephemeral: true,
     });
+    return;
   }
 
-  const alreadyExistingRules = global.server.main.rules
 
-  if (ruleNr > alreadyExistingRules.length + 1) {
-    ruleNr = alreadyExistingRules.length + 1;
-  }
+let newRules = global.server.main.rules
 
-  if (alreadyExistingRules.find((rule) => rule.index == ruleNr)) {
-    // move them down
-    alreadyExistingRules.forEach((rule) => {
-      if (rule.index >= ruleNr) {
-        rule.index++;
-      }
+  const rule = newRules.find((r) => r.index === ruleNr);
+  if (!rule) {
+    await interaction.reply({
+      content: "No rule with that index exists.",
+      ephemeral: true,
     });
+    return;
   }
 
+  if (newTitle) {
+    rule.title = newTitle;
+  }
+  if (newDescription) {
+    rule.description = newDescription;
+  }
+  if (newPunishments) {
+    const punishmentTypeArr = newPunishments.toLowerCase().split(",");
+    const punishments = [];
+    let punishmentIndex = 0
+    for (const punishment of punishmentTypeArr) {
+      punishmentIndex++;
+      const punishmentMap = {
+        "warn": "WARNING",
+        "mute": "TIMEOUT",
+        "kick": "KICK",
+        "ban": "BANISHMENT"
+      }
+      const punishmentArr = punishment.split(":");
+      let punishmentType = punishmentMap[punishmentArr[0]];
+      if (!punishmentType) {
+        await interaction.reply({
+          content: `Invalid punishment type: ${punishmentArr[0]}`,
+          ephemeral: true,
+        });
+        return;
+      }
+      const punishmentDuration = punishmentArr[1];
+      if (!punishmentDuration && punishmentType == "BANISHMENT") {
+          punishmentType = "PERMANENT_BANISHMENT";
+        } else if (punishmentType == "BANISHMENT") {
+          punishmentType = "TEMPORARY_BANISHMENT";
+        }
+        punishments.push({
+          index: punishmentIndex,
+          type: punishmentType,
+          time: punishmentDuration
+        })
+    }
+    rule.punishments = punishments;
+  }
 
-  alreadyExistingRules.push({
-    index: ruleNr,
-    title: title,
-    description: description,
-    punishments: punishments
-  });
-
-  global.server.main.rules = alreadyExistingRules.sort((a, b) => a.index - b.index);
+  global.server.main.rules = newRules;
 
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
@@ -108,10 +111,10 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
       global.app.config.debugging ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
     )
 
-    await serverData.updateOne({ id: global.app.config.mainServer }, { $set: { rules: alreadyExistingRules } }).then(async () => {
+    await serverData.updateOne({ id: global.app.config.mainServer }, { $set: { rules: newRules } }).then(async () => {
       
       await interaction.reply({
-        content: `Rule ${ruleNr} has been added.`,
+        content: `Rule ${ruleNr} has been updated.`,
         ephemeral: true,
       });
 
@@ -120,17 +123,17 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
   } catch (e) {
     console.error(e);
     await interaction.reply({
-      content: "An error occurred while adding the rule.",
+      content: "An error occurred while updating the rule.",
       ephemeral: true,
     });
     dbclient.close();
   }
 
-
-
-
-
 }
+const delay = (delayInms) => {
+  return new Promise((resolve) => setTimeout(resolve, delayInms));
+};
+
 function formatDuration(durationMs) {
   const units = [
       { label: 'y', ms: 1000 * 60 * 60 * 24 * 365 },
@@ -170,9 +173,5 @@ function parseDuration(durationStr) {
   const duration = parseInt(durationStr.slice(0, -1)) * units[durationStr.slice(-1)];
   return duration;
 }
-
-const delay = (delayInms) => {
-  return new Promise((resolve) => setTimeout(resolve, delayInms));
-};
 
 export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];

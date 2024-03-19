@@ -33,6 +33,20 @@ interface IRISGlobal extends NodeJS.Global {
     debugError: (message: any, sender: string) => void;
     debugWarn: (message: any, sender: string) => void;
   }
+  server: {
+    main: {
+      rules: {
+        index: number,
+        title: string | null,
+        description: string | null,
+        punishments: {
+          index: number,
+          type: string,
+          time: string | null,          
+        }[]
+      }[]
+    }
+  };
 
   bannedUsers: Array<string>;
   mongoStatus: number;

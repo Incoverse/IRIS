@@ -16,7 +16,7 @@
  */
 
 import Discord, { ButtonBuilder, ButtonStyle, ComponentBuilder, ComponentType } from "discord.js";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import { PathLike, readdirSync, readFileSync, statSync } from "fs";
 import { dirname, join } from "path";

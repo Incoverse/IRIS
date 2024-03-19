@@ -21,7 +21,7 @@ import Discord, {
   GuildMember,
   Team,
 } from "discord.js";
-import { IRISGlobal } from "../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import prettyMilliseconds from "pretty-ms";
 import { MongoClient } from "mongodb";

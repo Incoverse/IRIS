@@ -16,7 +16,7 @@
  */
 
 import Discord, { CommandInteractionOptionResolver, Message } from "discord.js";
-import { IRISGlobal } from "../../../../interfaces/global.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import { promisify } from "util";
 import { exec } from "child_process";
