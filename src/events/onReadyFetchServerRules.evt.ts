@@ -58,6 +58,14 @@ export async function runEvent(client: Discord.Client, RM: object) {
     }
 
     global.server.main.rules = serverdataDocument.rules || [];
+    // global.overrides.updateChoices("mod punish","rule", (option=>{
+    //   return option.setChoices(...global.server.main.rules.map((rule, index) => {
+    //     return {
+    //       name: `${rule.index}. ${rule.title}`,
+    //       value: rule.title.toLowerCase().replace(/ /g, "-"),
+    //     }
+    //   }))
+    // }))
     dbclient.close();
   } catch (error) {
     global.logger.error(error, returnFileName());

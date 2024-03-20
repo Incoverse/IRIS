@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { InteractionResponse, Message, REST, SlashCommandBuilder } from "discord.js";
+import { InteractionResponse, Message, REST, SharedSlashCommandOptions, SlashCommandAttachmentOption, SlashCommandBuilder, SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandOptionsOnlyBuilder, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandUserOption } from "discord.js";
 import { EventEmitter } from "events";
 import { AppInterface } from "./appInterface.js";
 
@@ -42,7 +42,18 @@ interface IRISGlobal extends NodeJS.Global {
         punishments: {
           index: number,
           type: string,
-          time: string | null,          
+          time: string | null,
+        }[]
+      }[];
+      offenses: {
+        [key: string]: {
+          violation: string,
+          punishment_type: string,
+          active: boolean,
+          violated_at: string,
+          ends_at: string | null,
+          expires_at: string | null,
+          offense_count: number,
         }[]
       }[]
     }
@@ -60,6 +71,7 @@ interface IRISGlobal extends NodeJS.Global {
   overrides: {
     reloadCommands?: () => Promise<boolean>;
     removeCommand?: (commandName: string, guildId: string)=> Promise<boolean>;
+    updateChoices?: (commandPath: string, option: string, update: (option: any) => Promise<any>) => Promise<boolean>;
     reloadConfig?: () => Promise<boolean>;
     changeConfig?: (key: string, value: any) => Promise<boolean>;
     setMaxUNOPlayers?: (maxPlayers: number) => Promise<boolean>;

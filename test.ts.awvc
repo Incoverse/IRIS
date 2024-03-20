@@ -1,0 +1,69 @@
+import { IRISGlobal } from "@src/interfaces/global.js";
+
+declare const global: IRISGlobal
+
+async function updateSlashCommand(commandPath, option, toUpdate) {
+    
+
+    const commandSplit = commandPath.split(" ")
+    const commandName = commandSplit[0] || null
+    const subCommandGroup = commandSplit[1] || null
+    const subCommand = commandSplit[2] || null
+    let slashCommand = null
+    slashCommand = global.requiredModules[Object.keys(global.requiredModules).filter(a=>a.startsWith("cmd")).find((cmd) => {
+        return cmd.toLowerCase() == "cmd"+ commandName.toLowerCase()
+    })]
+    if (!slashCommand) {
+        return [false, "Command not found"]
+    }
+    slashCommand = slashCommand.getSlashCommand()
+    if (subCommandGroup) {
+        slashCommand = slashCommand.options.find((opt) => {
+            return opt.name.toLowerCase() == subCommandGroup.toLowerCase()
+        })
+    }
+    if (!slashCommand) {
+        return [false, "SubCommandGroup not found"]
+    }
+    if (subCommand) {
+        slashCommand = slashCommand.options.find((opt) => {
+            return opt.name.toLowerCase() == subCommand.toLowerCase()
+        })
+    }
+    if (!slashCommand) {
+        return [false, "SubCommand not found"]
+    }
+    const optionSlash = slashCommand.options.find((opt) => {
+        return opt.name.toLowerCase() == option.toLowerCase()
+    })
+    if (!optionSlash) {
+        return [false, "Option not found"]
+    }
+    const newOption = await toUpdate(optionSlash)
+    if (!newOption) {
+        return [false, "Option not updated"]
+    }
+    slashCommand.options = slashCommand.options.map((opt) => {
+        if (opt.name.toLowerCase() == option.toLowerCase()) {
+            return newOption
+        }
+        return opt
+    })  
+    return true
+}
+
+
+return await updateSlashCommand("admin rules add","title", async (option) => {
+    return option.setChoices(
+        { name: "Rules", value: "rules" },
+        { name: "Rules2", value: "rules2" },
+        { name: "Rules3", value: "rules3" },
+        { name: "Rules4", value: "rules4" },
+        { name: "Rules5", value: "rules5" },
+        { name: "Rules6", value: "rules6" },
+        { name: "Rules7", value: "rules7" },
+        { name: "Rules8", value: "rules8" },
+        { name: "Rules9", value: "rules9" },
+        { name: "Rules10", value: "rules10" }
+    )
+})

@@ -21,7 +21,11 @@ import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-
+import express, { Express, Request, Response } from "express";
+import { readFileSync, writeFileSync } from "fs";
+import { request } from "undici";
+const app: Express = express();
+const port = 7380;
 const eventInfo = {
   type: "onStart",
   settings: {
@@ -29,33 +33,34 @@ const eventInfo = {
     mainOnly: false,
   },
 };
-
+let server = null;
+let completed = false;
+let expires_in = Number.MAX_SAFE_INTEGER
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export const setup = async (client:Discord.Client, RM: object) => true
 export async function runEvent(client: Discord.Client, RM: object) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
+
+  
   const dbclient = new MongoClient(global.mongoConnectionString);
   try {
     const database = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-    const collections = (await database.listCollections().toArray()).map((c) => c.name);
-    if (!collections.includes(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")) {
-        await database.createCollection(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")
-        /* prettier-ignore */
-        global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")}`,returnFileName());
-      }
-    if (!collections.includes(global.app.config.development ? "DEVSRV_SD_"+global.app.config.mainServer : "serverdata")) {
-      await database.createCollection(global.app.config.development ? "DEVSRV_SD_"+global.app.config.mainServer : "serverdata")
-      /* prettier-ignore */
-      global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_SD_"+global.app.config.mainServer : "serverdata")}`,returnFileName());
-    }
-    if (!collections.includes(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata")) {
-      await database.createCollection(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata")
-      /* prettier-ignore */
-      global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata")}`,returnFileName());
-    }
+    const offensedata = database.collection(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata");
+
+    const offenses = await offensedata.find({}).toArray();
+    global.server.main.offenses = {...Object.keys(offenses).map((uID) => {
+      return {
+        [uID]: offenses[uID].offenses,
+      };
+    })}
+
+    //TODO: Expand to make sure that the offenses are active. And fixing any inconsistencies.
+    global.logger.debug(`Loaded ${offenses.length} offenses from the database.`, returnFileName());
+
+  } catch (e) {
+    global.logger.error(e, returnFileName());
   } finally {
-    // Ensures that the client will close when you finish/error
     dbclient.close();
   }
 }
@@ -66,4 +71,4 @@ export const returnFileName = () =>
   ];
 export const eventType = () => eventInfo.type;
 export const eventSettings = () => eventInfo.settings;
-export const priority = () => Number.MAX_SAFE_INTEGER;
+export const priority = () => 5;
