@@ -49,9 +49,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
     const offensedata = database.collection(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata");
 
     const offenses = await offensedata.find({}).toArray();
-    global.server.main.offenses = {...Object.keys(offenses).map((uID) => {
+    global.server.main.offenses = {...offenses.map((uIDObj) => {
       return {
-        [uID]: offenses[uID].offenses,
+        [uIDObj.id]: uIDObj.offenses,
       };
     })}
 
