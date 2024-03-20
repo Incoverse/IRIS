@@ -83,7 +83,9 @@ declare const global: IRISGlobal;
   const logStream = createWriteStream(`./logs/${global.logName}`);
   global.logger = {
     log: (message: any, sender: string) => {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      if (typeof message !== "string") {
+        message = inspect(message, { depth: 1 });
+      }
       console.log(
         chalk.white.bold(
           "[" +
@@ -106,7 +108,9 @@ declare const global: IRISGlobal;
     },
     error: (message: any, sender: string) => {
       message = (message && message.stack) ? message.stack : message
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      if (typeof message !== "string") {
+        message = inspect(message, { depth: 1 });
+      }
       console.error(
         chalk.white.bold(
           "[" +
@@ -127,7 +131,9 @@ declare const global: IRISGlobal;
       );
     },
     warn: (message: any, sender: string) => {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      if (typeof message !== "string") {
+        message = inspect(message, { depth: 1 });
+      }
       console.log(
         chalk.white.bold(
           "[" +
@@ -149,7 +155,9 @@ declare const global: IRISGlobal;
     },
     debug: (message: any, sender: string) => {
       if (config.debugging) {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      if (typeof message !== "string") {
+        message = inspect(message, { depth: 1 });
+      }
       console.log(
           chalk.white.bold(
             "[" +
@@ -173,7 +181,9 @@ declare const global: IRISGlobal;
     debugError: (message: any, sender: string) => {
       if (config.debugging) {
         message = (message && message.stack) ? message.stack : message
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      if (typeof message !== "string") {
+        message = inspect(message, { depth: 1 });
+      }
       console.error(
           chalk.white.bold(
             "[" +
@@ -196,7 +206,9 @@ declare const global: IRISGlobal;
     },
     debugWarn: (message: any, sender: string) => {
       if (config.debugging) {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
+      if (typeof message !== "string") {
+        message = inspect(message, { depth: 1 });
+      }
       console.log(
           chalk.white.bold(
             "[" +
@@ -245,7 +257,9 @@ declare const global: IRISGlobal;
     global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-ERR");
   });
   const onExit = (a: string | number) => {
-    if (a==2) return
+    if (a==2) {
+      return
+    }
     global.logger.log("IRIS is shutting down...", "IRIS-"+a);
     process.exit(2);
   }
@@ -382,38 +396,14 @@ declare const global: IRISGlobal;
           ephemeral: true,
         });
       }
-      if (interaction.guild == null)
+      if (interaction.guild == null) {
         return await interaction.reply(
           ":x: This command can only be used in a server."
         );
-      if (interaction.guildId !== global.app.config.mainServer) return;
-
-
-        if (interaction.isAutocomplete()) {
-          const responsibleHandler = global.requiredModules[
-            "cmd" +
-              interaction.commandName[0].toUpperCase() +
-              interaction.commandName.slice(1)
-          ];
-
-          if (!responsibleHandler) return;
-
-          if (responsibleHandler.autocomplete) {
-            try {
-              await responsibleHandler.autocomplete(interaction, global.requiredModules);
-            } catch (e) {
-              global.logger.debugError(
-                `An error occurred while running the autocomplete for command '${interaction.commandName}'!`,
-                returnFileName()
-              );
-              global.logger.debugError(e, returnFileName());
-              return
-            }
-          }
-          return
-        }
-
-
+      }
+      if (interaction.guildId !== global.app.config.mainServer) {
+        return;
+      }
       const client = new MongoClient(global.mongoConnectionString);
       try {
         const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
@@ -435,15 +425,13 @@ declare const global: IRISGlobal;
                   7 * 24 * 60 * 60 * 1000,
               },
             };
-            if (
-              interaction.user.discriminator !== "0" &&
-              interaction.user.discriminator
-            )
+            if (interaction.user.discriminator !== "0" &&
+                          interaction.user.discriminator) {
               (entry.discriminator = interaction.user.discriminator),
                 userdata.insertOne(entry).then(() => {
                   client.close();
                 });
-          } else {
+            }
             const updateDoc = {
               $set: {
                 last_active: new Date().toISOString(),
@@ -458,7 +446,9 @@ declare const global: IRISGlobal;
         // Ensures that the client will close when you finish/error
         client.close();
       }
-      if (!interaction.isChatInputCommand()) return;
+      if (!interaction.isChatInputCommand()) {
+        return;
+      }
       let fullCmd = interaction.commandName;
       if ((
         interaction.options as CommandInteractionOptionResolver
@@ -473,44 +463,42 @@ declare const global: IRISGlobal;
       
       let found = false
       for (let command in global.requiredModules) {
-        if (command.startsWith("cmd")) {
-          if (
-            interaction.commandName == command.replace("cmd", "").toLowerCase()
-          ) {
-            found = true
-            if (await checkPermissions(interaction, fullCmd)) {
-                global.requiredModules[command].runCommand(interaction, global.requiredModules).then(async (res)=>{
-                  if (res == false) return
-                  if (!interaction.replied && !interaction.deferred) {
-                    global.logger.debugWarn(
-                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(global.requiredModules[command].returnFileName())}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
-                      returnFileName()
-                    );
-                    await interaction.reply({
-                      embeds: [
-                        new EmbedBuilder().setTitle("Command failed").setDescription(
-                        "We're sorry, this command could currently not be processed by IRIS, please try again later."
-                      ).setColor("Red")
-                    ],
-                    ephemeral: true,
-                  })
-                }
-              })
-              } else {
-              // global.logger.debugError(`${interaction.user.username} tried to run command '/${fullCmd}' but was denied access.`, returnFileName())
-              await interaction.reply({
-                embeds: [
-                  new EmbedBuilder().setTitle("Access Denied").setDescription(
-                    "You do not have permission to run this command."
-                  ).setColor("Red").setFooter({
-                    text: interaction.user.username,
-                    iconURL: interaction.user.avatarURL()
-                  })
-                ],
-                ephemeral: true,
-              });
-            }
-          }
+        if (command.startsWith("cmd") && interaction.commandName == command.replace("cmd", "").toLowerCase()) {
+              found = true
+              if (await checkPermissions(interaction, fullCmd)) {
+                  global.requiredModules[command].runCommand(interaction, global.requiredModules).then(async (res)=>{
+                    if (res == false) {
+                      return
+                    }
+                    if (!interaction.replied && !interaction.deferred) {
+                      global.logger.debugWarn(
+                        `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(global.requiredModules[command].returnFileName())}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
+                        returnFileName()
+                      );
+                      await interaction.reply({
+                        embeds: [
+                          new EmbedBuilder().setTitle("Command failed").setDescription(
+                          "We're sorry, this command could currently not be processed by IRIS, please try again later."
+                        ).setColor("Red")
+                      ],
+                      ephemeral: true,
+                    })
+                  }
+                })
+                } else {
+                // global.logger.debugError(`${interaction.user.username} tried to run command '/${fullCmd}' but was denied access.`, returnFileName())
+                await interaction.reply({
+                  embeds: [
+                    new EmbedBuilder().setTitle("Access Denied").setDescription(
+                      "You do not have permission to run this command."
+                    ).setColor("Red").setFooter({
+                      text: interaction.user.username,
+                      iconURL: interaction.user.avatarURL()
+                    })
+                  ],
+                  ephemeral: true,
+                });
+              }
         }
       }
       if (!found) {
@@ -606,10 +594,12 @@ declare const global: IRISGlobal;
           performance.resume("commandRegistration");
           continue;
         }
-        if (!global.app.config.development && command.commandSettings().devOnly)
+        if (!global.app.config.development && command.commandSettings().devOnly) {
           continue;
-        if (global.app.config.development && command.commandSettings().mainOnly)
+        }
+        if (global.app.config.development && command.commandSettings().mainOnly) {
           continue;
+        }
 
         
         performance.pause("fullRun")
@@ -660,10 +650,12 @@ declare const global: IRISGlobal;
         const event: IRISEvent = await import(`./events/${file}`);
         if (!(event.eventSettings().devOnly && event.eventSettings().mainOnly)) {
 
-          if (!global.app.config.development && event.eventSettings().devOnly)
-          continue;
-          if (global.app.config.development && event.eventSettings().mainOnly)
-          continue;
+          if (!global.app.config.development && event.eventSettings().devOnly) {
+            continue;
+          }
+          if (global.app.config.development && event.eventSettings().mainOnly) {
+            continue;
+          }
         } else {
           
           performance.pause("fullRun")
@@ -747,8 +739,9 @@ declare const global: IRISGlobal;
           roles.forEach((role: Role) => {
             if (role.name.toLowerCase().includes("new member")) {
               role.members.forEach((member: GuildMember) => {
-                if (!global.newMembers.includes(member.id))
+                if (!global.newMembers.includes(member.id)) {
                   global.newMembers.push(member.id);
+                }
               });
               return;
             }
@@ -824,8 +817,9 @@ declare const global: IRISGlobal;
               global.requiredModules[i].getListenerKey(),
               async (...args: any) => {
                 /* prettier-ignore */
-                if (global.requiredModules[i].getListenerKey() != Events.MessageCreate)
+                if (global.requiredModules[i].getListenerKey() != Events.MessageCreate) {
                   global.logger.debug(`Running '${eventType} (${listenerKey})' event: ${eventName}`,returnFileName());
+                }
                 await global.requiredModules[i].runEvent(global.requiredModules, ...args);
               }
             );
@@ -876,7 +870,7 @@ declare const global: IRISGlobal;
     /* prettier-ignore */
     const getOrdinalNum = (n:number)=> { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
     /* prettier-ignore */
-    const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e:any, t:any) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t:any) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t:any) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e:any, t:any, r:any) { return e.replace(t, (function (e:any) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e:any) { return (e + 24) % 12 || 12 }, getAmPm: function (e:any) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e:any, t:any, r:any, g:any) { return e.replace(t, (function (e:any) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
+    const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e:any, t:any) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t:any) { var r = t.length, g = e.getFullYear(); return r == 2 ? (g + "").slice(-2) : r == 4 ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t:any) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e:any, t:any, r:any) { return e.replace(t, (function (e:any) { var t = e.length; return t == 1 ? r : t == 2 ? ("0" + r).slice(-2) : e })) }, getHours12: function (e:any) { return (e + 24) % 12 || 12 }, getAmPm: function (e:any) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e:any, t:any, r:any, g:any) { return e.replace(t, (function (e:any) { var t = e.length; return t == 3 ? r[g].substr(0, 3) : t == 4 ? r[g] : e })) } };
     
     performance.start("logInTime")
     client.login(process.env.TOKEN);
