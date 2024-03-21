@@ -131,45 +131,6 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
 
 
 }
-function formatDuration(durationMs) {
-  const units = [
-      { label: 'y', ms: 1000 * 60 * 60 * 24 * 365 },
-      { label: 'w', ms: 1000 * 60 * 60 * 24 * 7 },
-      { label: 'd', ms: 1000 * 60 * 60 * 24 },
-      { label: 'h', ms: 1000 * 60 * 60 },
-      { label: 'm', ms: 1000 * 60 },
-      { label: 's', ms: 1000 },
-      { label: 'ms', ms: 1 }
-  ];
-
-  let duration = durationMs;
-  let durationStr = '';
-
-  for (const unit of units) {
-      const count = Math.floor(duration / unit.ms);
-      if (count > 0) {
-          durationStr += `${count}${unit.label} `;
-          duration -= count * unit.ms;
-      }
-  }
-
-  return durationStr.trim();
-}
-
-function parseDuration(durationStr) {
-  const units = {
-      'ms': 1,
-      's': 1000,
-      'm': 60 * 1000,
-      'h': 60 * 60 * 1000,
-      'd': 24 * 60 * 60 * 1000,
-      'w': 7 * 24 * 60 * 60 * 1000,
-      'y': 365 * 24 * 60 * 60 * 1000
-  };
-  
-  const duration = parseInt(durationStr.slice(0, -1)) * units[durationStr.slice(-1)];
-  return duration;
-}
 
 const delay = (delayInms) => {
   return new Promise((resolve) => setTimeout(resolve, delayInms));

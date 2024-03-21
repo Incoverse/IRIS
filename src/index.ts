@@ -293,6 +293,7 @@ declare const global: IRISGlobal;
   global.server = {
     main: {
       rules: [],
+      offenses: [],
     },
   };
 
@@ -382,6 +383,33 @@ declare const global: IRISGlobal;
     global.logger.log(`${chalk.white("[I]")} ${chalk.yellow("Logging in...")} ${chalk.white("[I]")}`, returnFileName());
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
+      if (interaction.isAutocomplete()) {
+        const responsibleHandler = global.requiredModules[
+          "cmd" +
+            interaction.commandName[0].toUpperCase() +
+            interaction.commandName.slice(1)
+        ];
+
+        if (!responsibleHandler) return;
+
+        if (responsibleHandler.autocomplete) {
+          try {
+            await responsibleHandler.autocomplete(interaction, global.requiredModules);
+          } catch (e) {
+            global.logger.debugError(
+              `An error occurred while running the autocomplete for command '${interaction.commandName}'!`,
+              returnFileName()
+            );
+            global.logger.debugError(e, returnFileName());
+            return
+          }
+        }
+        return
+      }
+    })
+
+    client.on(Events.InteractionCreate, async (interaction: any) => {
+      if (interaction.isAutocomplete()) return;
       if (!fullyReady) {
         return await interaction.reply({
           content:
@@ -401,9 +429,11 @@ declare const global: IRISGlobal;
           ":x: This command can only be used in a server."
         );
       }
+      
       if (interaction.guildId !== global.app.config.mainServer) {
         return;
       }
+
       const client = new MongoClient(global.mongoConnectionString);
       try {
         const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
@@ -855,6 +885,7 @@ declare const global: IRISGlobal;
       
       if (global.app.config.development) {
         global.logger.log(`Database name: ${chalk.cyanBright("IRIS_DEVELOPMENT")}`, returnFileName());
+        global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} collection: ${chalk.cyanBright("DEVSRV_OD_" + mainServer.id)}`, returnFileName());
         global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} collection: ${chalk.cyanBright("DEVSRV_SD_" + mainServer.id)}`, returnFileName());
         global.logger.log(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright("DEVSRV_UD_" + mainServer.id)}`, returnFileName());
         global.logger.log(`Log name: ${chalk.cyanBright(global.logName)}`, returnFileName());

@@ -64,7 +64,7 @@ export async function runEvent(RM: object, message: Discord.Message) {
         return text;
       };
 
-      const startRegex = /```(\n|js\n)/;
+      const startRegex = /```(.*?\n)/;
       const endRegex = /(|\n)```$/;
       const input = message.content
         .replace(".IRIS-EVAL ", "")
@@ -74,7 +74,7 @@ export async function runEvent(RM: object, message: Discord.Message) {
       let cleaned;
       try {
         // Evaluate (execute) our input
-        const evaled = eval("(async()=>{"+input+"})()");
+        const evaled = eval("(async()=>{\n"+input+"\n})()");
         // Put our eval result through the function
         // we defined above
         cleaned = await clean(evaled);

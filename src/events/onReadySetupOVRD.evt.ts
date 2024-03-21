@@ -17,7 +17,7 @@
 
 //! OVRD stands for Override.
 
-import Discord, { REST, Routes } from "discord.js";
+import Discord, { REST, Routes, SlashCommandOptionsOnlyBuilder } from "discord.js";
 import { MongoClient } from "mongodb";
 import moment from "moment-timezone";
 import chalk from "chalk";
@@ -50,7 +50,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
                   global.app.config.mainServer
                 ),
                 {
-                  body: global.reload.commands,
+                  body: Object.keys(global.requiredModules).filter(a => a.startsWith("cmd")).map(a => {
+                    return global.requiredModules[a].getSlashCommand().toJSON();
+                })
                 }
               );
                 resolve(true);
@@ -59,6 +61,54 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 reject(false);
             }
         })
+    }
+
+    global.overrides.updateChoices = async (commandPath:string, option:string, update:(option: SlashCommandOptionsOnlyBuilder) => Promise<SlashCommandOptionsOnlyBuilder>) => {
+      const commandSplit = commandPath.split(" ")
+      const commandName = commandSplit[0] || null
+      const subCommandGroup = commandSplit[1] || null
+      const subCommand = commandSplit[2] || null
+      let slashCommand = null
+      slashCommand = global.requiredModules[Object.keys(global.requiredModules).filter(a=>a.startsWith("cmd")).find((cmd) => {
+          return cmd.toLowerCase() == "cmd"+ commandName.toLowerCase()
+      })]
+      if (!slashCommand) {
+          return false
+      }
+      slashCommand = slashCommand.getSlashCommand()
+      if (subCommandGroup) {
+          slashCommand = slashCommand.options.find((opt) => {
+              return opt.name.toLowerCase() == subCommandGroup.toLowerCase()
+          })
+      }
+      if (!slashCommand) {
+        return false
+      }
+      if (subCommand) {
+          slashCommand = slashCommand.options.find((opt) => {
+              return opt.name.toLowerCase() == subCommand.toLowerCase()
+          })
+      }
+      if (!slashCommand) {
+        return false
+      }
+      const optionSlash = slashCommand.options.find((opt) => {
+          return opt.name.toLowerCase() == option.toLowerCase()
+      })
+      if (!optionSlash) {
+        return false
+      }
+      const newOption = await update(optionSlash)
+      if (!newOption) {
+        return false
+      }
+      slashCommand.options = slashCommand.options.map((opt) => {
+          if (opt.name.toLowerCase() == option.toLowerCase()) {
+              return newOption
+          }
+          return opt
+      })  
+      return await global.overrides.reloadCommands()
     }
 
     global.overrides.removeCommand = async (commandName:string, guildId:string) => {
@@ -124,4 +174,4 @@ export const returnFileName = () =>
   ];
 export const eventType = () => eventInfo.type;
 export const eventSettings = () => eventInfo.settings;
-export const priority = () => 8;
+export const priority = () => 9;

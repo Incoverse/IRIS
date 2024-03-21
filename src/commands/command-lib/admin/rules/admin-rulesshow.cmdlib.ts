@@ -38,7 +38,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
     interaction.options as CommandInteractionOptionResolver
   ).getBoolean("show-punishments", false);
 
-  if (!showPunishments && showPunishments != false) showPunishments = true;
+  if (!showPunishments && showPunishments != false) showPunishments = false;
 
   if (ruleNr) {
     const rule = global.server.main.rules.find((r) => r.index === ruleNr);
