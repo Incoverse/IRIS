@@ -73,7 +73,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
     punishments.push({
       index:punishmentIndex,
       type:punishmentType,
-      time:punishmentDuration,
+      time:!["kick","warn"].includes(punishmentDuration) ? punishmentDuration : null // if it's a kick or warn, it doesn't have a time
     });
   }
 
@@ -111,7 +111,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
     await serverData.updateOne({ id: global.app.config.mainServer }, { $set: { rules: alreadyExistingRules } }).then(async () => {
       
       await interaction.reply({
-        content: `Rule ${ruleNr} has been added.`,
+        content: `Rule **${ruleNr}. ${title}** has been added.`,
         ephemeral: true,
       });
 
