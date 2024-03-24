@@ -26,8 +26,23 @@ import Discord, {
   import { fileURLToPath } from "url";
   import chalk from "chalk";
   const __filename = fileURLToPath(import.meta.url);
-  
-  
+
+const localReturnFileName = () =>
+  __filename.split(process.platform == "linux" ? "/" : "\\")[
+    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+  ];
+
+global.logger.debug("Loading mod module '"+chalk.yellowBright("mod-ban")+"'...", localReturnFileName());
+import * as ban from "./command-lib/mod/mod-ban.cmdlib.js";
+global.logger.debug("Loading mod module '"+chalk.yellowBright("mod-unban")+"'...", localReturnFileName());
+import * as unban from "./command-lib/mod/mod-unban.cmdlib.js";
+global.logger.debug("Loading mod module '"+chalk.yellowBright("mod-kick")+"'...", localReturnFileName());
+import * as kick from "./command-lib/mod/mod-kick.cmdlib.js";
+global.logger.debug("Loading mod module '"+chalk.yellowBright("mod-mute")+"'...", localReturnFileName());
+import * as mute from "./command-lib/mod/mod-mute.cmdlib.js";
+global.logger.debug("Loading mod module '"+chalk.yellowBright("mod-unmute")+"'...", localReturnFileName());
+import * as unmute from "./command-lib/mod/mod-unmute.cmdlib.js";
+
   const punishmentTypeMap= {
     "WARNING": "Warning",
     "TIMEOUT": "Timeout",
@@ -37,11 +52,132 @@ import Discord, {
   }
 
 
+
   declare const global: IRISGlobal;
   const commandInfo = {
       slashCommand: new Discord.SlashCommandBuilder()
       .setName("mod")
-      .setDescription("Mod Commands")  
+      .setDescription("mod Commands")
+    .addSubcommand((subcommand) => //* ban <user> <reason> [remove] [duration] [delete messages (true/false)]
+      subcommand
+        .setName("ban")
+        .setDescription("Ban a user")
+        .addUserOption((option) =>
+          option
+            .setName("user")
+            .setDescription("The user you want to ban")
+            .setRequired(true)
+      )
+        .addStringOption((option) =>
+          option
+            .setName("reason")
+            .setDescription("The reason for the ban")
+            .setRequired(true)
+      )
+        .addBooleanOption((option) =>
+          option
+            .setName("remove")
+            .setDescription("Remove the ban on the user")
+        )
+        .addStringOption((option) =>
+          option
+            .setName("duration")
+            .setDescription("The duration of the ban")
+      )
+        .addBooleanOption((option) =>
+          option
+            .setName("delete-messages")
+            .setDescription("Delete the user's messages")
+      )
+    )
+    .addSubcommand((subcommand) => //* unban <user> <reason>
+      subcommand
+        .setName("unban")
+        .setDescription("Unban a user")
+        .addUserOption((option) =>
+          option
+            .setName("user")
+            .setDescription("The user you want to unban")
+            .setRequired(true)
+      )
+        .addStringOption((option) =>
+          option
+            .setName("reason")
+            .setDescription("The reason for the unban")
+            .setRequired(true)
+      )
+    )
+     .addSubcommand((subcommand) => //* kick <user> <reason> [delete messages (true/false)]
+      subcommand
+        .setName("kick")
+        .setDescription("Kick a user")
+        .addUserOption((option) =>
+          option
+            .setName("user")
+            .setDescription("The user you want to kick")
+            .setRequired(true)
+      )
+        .addStringOption((option) =>
+          option
+            .setName("reason")
+            .setDescription("The reason for the kick")
+            .setRequired(true)
+      )
+        .addBooleanOption((option) =>
+          option
+            .setName("delete-messages")
+            .setDescription("Delete the user's messages")
+        )
+      )
+          .addSubcommand((subcommand) => //* mute <user> <reason> [remove] [duration] [delete messages (true/false)]
+            subcommand
+              .setName("mute")
+              .setDescription("Mute a user")
+              .addUserOption((option) =>
+                option
+                  .setName("user")
+                  .setDescription("The user you want to mute")
+                  .setRequired(true)
+              )
+              .addStringOption((option) =>
+                option
+                  .setName("reason")
+                  .setDescription("The reason for the mute")
+                  .setRequired(true)
+            )
+              .addBooleanOption((option) =>
+                option
+                  .setName("remove")
+                  .setDescription("Remove the mute on the user")
+              )
+              .addStringOption((option) =>
+                option
+                  .setName("duration")
+                  .setDescription("The duration of the mute")
+              )
+              .addBooleanOption((option) =>
+                option
+                  .setName("delete-messages")
+                  .setDescription("Delete the user's messages")
+            )
+  )
+      .addSubcommand((subcommand) => //* unmute <user> <reason>
+        subcommand
+          .setName("unmute")
+          .setDescription("Unmute a user")
+          .addUserOption((option) =>
+            option
+              .setName("user")
+              .setDescription("The user you want to unmute")
+              .setRequired(true)
+          )
+          .addStringOption((option) =>
+            option
+              .setName("reason")
+              .setDescription("The reason for the unmute")
+              .setRequired(true)
+          )
+  )
         .addSubcommand((subcommand) =>
         subcommand
             .setName("punish")
@@ -63,6 +199,7 @@ import Discord, {
   
   
       
+
   
       //.setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
     settings: {
@@ -78,6 +215,25 @@ import Discord, {
     RM: object
   ) {
     try {
+      const subcommand = (
+        interaction.options as CommandInteractionOptionResolver
+      ).getSubcommand(true);
+
+
+      if (subcommand == "ban") {
+        await ban.runSubCommand(interaction, RM);
+      } else if (subcommand == "unban") {
+        await unban.runSubCommand(interaction, RM);
+      } else if (subcommand == "kick") {
+        await kick.runSubCommand(interaction, RM);
+      } else if (subcommand == "mute") {
+        await mute.runSubCommand(interaction, RM);
+      } else if (subcommand == "unmute") {
+        await unmute.runSubCommand(interaction, RM);
+      }
+   
+      //! mod ban <user> <reason> [duration] [delete-messages] Bans a user for the specified duration and reason, with an option to delete the user's messages sent an hour from when the ban was issues, option defaults to true. If no duration is specifed, it should be permanent.
+      //? When a ban/kick/mute is made, the bot finds the mod-log channel and posts an embed containing information about who got banned/kicked/muted, the reason and duration (if applicable), as well as who issued the punishment. The text of the embed message should be a way for IRIS to later-on determine the user's punishment. The format should be: PUNISHMENT|USERID|DURATION(seconds)|REASON|ISSUERID. Example: MUTE|301062520679170066|86400|Violated rule 3|516333697163853828, this message should also be 'covered' (between two "||"'s, ||like this||)
 
         const rule = (interaction.options as CommandInteractionOptionResolver).getString("rule");
         const user = (interaction.options as CommandInteractionOptionResolver).getUser("user");
@@ -291,7 +447,7 @@ import Discord, {
                     })
               ],
             })}
-
+          
             await (await interaction.guild.members.fetch(user.id)).timeout(parseDuration("28d"), "Manual Review")
 
           return await interaction.editReply({
@@ -308,8 +464,6 @@ import Discord, {
           });
         }
           
-
-
     } catch (e) {
       await interaction.client.application.fetch();
       global.logger.error(e, returnFileName());
@@ -406,7 +560,6 @@ import Discord, {
     const getOrdinalNum = (n:number)=> { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
 
   
-
   export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\")[
       __filename.split(process.platform == "linux" ? "/" : "\\").length - 1

@@ -56,6 +56,19 @@
         { "selector": "&Moderator", "canSee": true, "canUse": true },
         { "selector": "&everyone", "canSee": false, "canUse": false }
       ]
+    },
+    "mod": {
+      "main": [
+        { "selector": "&Administrator", "canSee": true, "canUse": true },
+        { "selector": "&Moderator", "canSee": true, "canUse": true },
+        { "selector": "&Support Team", "canSee": true, "canUse": true },
+        { "selector": "&everyone", "canSee": false, "canUse": false }
+      ],
+      "development": [
+        { "selector": "&Administrator", "canSee": true, "canUse": true },
+        { "selector": "&Moderator", "canSee": true, "canUse": true },
+        { "selector": "&everyone", "canSee": false, "canUse": false }
+      ]
     }
   },
 
