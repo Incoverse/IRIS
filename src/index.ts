@@ -33,6 +33,7 @@ import {
   PermissionsBitField,
   CommandInteractionOptionResolver,
   EmbedBuilder,
+  Interaction,
 } from "discord.js";
 import { AppInterface } from "@src/interfaces/appInterface.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
@@ -408,7 +409,8 @@ declare const global: IRISGlobal;
       }
     })
 
-    client.on(Events.InteractionCreate, async (interaction: any) => {
+
+      client.on(Events.InteractionCreate, async (interaction: any) => {
       if (interaction.isAutocomplete()) return;
       if (!fullyReady) {
         return await interaction.reply({
@@ -451,7 +453,7 @@ declare const global: IRISGlobal;
                 last_active: new Date().toISOString(),
                 username: interaction.user.username,
                 isNew:
-                  new Date().getTime() - (user.joinedAt?.getTime() ?? 0) <
+                  new Date().getTime() - ((user as GuildMember).joinedAt?.getTime() ?? 0) <
                   7 * 24 * 60 * 60 * 1000,
               },
             };
