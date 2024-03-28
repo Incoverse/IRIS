@@ -91,6 +91,14 @@ export async function runEvent(client: Discord.Client, RM: object) {
     });
     const guildMembers = await guild.members.fetch();
     for (let document of allDocuments) {
+      if (!guildMembers.map((member) => member.id).includes(document.id)) {
+        toBeEdited.push({
+          action: "RMV",
+          id: document.id,
+          username: document.username,
+        });
+        continue
+      }
       let obj = {
         id: document.id,
         birthday: document.birthday,
@@ -101,14 +109,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
       if (document.isNew) {
         if (!global.newMembers.includes(document.id))
           global.newMembers.push(document.id);
-      }
-      if (!guildMembers.map((member) => member.id).includes(document.id)) {
-        toBeEdited.push({
-          action: "RMV",
-          id: document.id,
-          username: document.username,
-        });
-        continue
       }
       let defaults = global.app.config.defaultEntry
 
@@ -197,7 +197,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     if (toBeEdited.length > 0) {
       let toBeRemoved = toBeEdited
         .filter((a) => a.action == "RMV")
-        .map((a) => a.id);
+        .map((a) => {return{id:a.id}});
       if (toBeRemoved.length > 0)
         allActions.push(
           userdata
@@ -214,10 +214,10 @@ export async function runEvent(client: Discord.Client, RM: object) {
               toBeEdited
                 .filter((a) => a.action == "RMV")
                 .map((a) => a.username)
-                .forEach((entry) => {
+                .forEach((username) => {
                   global.logger.debug(
                     `Removed ${chalk.yellow(
-                      entry.username
+                      username
                     )} from the database. (user left)`,
                     returnFileName()
                   );
@@ -280,7 +280,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
       }
     }
     if (allActions.length > 0) {
-      Promise.all(allActions).then(() => {
+      await Promise.all(allActions).then(() => {
         // global.logger.debug("Finished.", returnFileName());
         // console.log("A")
         dbclient.close();

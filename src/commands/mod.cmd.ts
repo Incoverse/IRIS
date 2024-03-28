@@ -59,6 +59,29 @@ import Discord, {
                 .setRequired(true)
                 .setAutocomplete(true)
             )
+        ).addSubcommand((subcommand) =>
+        subcommand
+            .setName("review")
+            .setDescription("Review a case that has been flagged for manual review.")
+            .addUserOption((option) =>
+                option
+                    .setName("user")
+                    .setDescription("User to review")
+                    .setRequired(true)
+            ).addStringOption((option) =>
+            option
+                .setName("decision")
+                .setDescription("The decision made on the case.")
+                .setRequired(true)
+                .setChoices(
+                  {name: "Permanent Ban", value: "PERMANENT_BANISHMENT"},
+                  {name: "Temporary Ban", value: "TEMPORARY_BANISHMENT"},
+                  {name: "Kick", value: "KICK"},
+                  {name: "Timeout", value: "TIMEOUT"},
+                  {name: "Warning", value: "WARNING"},
+                  {name: "No Action", value: "NO_ACTION"}
+                )
+            )
         ),
   
   
@@ -252,7 +275,7 @@ import Discord, {
                       iconURL: user.displayAvatarURL()
                   })
                   .setDescription(`Hello ${user.displayName},\n\nWe have determined that your recent actions in the server have violated rule:
-                  **${violatedRule.index + ". " + violatedRule.title}**\n\nThis case has been flagged for manual review. You will be unable to interact with the server until the review is complete.\n\nAfter the review is complete, you will be DM:d once again with the results of the review. The review will determine whether your actions combined with your past offenses are eligible for a permanent explusion from the server. If they are, you will be permanentely banned from the server. If the moderators deem your case to be ineligible - you will be allowed to continue interacting with the server.\n\nKeep in mind that the moderators are also able to give you another punishment if they deem that to be neccessary.`)
+                  **${violatedRule.index + ". " + violatedRule.title}** \nThis case has been flagged for manual review. You will be unable to interact with the server until the review is complete.\n\nAfter the review is complete, you will be DM'd once again with the results of the review. The review will determine whether your actions combined with your past offenses are eligible for a permanent explusion from the server. If they are, you will be permanentely banned from the server. If the moderators deem your case to be ineligible - you will be allowed to continue interacting with the server.\n\nKeep in mind that the moderators are also able to give you another punishment if they deem that to be neccessary.`)
                   .addFields({name:"Type", value:"Manual Review"})
                   .setColor(Discord.Colors.Red)
                   .setFooter({
@@ -264,12 +287,15 @@ import Discord, {
           })
 
           if (modLogChannel) {
+
+            const modCommandID = (await interaction.guild.commands.fetch()).find((command) => command.name == "mod").id;
+
             (modLogChannel as TextChannel).send({
               // who banned, who got banned, reason, time, duration, type
               embeds: [
                   new Discord.EmbedBuilder()
                     .setThumbnail(user.displayAvatarURL())
-                    .setDescription(`${user} has gone past the maximum amount of offenses for rule \n**${violatedRule.index}. ${violatedRule.title}**\n\nIRIS has been configured to flag any case going above the offense limit as a manual review.\n\nOnce a decision has been made - use the \`/mod review\` command to review this case.`)
+                    .setDescription(`${user} has gone past the maximum amount of offenses for the violated rule.\n\nIRIS has been configured to flag any case going above the offense limit as a manual review.\n\nOnce a decision has been made - use the </mod review:${modCommandID}> command to review this case.`)
                     .setAuthor({
                       name: user.username + " (" + user.id + ")",
                       iconURL: user.displayAvatarURL()

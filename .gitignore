@@ -111,3 +111,6 @@ local_config.json
 # dont push config.jsonc, this will prevent any accidental config pushes by the dev team
 **/config.jsonc
 /data
+
+## Do not push the IRIS.sock file
+IRIS.sock
