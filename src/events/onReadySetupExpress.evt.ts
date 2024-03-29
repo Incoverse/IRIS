@@ -38,6 +38,11 @@ let completed = false;
 let expires_in = Number.MAX_SAFE_INTEGER
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
+
+const FN = __filename.split(process.platform == "linux" ? "/" : "\\")[
+  __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
+]
+
 global.communicationChannel.once("authInquiry", async (message) => {
     global.communicationChannel.emit("authInquiryResp", {
         sender: returnFileName(),
@@ -45,8 +50,8 @@ global.communicationChannel.once("authInquiry", async (message) => {
             authMade: completed,
             ...(completed ? { expires_in } : {})
         }
-    })
-})
+    }, returnFileName());
+}, FN);
 export const setup = async (client:Discord.Client, RM: object) => true
 export async function runEvent(client: Discord.Client, RM: object) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}

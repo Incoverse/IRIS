@@ -63,18 +63,40 @@ export async function runEvent(client: Discord.Client, RM: object) {
         })
 
         nodeIPC.server.on("subscribe", (data:{
-            iam:string,
             event:string
         }, socket) => {
             function parseSubscription(rcvd_data:any) {
                 nodeIPC.server.emit(socket, data.event, rcvd_data)
             }
-            global.communicationChannel.on(data.event, parseSubscription)
+            global.communicationChannel.on(data.event, parseSubscription, returnFileName())
             socketTable.get(socketToIAM(socket)).subscriptions.set(data.event, parseSubscription)
         })
 
+        nodeIPC.server.on("query", (data:{
+            type:string,
+            timeout?:number
+        }, socket) => {
+
+            const timeout = data.timeout || 5000
+            const nonce = crypto.randomBytes(16).toString("hex")
+
+            let timeoutTimeout = null;
+            function queryResponseHandler(response) {
+                clearTimeout(timeoutTimeout)
+                nodeIPC.server.emit(socket, "query", response)
+            }
+
+            timeoutTimeout = setTimeout(() => {
+                nodeIPC.server.emit(socket, "query", {message: "Query timed out", code: "QUERY_TIMEOUT"})
+                global.communicationChannel.off("ipc-query-"+nonce,queryResponseHandler, returnFileName())
+            }, timeout)
+            global.communicationChannel.once("ipc-query-"+nonce, queryResponseHandler, returnFileName())
+            global.communicationChannel.emit("ipc-query", {type: data.type, nonce: nonce}, returnFileName())
+
+        })
+
+
         nodeIPC.server.on("unsubscribe", (data:{
-            iam:string,
             event:string
         }, socket) => {
             let iam = socketToIAM(socket)
@@ -82,7 +104,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
                 nodeIPC.server.emit(socket, "unsubscribe", {message: "No subscription found", code: "NO_SUBSCRIPTION_FOUND"})
                 return
             }
-            global.communicationChannel.off(data.event, socketTable.get(iam).subscriptions.get(data.event))
+            global.communicationChannel.off(data.event, socketTable.get(iam).subscriptions.get(data.event), returnFileName())
             socketTable.get(iam).subscriptions.delete(data.event)
         })
 
@@ -91,7 +113,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
 
             let iam = socketToIAM(socket)
             for (let [event, callback] of socketTable.get(iam).subscriptions) {
-                global.communicationChannel.off(event, callback)
+                global.communicationChannel.off(event, callback, returnFileName())
             }
             socketTable.delete(iam)
 

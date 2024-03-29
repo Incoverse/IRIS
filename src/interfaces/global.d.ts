@@ -86,7 +86,7 @@ interface IRISGlobal extends NodeJS.Global {
     timezone: string | null;
     passed?: boolean;
   }>;
-  communicationChannel: EventEmitter;
+  communicationChannel: LoggedEventEmitter;
   newMembers: Array<string>;
   dirName: string;
   SlashCommandBuilder: SlashCommandBuilder;
@@ -96,11 +96,6 @@ interface IRISGlobal extends NodeJS.Global {
       validGuesses: Array<string>;
       validWords: Array<string>;
     };
-  };
-  loggingData: {
-    joins: Array<string>;
-    leaves: Array<string>;
-    messages: number;
   };
   games: {
     wordle?: {
@@ -125,4 +120,13 @@ interface IRISGlobal extends NodeJS.Global {
       maxPlayers: number;
     }
   };
+}
+
+interface LoggedEventEmitter extends EventEmitter {
+  on(event: string | symbol, listener: (...args: any[]) => void, caller?: string): this;
+  once(event: string | symbol, listener: (...args: any[]) => void, caller?: string): this;
+  emit(event: string | symbol, ...args: any[]): boolean;
+  off(event: string | symbol, listener: (...args: any[]) => void, caller?: string): this;
+  removeListener(event: string | symbol, listener: (...args: any[]) => void, caller?: string): this;
+  addListener(event: string | symbol, listener: (...args: any[]) => void, caller?: string): this;
 }

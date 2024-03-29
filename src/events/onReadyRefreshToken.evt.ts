@@ -40,7 +40,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     if (message.data.authMade) tokenExpirySec = message.data.expires_in;
 
     startTokenTimer();
-  });
+  }, returnFileName());
 }
 
 function startTokenTimer() {

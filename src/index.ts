@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Inimi | InimicalPart | Incoverse
+ * Copyright (c) 2024 Inimi | InimicalPart | Incoverse
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -230,6 +230,53 @@ declare const global: IRISGlobal;
   global.bannedUsers = [];
   global.birthdays = [];
   global.communicationChannel = new EventEmitter();
+  let oldEmit = global.communicationChannel.emit
+  let oldOn = global.communicationChannel.on
+  let oldOnce = global.communicationChannel.once
+  let oldOff = global.communicationChannel.off
+  //! Log every emit
+  global.communicationChannel.emit = function(...args: any) {
+    const caller = typeof args[args.length-1] == "string" ? args[args.length-1] : "unknown"
+    var emitArgs = arguments;
+    global.logger.debug(("Emitted '"+chalk.cyanBright.bold(emitArgs[0])+"' with data: " + chalk.yellowBright(JSON.stringify(emitArgs[1]))),caller)
+    return oldEmit.apply(global.communicationChannel, arguments)
+  }
+  //! Log every on
+  global.communicationChannel.on = function(...args: any) {
+    const caller = args[2] || "unknown"
+    var onArgs = arguments;
+    if (!(new Error("")).stack.includes("once")) global.logger.debug("Listening for '"+chalk.cyanBright.bold(onArgs[0])+"'",caller)
+    return oldOn.apply(global.communicationChannel, arguments)
+  }
+  global.communicationChannel.addListener = global.communicationChannel.on
+
+  //! Log every once
+  global.communicationChannel.once = function(...args: any) {
+    const caller = args[2] || "unknown"
+    var onceArgs = arguments;
+    global.logger.debug("Listening once for '"+chalk.cyanBright.bold(onceArgs[0])+"'",caller)
+    return oldOnce.apply(global.communicationChannel, arguments)
+  }
+  //! Log every off
+  global.communicationChannel.off = function(...args: any) {
+    let caller = args[2] || "FromONCE"
+    const fromOnce = caller == "FromONCE"
+    if (caller == "FromONCE") {
+      const errorStack = (new Error()).stack.split("\n")
+      const handleOnceIndex = errorStack.findIndex((line) => line.includes("#handleOnce"))
+      if (handleOnceIndex != -1) {
+        const dirSeparator = process.platform == "linux" ? /.*\// : /.*\\/g
+        caller = errorStack[handleOnceIndex-1].trim().split(" ")[1].replace("file:","").replace(/:.*/g,"").replace(dirSeparator,"")
+      }
+    }
+
+    var offArgs = arguments;
+    global.logger.debug("No longer listening"+(fromOnce?" (once)":"")+" for '"+chalk.cyanBright.bold(offArgs[0])+"'",caller)
+    return oldOff.apply(global.communicationChannel, arguments)
+  }
+  global.communicationChannel.removeListener = global.communicationChannel.off
+
+
   global.newMembers = [];
   const requiredPermissions = [
     PermissionsBitField.Flags.AddReactions,
@@ -272,11 +319,6 @@ declare const global: IRISGlobal;
   global.overrides = {
      //! These overrides get replaced by the event onReadySetupOVRD.evt.ts 
   }
-  global.loggingData = {
-    joins: [],
-    leaves: [],
-    messages: 0,
-  };
   global.server = {
     main: {
       rules: [],
@@ -662,6 +704,10 @@ declare const global: IRISGlobal;
 
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of eventFiles) {
+        global.logger.debug(
+          `Registering event: ${chalk.blueBright(file)}`,
+          returnFileName()
+        );
         const event: IRISEvent = await import(`./events/${file}`);
         if (!(event.eventSettings().devOnly && event.eventSettings().mainOnly)) {
 
@@ -680,10 +726,6 @@ declare const global: IRISGlobal;
           continue;
         }
 
-        global.logger.debug(
-          `Registering event: ${chalk.blueBright(file)}`,
-          returnFileName()
-        );
 
         if (!(await event.setup(client, global.requiredModules))) {
           performance.pause("fullRun")

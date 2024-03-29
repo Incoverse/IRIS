@@ -40,9 +40,6 @@ export async function runEvent(
 ) {
   if (args[0].user.bot) return;
   if (args[0].guild.id !== global.app.config.mainServer) return;
-  // Add user to global.loggingData.leaves if they are not in it already
-  if (!global.loggingData.leaves.includes(args[0].id))
-    global.loggingData.leaves.push(args[0].id);
 
   const client = new MongoClient(global.mongoConnectionString);
   if (global.newMembers.includes(args[0].user.id)) global.newMembers.splice(global.newMembers.indexOf(args[0].user.id),1)
