@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { MongoClient } from "mongodb";
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
+import storage from "@src/lib/utilities/storage.js";
 
 const eventInfo = {
   type: "discordEvent",
@@ -31,28 +31,20 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(RM: object, message: Discord.Message) {
+export const setup = async (client:Discord.Client) => true
+export async function runEvent(message: Discord.Message) {
   if (message.guildId != global.app.config.mainServer) return;
   if (message.author.id == message.client.user.id) return;
-  const client = new MongoClient(global.mongoConnectionString);
   try {
-    const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-    const userdata = database.collection(
-      global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-    );
-    let a;
-    // Query for a movie that has the title 'Back to the Future'
     const query = { id: message.author.id };
     const updateDoc = {
       $set: {
         last_active: new Date().toISOString(),
       },
     };
-    await userdata.updateOne(query, updateDoc, {});
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
+    await storage.updateOne("user", query, updateDoc);
+  } catch (e) {
+    global.logger.error(`Failed to update last_active for ${message.author.tag}: ${e}`, returnFileName());
   }
 }
 

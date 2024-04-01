@@ -27,8 +27,7 @@ declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
 export async function runSubCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   const user = interaction.user.discriminator != "0" && interaction.user.discriminator ? interaction.user.tag: interaction.user.username
   /* prettier-ignore */

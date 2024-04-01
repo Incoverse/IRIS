@@ -16,11 +16,10 @@
  */
 
 import Discord from "discord.js";
-import { MongoClient } from "mongodb";
-import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
+import storage from "@src/lib/utilities/storage.js";
 
 const eventInfo = {
   type: "onStart",
@@ -32,7 +31,7 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => {
+export const setup = async (client:Discord.Client) => {
   const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
   // check if there is a role that includes "new member" in it's name
   if (!roles.some((role) => role.name.toLowerCase().includes("new member"))) {
@@ -41,29 +40,17 @@ export const setup = async (client:Discord.Client, RM: object) => {
   }
   return true
 }
-export async function runEvent(client: Discord.Client, RM: object) {
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
   const guild = await client.guilds.fetch(global.app.config.mainServer);
-  const dbclient = new MongoClient(global.mongoConnectionString);
+
+
+
 
   try {
-    const database = dbclient.db(
-      global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
-    );
-    const userdata = database.collection(
-      global.app.config.development
-        ? "DEVSRV_UD_" + global.app.config.mainServer
-        : "userdata"
-    );
-
-    const serverdata = database.collection(
-      global.app.config.development
-        ? "DEVSRV_SD_" + global.app.config.mainServer
-        : "serverdata"
-    );
-    const serverdataDocument = await serverdata.findOne({id:global.app.config.mainServer})
+    const serverdataDocument = await storage.findOne("server", {id:global.app.config.mainServer})
     if (!serverdataDocument) {
-      await serverdata.insertOne({
+      await storage.insertOne("server", {
         id: global.app.config.mainServer,
         rules: [],
         games: [],        
@@ -80,7 +67,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     /*
      * We're awaiting the result of the find() function, because we don't want to accidentally let other modules access and modify the database before we're done catching it up.
      */
-    const allDocuments = await userdata.find().toArray();
+    const allDocuments = await storage.find("user", {});
     let newMembersRole = null;
     await guild.roles.fetch().then(async (roles) => {
       roles.forEach((role) => {
@@ -155,24 +142,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
             entry.discriminator = member.user.discriminator;
           }
           toBeEdited.push({ action: "ADD", entry });
-        } else {
-          let userDoc = allDocuments.find((m) => m.id == member.id);
-          if (
-            userDoc.username !== member.user.username ||
-            (userDoc.discriminator !== member.user.discriminator &&
-              userDoc.discriminator)
-          ) {
-            toBeEdited.push({
-              action: "UPD_USRNAME",
-              id: member.id,
-              username: member.user.username,
-              tag: member.user.tag,
-              discriminator:
-                member.user.discriminator !== "0" && member.user.discriminator
-                  ? member.user.discriminator
-                  : null,
-            });
-          }
         }
       }
       if (
@@ -200,17 +169,10 @@ export async function runEvent(client: Discord.Client, RM: object) {
         .map((a) => {return{id:a.id}});
       if (toBeRemoved.length > 0)
         allActions.push(
-          userdata
-            .deleteMany({
+          storage.deleteMany("user", {
               $or: toBeRemoved,
             })
-            .then((result) => {
-              // const entryOrEntries =
-              //   result.deletedCount > 1 || result.deletedCount < 1
-              //     ? "entries"
-              //     : "entry"; // if more than 1, or less than 1, use plural
-              // /* prettier-ignore */
-              // global.logger.debug(`Successfully removed ${chalk.yellow(result.deletedCount)} redundant ${entryOrEntries} from the database.`,returnFileName());
+            .then(() => {
               toBeEdited
                 .filter((a) => a.action == "RMV")
                 .map((a) => a.username)
@@ -230,11 +192,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
         .map((a) => a.entry);
       if (toBeAdded.length > 0)
         allActions.push(
-          userdata.insertMany(toBeAdded).then((result) => {
-            // global.logger.debug(
-            //   `Successfully added ${result.insertedCount} missing UserData document(s).`,
-            //   returnFileName()
-            // );
+          storage.insertMany("user", toBeAdded)
+          .then(() => {
             toBeAdded.forEach((entry) => {
               global.logger.debug(
                 `Added ${chalk.yellow(entry.username)} to the database. (user joined)`,
@@ -246,53 +205,17 @@ export async function runEvent(client: Discord.Client, RM: object) {
       const toBeUpdated = toBeEdited.filter((a) => a.action == "UPD");
       for (let entry of toBeUpdated) {
         allActions.push(
-          userdata.updateOne({ id: entry.id }, { $set: entry.changes }).then((result) => {
+          storage.updateOne("user", { id: entry.id }, { $set: entry.changes }).then(() => {
             global.logger.debug("Added "+chalk.yellow(Object.keys(entry.changes).length)+" missing field"+(Object.keys(entry.changes).length>1?"s":"")+" to "+chalk.yellow(entry.username) + "'" + (entry.username.toLowerCase().endsWith("s") ? "" : "s") + " entry.", returnFileName())
           })
         );
       }
-      const toBeUsernameUpdate = toBeEdited.filter((a) => a.action == "UPD_USRNAME");
-      for (let entry of toBeUsernameUpdate) {
-        let unsetData = {};
-        if (entry.discriminator == null) {
-          unsetData = { $unset: { discriminator: "" } };
-        }
-        const oldUsername = !entry.discriminator
-          ? entry.username
-          : entry.username + "#" + entry.discriminator;
-        const newUsername =
-          entry.user.discriminator !== "0" && entry.user.discriminator
-            ? entry.user.tag
-            : entry.user.username;
-
-        global.logger.debug(
-          `${chalk.yellow(
-            oldUsername
-          )} changed their username to ${chalk.yellow(newUsername)}.`,
-          returnFileName()
-        );
-        allActions.push(
-          userdata.updateOne(
-            { id: entry.id },
-            { $set: { username: entry.username }, ...unsetData }
-          )
-        );
-      }
     }
     if (allActions.length > 0) {
-      await Promise.all(allActions).then(() => {
-        // global.logger.debug("Finished.", returnFileName());
-        // console.log("A")
-        dbclient.close();
-      });
-    } else {
-      // console.log("B")
-      // global.logger.debug("Finished.", returnFileName());
-      dbclient.close();
+      await Promise.all(allActions)
     }
   } catch (error) {
     global.logger.error(error, returnFileName());
-    dbclient.close();
   }
 }
 

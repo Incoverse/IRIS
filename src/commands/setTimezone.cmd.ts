@@ -19,7 +19,7 @@ import Discord, { CommandInteractionOptionResolver } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import moment from "moment-timezone";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -40,23 +40,11 @@ const commandInfo = {
     mainOnly: false,
   },
 };
-export const setup = async (client: Discord.Client, RM: object) => true;
+export const setup = async (client: Discord.Client) => true;
 export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   try {
-    const client = new MongoClient(global.mongoConnectionString);
-    try {
-      const db = client.db(
-        global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
-      );
-      const userdata = db.collection(
-        global.app.config.development
-          ? "DEVSRV_UD_" + global.app.config.mainServer
-          : "userdata"
-      );
-
       const commandOptions =
         interaction.options as CommandInteractionOptionResolver;
 
@@ -94,20 +82,10 @@ export async function runCommand(
         return;
       }
       
-      let dbclient = new MongoClient(global.mongoConnectionString);
-      try {
-        await dbclient.connect();
-        const database = dbclient.db(
-          global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
-        );
-        const userdata = database.collection(
-          global.app.config.development
-            ? "DEVSRV_UD_" + global.app.config.mainServer
-            : "userdata"
-        );
         if (commandOptions.getString("timezone").toLowerCase() === "none") {
-          let user = await userdata.findOne({ id: interaction.user.id });
-          await userdata.updateOne(
+          let user = await storage.findOne("user", { id: interaction.user.id });
+          await storage.updateOne(
+            "user",
             { id: interaction.user.id },
             {
               $set: {
@@ -124,7 +102,8 @@ export async function runCommand(
           });
         } else {
           let timezone = moment.tz.names()[moment.tz.names().map(a=>a.toLowerCase()).indexOf(commandOptions.getString("timezone").toLowerCase())]
-          await userdata.updateOne(
+          await storage.updateOne(
+            "user",
             { id: interaction.user.id },
             {
               $set: {
@@ -141,12 +120,6 @@ export async function runCommand(
             ephemeral: true,
           });
         }
-      } finally {
-        await dbclient.close();
-      }
-    } finally {
-      await client.close();
-    }
   } catch (e) {
     global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();

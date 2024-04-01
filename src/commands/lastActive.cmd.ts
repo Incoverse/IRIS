@@ -18,7 +18,7 @@
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -40,24 +40,18 @@ const commandInfo = {
   },
 };
 
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => true
 export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   try {
     await interaction.deferReply();
     const target = interaction.options.getUser("user");
-    const client = new MongoClient(global.mongoConnectionString);
+
 
     try {
-      const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-      const userdata = database.collection(
-        global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-      );
-      // Query for a movie that has the title 'Back to the Future'
       const query = { id: target.id };
-      let userInfo = await userdata.findOne(query);
+      let userInfo = await storage.findOne("user", query);
       if (userInfo == null || userInfo.last_active == null) {
         await interaction.editReply(
           "This user has never interacted with this server."
@@ -65,18 +59,15 @@ export async function runCommand(
       } else {
         await interaction.editReply({
           content:
-            "<@" +
-            target.id +
-            "> was last active ``" +
+            target + " was last active ``" +
             timeAgo(new Date(userInfo.last_active)) +
             "``",
           allowedMentions: { parse: [] },
         });
       }
-    } finally {
-      // Ensures that the client will close when you finish/error
-      await client.close();
-    }
+    } catch (e) {
+      global.logger.error(e.toString(), returnFileName());
+    } 
     return;
   } catch (e) {
     global.logger.error(e, returnFileName());

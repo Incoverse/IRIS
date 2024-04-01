@@ -114,3 +114,6 @@ local_config.json
 
 ## Do not push the IRIS.sock file
 IRIS.sock
+
+## Do not push the storage folder (backup folder if MongoDB malfunctions)
+storage/

@@ -32,6 +32,8 @@ interface AppInterface {
     externalOwners: Array<string>;
     showErrors: boolean;
     debugging: boolean;
+    skipMongoFailWait: boolean;
+    backupStoragePath: string;
     mainServer: string;
     developmentServer: string;
     development: boolean;

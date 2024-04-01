@@ -16,11 +16,11 @@
  */
 
 import Discord from "discord.js";
-import { MongoClient } from "mongodb";
 import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
+import storage from "@src/lib/utilities/storage.js";
 
 const eventInfo = {
   type: "discordEvent",
@@ -33,8 +33,8 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(RM: object, message: Discord.Message) {
+export const setup = async (client:Discord.Client) => true
+export async function runEvent(message: Discord.Message) {
   if (message.guildId != global.app.config.mainServer) return;
   if (message.author.id == message.client.user.id) return;
   if (
@@ -160,16 +160,9 @@ export async function runEvent(RM: object, message: Discord.Message) {
     /* prettier-ignore */
     global.logger.debug(`Time provided by ${chalk.yellow(user)} was matched to timezone: ${chalk.yellow(timezonePlusOffset)}`,returnFileName())
 
-    const client = new MongoClient(global.mongoConnectionString);
     try {
-      const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-      const userdata = database.collection(
-        global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-      );
-      let a;
-      // Query for a movie that has the title 'Back to the Future'
       const query = { id: message.author.id };
-      let userInfo = await userdata.findOne(query);
+      let userInfo = await storage.findOne("user",query);
       if (userInfo?.settings?.changeTimezone) {
 
         
@@ -179,7 +172,8 @@ export async function runEvent(RM: object, message: Discord.Message) {
       const approximatedPlusOffset = `${moded} (${getOffset(moded)})`
       /* prettier-ignore */
       global.logger.debug(`${chalk.yellow(user)}'s timezone is now approximated to be ${chalk.yellow(approximatedPlusOffset)}`, returnFileName());
-      await userdata.updateOne(
+      await storage.updateOne(
+        "user",
         query,
         {
           $set: {
@@ -188,15 +182,14 @@ export async function runEvent(RM: object, message: Discord.Message) {
           $push: {
             timezones: approximatedTimezone,
           },
-        },
-        {}
+        }
       );
-      await userdata.updateOne(
+      await storage.updateOne(
+        "user",
         { ...query, timezones: { $size: 5 } },
         {
           $pop: { timezones: -1 },
-        },
-        {}
+        }
       );
       if (
         global.birthdays.some((birthday) => birthday.id === message.author.id)
@@ -216,9 +209,8 @@ export async function runEvent(RM: object, message: Discord.Message) {
         global.logger.debug(`${chalk.yellow(user)} has manually set their timezone, we will not be changing it.`, returnFileName())
         
      }
-    } finally {
-      // Ensures that the client will close when you finish/error
-      await client.close();
+    } catch (e) {
+      global.logger.error(e.toString(), returnFileName());
     }
   }
 }

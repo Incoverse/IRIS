@@ -17,7 +17,6 @@
 
 
 import Discord from "discord.js";
-import undici from "undici";
 import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "@src/interfaces/global.js";
@@ -33,9 +32,14 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(client: Discord.Client, RM: object) {
+export const setup = async (client:Discord.Client) => global.dataForSetup.events.includes("onReadySetupPermsToken")
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
+
+  if (!process.env.ACCESS_TKN) {
+    global.logger.error("No access token found in the environment variables. Cannot proceed.", returnFileName());
+    return;
+  }
 
   let permissions = global.app.config.permissions;
 
@@ -92,7 +96,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
     }
 
     try {
-      const tokenResponseData = await undici.request(
+      const tokenResponseData = await fetch(
         "https://discord.com/api/v10/applications/" +
           process.env.cID +
           "/guilds/" +
@@ -111,13 +115,13 @@ export async function runEvent(client: Discord.Client, RM: object) {
           },
         }
       );
-      if (tokenResponseData.statusCode == 200) {
+      if (tokenResponseData.status == 200) {
         global.logger.debug(`Successfully updated permissions for command '${chalk.yellowBright(command)}'.`, returnFileName());
       } else {
         global.logger.debugError(
             `Failed to update permissions for command '${chalk.yellowBright(command)}'.`, returnFileName()
         );
-        global.logger.debugError(await tokenResponseData.body.json(), returnFileName());
+        global.logger.debugError(await tokenResponseData.json(), returnFileName());
       }
     } catch (err) {
       global.logger.error(err, returnFileName());
@@ -134,7 +138,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
       });
     }
     async function getCurrentPerms(command_id) {
-      const tokenResponseData = await undici.request(
+      const tokenResponseData = await fetch(
         "https://discord.com/api/v10/applications/" +
           process.env.cID +
           "/guilds/" +
@@ -148,7 +152,7 @@ export async function runEvent(client: Discord.Client, RM: object) {
           },
         }
       );
-      return ((await tokenResponseData.body.json()) as any).permissions ?? [];
+      return ((await tokenResponseData.json()) as any).permissions ?? [];
     }
     async function convertToPermObject(customobject: any) {
       let type = null;

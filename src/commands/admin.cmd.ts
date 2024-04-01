@@ -225,10 +225,11 @@ const commandInfo = {
           subcommand
             .setName("show")
             .setDescription("Show the rules stored in IRIS database.")
-            .addIntegerOption((option) =>
+            .addStringOption((option) =>
               option
-                .setName("index")
-                .setDescription("The index of the rule you want to show")
+                .setName("rule")
+                .setDescription("The rule you want to show")
+                .setAutocomplete(true)
             )
             .addBooleanOption((option) =>
               option
@@ -268,22 +269,25 @@ const commandInfo = {
               subcommand
               .setName("delete")
               .setDescription("Delete a rule")
-              .addIntegerOption((option) =>
+              .addStringOption((option) =>
                 option
-                  .setName("index")
-                  .setDescription("The index of the rule")
+                  .setName("rule")
+                  .setDescription("The rule you want to delete")
                   .setRequired(true)
+                  .setAutocomplete(true)
+
               )
         )
         .addSubcommand((subcommand) =>
           subcommand
             .setName("edit")
             .setDescription("Edit a rule")
-            .addIntegerOption((option) =>
+            .addStringOption((option) =>
               option
-                .setName("index")
-                .setDescription("The index of the rule")
+                .setName("rule")
+                .setDescription("The rule you want to edit")
                 .setRequired(true)
+                .setAutocomplete(true)
             )
             .addStringOption((option) =>
               option
@@ -313,11 +317,26 @@ const commandInfo = {
   }
 };
 
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => true
+
+export const autocomplete = async (interaction: Discord.AutocompleteInteraction) => {
+  const optionName = interaction.options.getFocused(true).name
+  const focusedValue = interaction.options.getFocused();
+  
+  if (optionName == "rule") {
+      const choices = global.server.main.rules.map((rule) => {
+          return {
+              name: `${rule.index}. ${rule.title}`,
+              value: `${rule.title}`
+          }
+      })
+         
+      await interaction.respond(choices.filter((choice) => choice.name.toLowerCase().includes(focusedValue.toLowerCase())).slice(0, 25));
+  }
+}
 
 export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   try {
     const subcommandGroup = (
@@ -328,45 +347,45 @@ export async function runCommand(
     ).getSubcommand(true);
 
     if (subcommandGroup == "entry") {
-      await entryManagement.runSubCommand(interaction, RM);
+      await entryManagement.runSubCommand(interaction);
     } else if (subcommandGroup == "edit") {
       if (subcommand == "timezone") {
-        await changeTimezone.runSubCommand(interaction, RM);
+        await changeTimezone.runSubCommand(interaction);
       } else if (subcommand == "birthday") {
-        await changeBirthday.runSubCommand(interaction, RM);
+        await changeBirthday.runSubCommand(interaction);
       }
     } else if (subcommandGroup == "system") {
       if (subcommand == "checkcert") {
-        await checkCertificate.runSubCommand(interaction, RM);
+        await checkCertificate.runSubCommand(interaction);
       } else if (subcommand == "restartmongo") {
-        await restartMongoDB.runSubCommand(interaction, RM);
+        await restartMongoDB.runSubCommand(interaction);
       }
     } else if (subcommandGroup == "iris") {
       if (subcommand == "restart") {
-        await restartIRIS.runSubCommand(interaction, RM);
+        await restartIRIS.runSubCommand(interaction);
       } else if (subcommand == "stop") {
-        await stopIRIS.runSubCommand(interaction, RM);
+        await stopIRIS.runSubCommand(interaction);
       } else if (subcommand == "setpresence") {
         return await interaction.reply({
           content: "This command is currently disabled.",
           ephemeral: true,
         });
 
-        //await setPresence.runSubCommand(interaction, RM);
+        //await setPresence.runSubCommand(interaction);
       } else if (subcommand == "logs") {
-        await logs.runSubCommand(interaction, RM);
+        await logs.runSubCommand(interaction);
       } else  if (subcommand == "editmessage") {
-        await editMessage.runSubCommand(interaction, RM);
+        await editMessage.runSubCommand(interaction);
       }
     } else if (subcommandGroup == "rules") {
       if (subcommand == "show") {
-        await rulesshow.runSubCommand(interaction, RM);
+        await rulesshow.runSubCommand(interaction);
       } else if (subcommand == "add") {
-        await rulesAdd.runSubCommand(interaction, RM);
+        await rulesAdd.runSubCommand(interaction);
       } else if (subcommand == "delete") {
-        await rulesDelete.runSubCommand(interaction, RM);
+        await rulesDelete.runSubCommand(interaction);
       } else if (subcommand == "edit") {
-        await rulesEdit.runSubCommand(interaction, RM);
+        await rulesEdit.runSubCommand(interaction);
       }
     }
   } catch (e) {

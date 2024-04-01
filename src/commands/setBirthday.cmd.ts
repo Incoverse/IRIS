@@ -15,12 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import Discord, { GuildMemberRoleManager } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-import { MongoClient } from "mongodb";
-import moment from "moment-timezone";
 import chalk from "chalk";
+import storage from "@src/lib/utilities/storage.js";
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
@@ -43,17 +42,14 @@ const commandInfo = {
   },
 };
 
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => true
 export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   try {
     let date: string = interaction.options.get("date").value.toString();
-    const client = new MongoClient(global.mongoConnectionString);
     if (date == "none") {
       if (!global.birthdays.some((el) => el.id === interaction.user.id)) {
-        client.close();
         await interaction.reply({
           content: "You don't have a birthday set!",
           ephemeral: true,
@@ -63,24 +59,16 @@ export async function runCommand(
       await interaction.deferReply({
         ephemeral: true,
       });
-      try {
-        const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-        const userdata = database.collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
-        let a;
-        // Query for a movie that has the title 'Back to the Future'
-        const query = { id: interaction.user.id };
-        let userInfo = await userdata.findOne(query);
-        userInfo.birthday = null;
-        await userdata.replaceOne({ id: interaction.user.id }, userInfo);
-      } finally {
-        // Ensures that the client will close when you finish/error
-        await client.close();
-      }
+      await storage.updateOne("user", { id: interaction.user.id }, { $set: { birthday: null } });
       global.birthdays = global.birthdays.filter(
         (obj) => obj.id !== interaction.user.id
       );
+      const userHasBirthdayRole = interaction.guild.roles.cache.find(
+        (role) => role.name.toLowerCase().includes("birthday")
+      );
+      if (!!userHasBirthdayRole) {
+        await (interaction.member.roles as GuildMemberRoleManager).remove(userHasBirthdayRole);
+      }
       return await interaction.editReply(
         "Your birthday has been cleared successfully."
       );
@@ -108,7 +96,6 @@ export async function runCommand(
             : "contact a staff member."),
         ephemeral: true,
       });
-      client.close();
       return;
     }
 
@@ -123,7 +110,6 @@ export async function runCommand(
         content: "Invalid date! Please provide the date in a YYYY-MM-DD format",
         ephemeral: true,
       });
-      client.close();
       return;
     }
     const match = date.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/);
@@ -135,7 +121,6 @@ export async function runCommand(
         content: "Invalid date! Please provide the date in a YYYY-MM-DD format",
         ephemeral: true,
       });
-      client.close();
       return;
     }
     if (new Date(date).toString() == "Invalid Date") {
@@ -143,7 +128,6 @@ export async function runCommand(
         content: "Invalid date! Please provide the date in a YYYY-MM-DD format",
         ephemeral: true,
       });
-      client.close();
       return;
     }
     if (
@@ -154,7 +138,6 @@ export async function runCommand(
         content: "Invalid date!",
         ephemeral: true,
       });
-      client.close();
       return;
     }
     if (
@@ -166,7 +149,6 @@ export async function runCommand(
           "You're too young! You need to be at least 13 years old. **Keep in mind that Discord's ToS say that you have to be at least 13 to use their service.**",
         ephemeral: true,
       });
-      client.close();
       return;
     }
     if (new Date() < new Date(date)) {
@@ -176,37 +158,28 @@ export async function runCommand(
           "The date you have provided is in the future! Please provide your birthday (When you were born, not your upcoming birthday).",
         ephemeral: true,
       });
-      client.close();
       return;
     }
 
-    await interaction.deferReply();
-    try {
-      const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-      const userdata = database.collection(
-        global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-      );
-      // Query for a movie that has the title 'Back to the Future'
-      const query = { id: interaction.user.id };
-      const userInfo = await userdata.findOne(query);
-      let copy = global.birthdays.filter(
-        (obj) => obj.id !== interaction.user.id
-      );
-      copy.push({
-        timezone: userInfo.approximatedTimezone,
+    await interaction.deferReply({
+      ephemeral: true,
+    });
+    const query = { id: interaction.user.id };
+    const userInfo = await storage.findOne("user",query);
+    let copy = global.birthdays.filter(
+      (obj) => obj.id !== interaction.user.id
+    );
+    copy.push({
+      timezone: userInfo.approximatedTimezone,
+      birthday: date,
+      id: interaction.user.id,
+    });
+    global.birthdays = copy;
+    await storage.updateOne("user", query, {
+      $set: {
         birthday: date,
-        id: interaction.user.id,
-      });
-      global.birthdays = copy;
-      await userdata.updateOne(query, {
-        $set: {
-          birthday: date,
-        },
-      });
-    } finally {
-      // Ensures that the client will close when you finish/error
-      await client.close();
-    }
+      },
+    });
     /* prettier-ignore */
     global.logger.debug(`${chalk.yellow(interaction.user.username)} set their birthday to: ${date}`,returnFileName());
     await interaction.editReply(

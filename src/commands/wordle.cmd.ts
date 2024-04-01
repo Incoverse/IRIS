@@ -24,7 +24,7 @@ import Discord, {
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import prettyMilliseconds from "pretty-ms";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -58,10 +58,32 @@ const commandInfo = {
   },
 };
 
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => {
+  if (!global.dataForSetup.events.includes("wordleHandler")) {
+    global.logger.error(
+      "The wordle command requires the wordleHandler event to be present!",
+      returnFileName()
+    );
+    return false;
+  }
+  if (!global.resources.wordle) {
+    global.resources.wordle = {
+      validGuesses: (
+        await fetch(global.app.config.resources.wordle.validGuesses).then((res) =>
+            res.text()
+          )
+        ).split("\n"),
+        validWords: (
+          await fetch(global.app.config.resources.wordle.validWords).then((res) =>
+            res.text()
+          )
+        ).split("\n"),
+    };
+  }
+  return true;
+}
 export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   try {
     const wordle = global.games.wordle;
@@ -176,17 +198,10 @@ export async function runCommand(
           ephemeral: true,
         });
       }
-      const dbclient = new MongoClient(global.mongoConnectionString);
-      const userdata = dbclient
-        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-        .collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
       if (
-        (await userdata.findOne({ id: interaction.user.id }))?.gameData?.wordle
+        (await storage.findOne("user", { id: interaction.user.id }))?.gameData?.wordle
           ?.lastPlayed?.id == wordle.id
       ) {
-        dbclient.close();
         return await interaction.reply({
           content:
             "You have already played the daily wordle! The daily wordle will reset " +
@@ -197,7 +212,6 @@ export async function runCommand(
           ephemeral: true,
         });
       }
-      await dbclient.close();
       wordle.currentlyPlaying[interaction.user.id] = {
         boardMessage: null,
         guesses: [],
@@ -520,18 +534,12 @@ export async function runCommand(
         ephemeral: true,
       });
       //Generate an embed that will contain the following: Games played, games won, longest streak, current streak, average time (average from last12 and then prettify with prettyMilliseconds), average guesses. Add emojis before the name and use fields.
-      const client = new MongoClient(global.mongoConnectionString);
-      const collection = client
-        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-        .collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
       try {
         // make sure that if the user hasnt played wordle before, it says so
-        let userData: any = await collection.findOne({
-          id: interaction.user.id,
-        });
-        client.close();
+        let userData: any = await storage.findOne(
+          "user",
+          { id: interaction.user.id }
+        );
         if (!userData?.gameData?.wordle) {
           await interaction.editReply({
             content:
@@ -600,21 +608,17 @@ export async function runCommand(
         // .set
       } catch (err) {
         global.logger.error(err, returnFileName());
-        client.close();
       }
     }
 
     async function generateStats(failed: boolean) {
-      const client = new MongoClient(global.mongoConnectionString);
-      const collection = client
-        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-        .collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
       try {
-        let userData: any = await collection.findOne({
-          id: interaction.user.id,
-        });
+        let userData: any = await storage.findOne(
+          "user",
+          {
+            id: interaction.user.id,
+          }
+        );
         userData.gameData.wordle = {
           gamesPlayed: userData?.gameData?.wordle?.gamesPlayed ?? 0,
           gamesWon: userData?.gameData?.wordle?.gamesWon ?? 0,
@@ -634,7 +638,8 @@ export async function runCommand(
         if (userData.gameData.wordle.last12.length > 12) {
           userData.gameData.wordle.last12.shift();
         }
-        await collection.updateOne(
+        await storage.updateOne(
+          "user",
           { id: interaction.user.id },
           {
             $set: {
@@ -659,7 +664,6 @@ export async function runCommand(
             },
           }
         );
-        await client.close();
       } catch (e) {
         global.logger.error(e, returnFileName());
       }

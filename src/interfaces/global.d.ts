@@ -26,7 +26,7 @@ interface IRISGlobal extends NodeJS.Global {
   }
   logName: string;
   logger: {
-    log: (message: any, sender: string) => void;
+    log: (...args) => void;
     error: (message: any, sender: string) => void;
     warn: (message: any, sender: string) => void;
     debug: (message: any, sender: string) => void;
@@ -74,7 +74,10 @@ interface IRISGlobal extends NodeJS.Global {
     updateChoices?: (commandPath: string, option: string, update: (option: any) => Promise<any>) => Promise<boolean>;
     reloadConfig?: () => Promise<boolean>;
     changeConfig?: (key: string, value: any) => Promise<boolean>;
-    setMaxUNOPlayers?: (maxPlayers: number) => Promise<boolean>;
+  }
+  dataForSetup: {
+    events: string[]
+    commands: string[]
   }
   rest: REST;
   requiredModules: {
@@ -92,7 +95,7 @@ interface IRISGlobal extends NodeJS.Global {
   SlashCommandBuilder: SlashCommandBuilder;
   mongoConnectionString: string;
   resources: {
-    wordle: {
+    wordle?: {
       validGuesses: Array<string>;
       validWords: Array<string>;
     };

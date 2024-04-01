@@ -35,10 +35,9 @@ const commandInfo = {
   },
 };
 
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => true
 export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   try {
     const getAllFiles = function (dirPath: PathLike, arrayOfFiles: string[]) {
@@ -80,7 +79,7 @@ export async function runCommand(
       },
       {
         name: ":alarm_clock: Events",
-        value: Object.keys(RM)
+        value: Object.keys(global.requiredModules)
           .filter((evt) => evt.startsWith("event"))
           .length.toString(),
         inline: true,
@@ -98,7 +97,7 @@ export async function runCommand(
       },
       {
         name: ":jigsaw: Commands",
-        value: Object.keys(RM)
+        value: Object.keys(global.requiredModules)
           .filter((cmd) => cmd.startsWith("cmd"))
           .length.toString(),
         inline: true,

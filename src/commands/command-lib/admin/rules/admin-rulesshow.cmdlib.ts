@@ -22,7 +22,7 @@ import chalk from "chalk";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
   const punishmentTypeMap= {
     "WARNING": "Warning",
     "TIMEOUT": "Timeout",
@@ -30,26 +30,27 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
     "TEMPORARY_BANISHMENT": "Temporary ban",
     "PERMANENT_BANISHMENT": "Permanent ban"
   }
-  const ruleNr = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getInteger("index", false);
+  let ruleName = (interaction.options as CommandInteractionOptionResolver).getString("rule", false) as string
+  let showPunishments = (interaction.options as CommandInteractionOptionResolver).getBoolean("show-punishments", false);
+  let rule = null;
 
-  let showPunishments = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getBoolean("show-punishments", false);
+  if (ruleName) {
+    if (ruleName.match(/^[0-9]+\.\s/gm)) ruleName = ruleName.replace(/^[0-9]+\.\s/gm, ""); //! If the index accidentally gets added to the rule name, remove it.
+    
+    rule = global.server.main.rules.find((rulee) => rulee.title == ruleName);
+
+    if (!rule) {
+        return await interaction.reply({
+            content: "Rule not found.",
+            ephemeral: true
+        })
+     }
+
+  }
 
   if (!showPunishments && showPunishments != false) showPunishments = false;
 
-  if (ruleNr) {
-    const rule = global.server.main.rules.find((r) => r.index === ruleNr);
-    if (!rule) {
-      await interaction.reply({
-        content: "No rule with that number exists.",
-        ephemeral: true,
-      });
-      return;
-    }
-
+  if (rule) {
     const ruleEmbed = new Discord.EmbedBuilder()
       .setTitle(`Rule ${rule.index}: ${rule.title}`)
 

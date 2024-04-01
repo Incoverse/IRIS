@@ -20,7 +20,7 @@ import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import { PathLike, readdirSync, readFileSync, statSync } from "fs";
 import { dirname, join } from "path";
-import { checkPermissions } from "../lib/permissionsCheck.js";
+import { checkPermissions } from "../lib/utilities/permissionsCheck.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -37,11 +37,10 @@ const commandInfo = {
   },
 }
 
-export const setup = async (client: Discord.Client, RM: object) => true;
+export const setup = async (client: Discord.Client) => true;
 
 export async function runCommand(
-    interaction: Discord.CommandInteraction,
-    RM: object
+    interaction: Discord.CommandInteraction
 ) {
   try {
       const pages = [];
@@ -50,7 +49,6 @@ export async function runCommand(
           return b instanceof Discord.SlashCommandSubcommandBuilder || b instanceof Discord.SlashCommandSubcommandGroupBuilder;
         }).length == 0;
       }).map((moduleKey) => {
-        
         return {
           name: global.requiredModules[moduleKey].getSlashCommand().name,
           description: global.requiredModules[moduleKey].getSlashCommand().description

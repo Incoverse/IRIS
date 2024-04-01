@@ -22,6 +22,7 @@ import { fileURLToPath } from "url";
 import uuid4 from "uuid4";
 import moment from "moment-timezone";
 import chalk from "chalk";
+import storage from "@src/lib/utilities/storage.js";
 
 const eventInfo = {
   type: "runEvery",
@@ -35,25 +36,38 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(client: Discord.Client, RM: object) {
+export const setup = async (client:Discord.Client) => {
+  if (!global.dataForSetup.commands.includes("wordle")) {
+    global.logger.error(
+      "The wordleHandler event requires the '/wordle' command to be present!",
+      returnFileName()
+    );
+    return false;
+  }
+  if (!global.resources.wordle) {
+    global.resources.wordle = {
+      validGuesses: (
+        await fetch(global.app.config.resources.wordle.validGuesses).then((res) =>
+            res.text()
+          )
+        ).split("\n"),
+        validWords: (
+          await fetch(global.app.config.resources.wordle.validWords).then((res) =>
+            res.text()
+          )
+        ).split("\n"),
+    };
+  }
+  return true;
+}
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
   let wordle = global?.games?.wordle;
   if (!wordle) {
-    const dbclient = new MongoClient(global.mongoConnectionString);
-    const database = dbclient.db(
-      global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
-    );
-    const gamedata = database.collection(
-      global.app.config.development
-        ? "DEVSRV_SD_" + global.app.config.mainServer
-        : "serverdata"
-    );
-    const games = (await gamedata.findOne({})).games
+    const games = (await storage.findOne("server",{})).games
     const game = games.find(
       (g) => g.type == "wordle"
     );
-    dbclient.close();
     if (game) {
       game.data.currentlyPlaying = {};
       wordle = game.data;
@@ -62,15 +76,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
   }
   // First check if the wordle is expired, and if it is, make a new one
   if (!wordle || new Date(wordle.expires).getTime() < new Date().getTime()) {
-    const dbclient = new MongoClient(global.mongoConnectionString);
-    const database = dbclient.db(
-      global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS"
-    );
-    const serverdata = database.collection(
-      global.app.config.development
-        ? "DEVSRV_SD_" + global.app.config.mainServer
-        : "serverdata"
-    );
     // Generate a new wordle
     const newWordle =
       global.resources.wordle.validWords[
@@ -87,9 +92,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
     global.games.wordle = { ...data, currentlyPlaying: {} };
 
 
-    const newGames = (await serverdata.findOne({id:global.app.config.mainServer})).games.filter((a) => a.type != "wordle")
+    const newGames = (await storage.findOne("server",{id:global.app.config.mainServer}))?.games?.filter((a) => a.type != "wordle") || [];
     newGames.push({ type: "wordle", data });
-    await serverdata.updateOne({
+    await storage.updateOne("server", {
       id: global.app.config.mainServer,
     },{
       $set: {
@@ -98,13 +103,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
     });
     
     global.logger.debug(`Successfully generated new wordle: ${chalk.green(newWordle)} (Expires: ${chalk.green(moment(new Date(new Date().getTime() + 1000 * 60 * 60 * 24)).format("M/D/y HH:mm:ss"))})`, returnFileName());
-    if (!wordle) return dbclient.close();
-    const userdata = database.collection(
-      global.app.config.development
-        ? "DEVSRV_UD_" + global.app.config.mainServer
-        : "userdata"
-    );
-    await userdata.updateMany(
+    if (!wordle) return;
+    await storage.updateMany("user",
       // Reset streak for everyone that didn't solve the previous wordle
       {
         $and: [
@@ -125,7 +125,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
       },
       { $set: { "gameData.wordle.streak": 0 } }
     );
-    dbclient.close();
   }
 }
 

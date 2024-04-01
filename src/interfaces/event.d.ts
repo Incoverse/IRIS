@@ -26,12 +26,12 @@ interface IRISEvent {
     priority: () => number;
     getMS: () => number;
     runImmediately: () => boolean;
-    setup: (client: Discord.Client, RM: object) => Promise<boolean>;
-    runEvent: (RM: object, message: Discord.Message, ) => Promise<void>;
-    runEvent: (interaction: Discord.CommandInteraction, RM: object) => Promise<void>;
-    runEvent: (RM: object, ...args: Array<Discord.GuildMember>) => Promise<void>;
-    runEvent: (client: Discord.Client, RM: object) => Promise<void>;
-    runEvent: (RM: object, ...args: Array<Discord.User>) => Promise<void>;
+    setup: (client: Discord.Client) => Promise<boolean | string>;
+    runEvent: (message: Discord.Message, ) => Promise<void>;
+    runEvent: (interaction: Discord.CommandInteraction) => Promise<void>;
+    runEvent: (...args: Array<Discord.GuildMember>) => Promise<void>;
+    runEvent: (client: Discord.Client) => Promise<void>;
+    runEvent: (...args: Array<Discord.User>) => Promise<void>;
     returnFileName: () => string;
     
 }

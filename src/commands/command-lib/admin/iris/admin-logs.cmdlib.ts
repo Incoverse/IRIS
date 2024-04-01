@@ -15,20 +15,15 @@
   * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { CommandInteractionOptionResolver, StringSelectMenuBuilder, Team } from "discord.js";
+import Discord, { StringSelectMenuBuilder } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-import chalk from "chalk";
-import { promisify } from "util";
-import {exec} from "child_process";
-import moment from "moment-timezone";
-import { MongoClient } from "mongodb";
 import {readdirSync, statSync} from "fs";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
     // get all files in logs/, and put them as fields in an embed, the value of the field being the creation date. to get the creation date, remove "IRIS-" and ".log" from the file name, pipe the output to new Date() and get a pretty date from that
     
     const logs = readdirSync("./logs").filter(file => file.endsWith(".log"));

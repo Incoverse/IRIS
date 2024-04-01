@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "module": "NodeNext",
-    "moduleResolution": "nodenext",
-    "target": "ES2022",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
     "outDir": "./dist",
     "rootDir": "./src",
     "esModuleInterop": true,

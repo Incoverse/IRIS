@@ -22,12 +22,12 @@ import chalk from "chalk";
 import { promisify } from "util";
 import {exec} from "child_process";
 import moment from "moment-timezone";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
     const subcommand = (
         interaction.options as CommandInteractionOptionResolver
       ).getSubcommand(true);
@@ -44,15 +44,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
           });
           return;
         }
-        const client = new MongoClient(global.mongoConnectionString);
-    
-        const collection = client
-          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-          .collection(
-            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-          );
-        const result = await collection.findOne({ id: user.id });
-        client.close();
+        const result = await storage.findOne("user", { id: user.id });
         if (result == null) {
           await interaction.reply({
             content: "This user does not have an entry in the database!",
@@ -86,18 +78,9 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
           return;
         }
     
-        const client = new MongoClient(global.mongoConnectionString);
-    
-        const collection = client
-          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-          .collection(
-            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-          );
-    
         // Check if the user already has an entry in the database
-        const result = await collection.findOne({ id: user.id });
+        const result = await storage.findOne("user", { id: user.id });
         if (result != null) {
-          client.close()
           await interaction.reply({
             content: "This user already has an entry in the database!",
             ephemeral: true,
@@ -137,8 +120,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
           entry.timezones.push(timezone);
         }
     
-        await collection.insertOne(entry);
-        client.close();
+        await storage.insertOne("user",entry);
         delete entry._id;
         await interaction.reply({
           content:
@@ -155,28 +137,24 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         const user = (
           interaction.options as CommandInteractionOptionResolver
         ).getUser("user", true);
-        const client = new MongoClient(global.mongoConnectionString);
-    
-        const collection = client
-          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-          .collection(
-            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-          );
-        /*
-         * Here we do not check if the user is a bot, because if a bot entry is accidentally created, it should be able to be deleted.
-         */
-        const result = await collection.findOneAndDelete({ id: user.id });
+
+        if (user.bot) {
+          return await interaction.reply({
+            content:
+              "This user is a bot and cannot have an entry in the database!",
+            ephemeral: true,
+          });
+        }
+
+        await storage.deleteOne("user", { id: user.id });
         await interaction.reply({
           content:
-            result.value != null
-              ? "**" +
+              "**" +
                 user.username +
                 (user.username.endsWith("s") ? "'" : "'s") +
-                "** entry has been successfully deleted."
-              : "This user does not have an entry in the database!",
+                "** entry has been successfully deleted.",
           ephemeral: true,
         });
-        client.close();
       }
 }
 

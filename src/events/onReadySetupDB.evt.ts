@@ -16,11 +16,10 @@
  */
 
 import Discord from "discord.js";
-import { MongoClient } from "mongodb";
-import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
+import storage, { setupFiles, setupMongo } from "@src/lib/utilities/storage.js";
 
 const eventInfo = {
   type: "onStart",
@@ -32,32 +31,11 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(client: Discord.Client, RM: object) {
+export const setup = async (client:Discord.Client) => true
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
-  const dbclient = new MongoClient(global.mongoConnectionString);
-  try {
-    const database = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-    const collections = (await database.listCollections().toArray()).map((c) => c.name);
-    if (!collections.includes(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")) {
-        await database.createCollection(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")
-        /* prettier-ignore */
-        global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata")}`,returnFileName());
-      }
-    if (!collections.includes(global.app.config.development ? "DEVSRV_SD_"+global.app.config.mainServer : "serverdata")) {
-      await database.createCollection(global.app.config.development ? "DEVSRV_SD_"+global.app.config.mainServer : "serverdata")
-      /* prettier-ignore */
-      global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_SD_"+global.app.config.mainServer : "serverdata")}`,returnFileName());
-    }
-    if (!collections.includes(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata")) {
-      await database.createCollection(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata")
-      /* prettier-ignore */
-      global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata")}`,returnFileName());
-    }
-  } finally {
-    // Ensures that the client will close when you finish/error
-    dbclient.close();
-  }
+  
+  return storage.method == "file" ? await setupFiles() : await setupMongo();
 }
 
 export const returnFileName = () =>

@@ -18,9 +18,6 @@
 import {
   Collection,
   GuildMember,
-  CommandInteraction,
-  GuildMemberRoleManager,
-  Message,
   Role,
   Snowflake,
   Client,
@@ -41,18 +38,16 @@ import prettyMilliseconds from "pretty-ms";
 import chalk from "chalk";
 import { EventEmitter } from "events";
 import JsonCParser from "jsonc-parser";
-import { readFileSync, readdirSync, existsSync, writeFileSync, createWriteStream, mkdirSync, unlinkSync } from "fs";
+import { readFileSync, readdirSync, existsSync, createWriteStream, mkdirSync, unlinkSync } from "fs";
 import dotenv from "dotenv";
 import moment from "moment-timezone";
-import { MongoClient } from "mongodb";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-import { promisify, inspect } from "util";
-import {exec} from "child_process";
+import { dirname, join, relative } from "path";
+import { inspect } from "util";
 
 import performance from "./lib/performance.js";
-import { checkPermissions, getFullCMD } from "./lib/permissionsCheck.js";
-const execPromise = promisify(exec);
+import { checkPermissions, getFullCMD } from "./lib/utilities/permissionsCheck.js";
+import storage, { checkMongoAvailability } from "./lib/utilities/storage.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -223,13 +218,16 @@ declare const global: IRISGlobal;
     version: JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
       .version,
     config: config,
-    owners: [], // this will be filled in later
+    owners: [], //? this will be filled in later
   };
   
   global.app = app;
   global.bannedUsers = [];
   global.birthdays = [];
   global.communicationChannel = new EventEmitter();
+
+  
+
   let oldEmit = global.communicationChannel.emit
   let oldOn = global.communicationChannel.on
   let oldOnce = global.communicationChannel.once
@@ -292,9 +290,10 @@ declare const global: IRISGlobal;
     console.error(err)
     global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-ERR");
   });
-  const onExit = (a: string | number) => {
+  const onExit = async (a: string | number) => {
     if (a==2) return
     global.logger.log("IRIS is shutting down...", "IRIS-"+a);
+    await storage.cleanup();
     process.exit(2);
   }
   //catches ctrl+c event
@@ -316,54 +315,35 @@ declare const global: IRISGlobal;
   global.reload = {
     commands: []
   };
-  global.overrides = {
-     //! These overrides get replaced by the event onReadySetupOVRD.evt.ts 
-  }
   global.server = {
     main: {
       rules: [],
       offenses: [],
     },
   };
+  global.dataForSetup = {
+    commands: [],
+    events: []
+  };
 
   global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
   global.app.config.development = process.env.DEVELOPMENT == "YES";
-  if (!global.app.config.development) {
-    try {
 
-      await execPromise("systemctl status mongod | grep 'active (running)'");
-      global.mongoStatus = global.mongoStatuses.RUNNING
-    } catch (e) {
-      global.mongoStatus = global.mongoStatuses.STOPPED
-    }
-  }
-  global.games = {
-    uno: {
-      maxPlayers: 4
-    },
-  };
+
   global.dirName = __dirname;
-  if (process.env.DBUSERNAME == "iris" && global.app.config.development) {
-    global.logger.log("Hold on! You are attempting to run IRIS in development mode, but are using the main database credentials, which is not allowed. Please change the DBUSERNAME and DBPASSWD in the .env file to the development credentials.", returnFileName());
-    process.exit(1);
-  }
   global.mongoConnectionString =
     `mongodb://${process.env.DBUSERNAME}:${process.env.DBPASSWD}@${global.app.config.mongoDBServer}:27017/?authMechanism=DEFAULT&tls=true&family=4`;
   //! Becomes something like: mongodb://username:password@server.com:27017/?authMechanism=DEFAULT&tls=true&family=4
-  global.resources = {
-    wordle: {
-      validGuesses: (
-        await fetch(app.config.resources.wordle.validGuesses).then((res) =>
-          res.text()
-        )
-      ).split("\n"),
-      validWords: (
-        await fetch(app.config.resources.wordle.validWords).then((res) =>
-          res.text()
-        )
-      ).split("\n"),
-    },
-  };
+
+  //!--------------------------
+  console.clear();
+
+  global.logger.log(`${chalk.green("IRIS")} ${chalk.bold.white(`v${app.version}`)} ${chalk.green("is starting up!")}`, returnFileName());
+  global.logger.log("------------------------", returnFileName());
+
+  //!--------------------------
+
+  global.resources = {};
 
   if (global.app.config.development) {
     global.app.config.mainServer = global.app.config.developmentServer;
@@ -400,13 +380,6 @@ declare const global: IRISGlobal;
       ],
     });
 
-    //!--------------------------
-    console.clear();
-
-    global.logger.log(`${chalk.green("IRIS")} ${chalk.bold.white(`v${app.version}`)} ${chalk.green("is starting up!")}`, returnFileName());
-    global.logger.log("------------------------", returnFileName());
-
-    //!--------------------------
     global.requiredModules = {};
 
     global.logger.log(`${chalk.white("[I]")} ${chalk.yellow("Logging in...")} ${chalk.white("[I]")}`, returnFileName());
@@ -461,14 +434,9 @@ declare const global: IRISGlobal;
       if (interaction.guildId !== global.app.config.mainServer) return;
 
 
-      const client = new MongoClient(global.mongoConnectionString);
       try {
-        const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-        const userdata = database.collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
         const query = { id: interaction.user.id };
-        userdata.findOne(query).then((result) => {
+        storage.findOne("user", query).then((result) => {
           const user = interaction.member;
           if (result == null) {
             const entry = {
@@ -487,24 +455,17 @@ declare const global: IRISGlobal;
               interaction.user.discriminator
             )
               (entry.discriminator = interaction.user.discriminator),
-                userdata.insertOne(entry).then(() => {
-                  client.close();
-                });
+                storage.insertOne("user", entry)
           } else {
             const updateDoc = {
               $set: {
                 last_active: new Date().toISOString(),
               },
             };
-            userdata.updateOne(query, updateDoc, {}).then(() => {
-              client.close();
-            });
+            storage.updateOne("user", query, updateDoc)
           }
         });
-      } catch {
-        // Ensures that the client will close when you finish/error
-        client.close();
-      }
+      } catch {}
       if (!interaction.isChatInputCommand()) return;
       let fullCmd = interaction.commandName;
       if ((
@@ -585,8 +546,7 @@ declare const global: IRISGlobal;
       const me = await guild.members.fetch(client.user.id);
       const perms = me.permissions;
       let hasAllPerms = true
-      global.logger.debug(
-        // check permissions in <server name>
+      global.logger.log(
         `Checking permissions in ${chalk.cyanBright(guild.name)}`,
         returnFileName()
       )
@@ -594,7 +554,7 @@ declare const global: IRISGlobal;
       performance.start("permissionCheck"); 
       for (let i of requiredPermissions) {
         if (!perms.has(i)) {
-          global.logger.debugError(
+          global.logger.error(
             `${chalk.redBright.bold(client.user.username)} is missing permission ${chalk.redBright.bold(new PermissionsBitField(i).toArray()[0])}!`,
             returnFileName()
           );
@@ -602,7 +562,7 @@ declare const global: IRISGlobal;
         } else {
           performance.pause("fullRun")
           performance.pause("permissionCheck"); // pause the timer so that the log time isn't included 
-          global.logger.debug(
+          global.logger.log(
             `${chalk.yellowBright(client.user.username)} has permission ${chalk.yellowBright(new PermissionsBitField(i).toArray()[0])}.`,
             returnFileName()
           )
@@ -616,12 +576,24 @@ declare const global: IRISGlobal;
       
       global.logger.log("------------------------", returnFileName());
       if (!hasAllPerms) {
-        global.logger.debugError(
+        global.logger.error(
           `${chalk.redBright.bold(client.user.username)} is missing one or more permissions! Please grant them and restart the bot.`,
           returnFileName()
         );
         process.exit(1);
       }
+
+      if (global.mongoConnectionString.match(/^(mongodb(?:\+srv)?(\:)(?:\/{2}){1})(?:\w+\:\w+\@)?(\w+?(?:\.\w+?)*)(\:)(\d+(?:\/){0,1})(?:\/\w+?)?(?:\?\w+?\=\w+?(?:\&\w+?\=\w+?)*)?$/gm)) { //! Credits: https://regex101.com/library/jxxyRm
+
+        const isMongoAvailable = await checkMongoAvailability();
+        if (isMongoAvailable) {
+          global.logger.log("The MongoDB connection string is valid. Switching to "+chalk.yellowBright("MongoDB")+" storage...", returnFileName());
+          global.mongoStatus = global.mongoStatuses.RUNNING;
+        } else global.logger.warn("The MongoDB server is inaccessible. Switching to "+chalk.yellowBright("file")+" storage...", returnFileName());
+      } else global.logger.warn("Invalid MongoDB credentials provided. Switching to "+chalk.yellowBright("file")+" storage...", returnFileName());
+      global.logger.log("------------------------", returnFileName());
+    
+      if (storage.method == "file" && !global.app.config.skipMongoFailWait) await sleep(3000);
 
 
       performance.start("commandRegistration");
@@ -631,26 +603,35 @@ declare const global: IRISGlobal;
       const commandFiles = readdirSync(commandsPath).filter((file: string) =>
         file.endsWith(".cmd.js")
       );
+      performance.pause("commandRegistration");
+      performance.start("eventLoader");
+      const eventFiles = readdirSync(join(__dirname, "events")).filter((file: string) =>
+        file.endsWith(".evt.js")
+      );
+      global.dataForSetup.events = eventFiles.map((file: string) => {
+        return file.replace(".evt.js", "");
+      })
+      performance.pause("eventLoader");
+      performance.resume("commandRegistration");
 
+      global.dataForSetup.commands = commandFiles.map((file: string) => {
+        return file.replace(".cmd.js", "");
+      })
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
-        performance.pause("fullRun")
-        performance.pause("commandRegistration");
-        /* prettier-ignore */
-        // global.logger.debug(`Loading command: ${chalk.blueBright(file)}`,returnFileName());
-        performance.resume("fullRun")
-        performance.resume("commandRegistration");
+        performance.pause(["fullRun", "commandRegistration"]);
+        global.logger.debug(`Registering command: ${chalk.blueBright(file)}`,returnFileName());
+        performance.resume(["fullRun", "commandRegistration"]);
+
+
         const command: IRISCommand = await import(`./commands/${file}`);
         if (
           command.commandSettings().devOnly &&
           command.commandSettings().mainOnly
         ) {
-          performance.pause("fullRun")
-          performance.pause("commandRegistration");
-          /* prettier-ignore */
+          performance.pause(["fullRun", "commandRegistration"]);
           global.logger.debugError(`Error while registering command: ${chalk.redBright(file)} (${chalk.redBright("Command cannot be both devOnly and mainOnly!")})`,returnFileName());
-          performance.resume("fullRun")
-          performance.resume("commandRegistration");
+          performance.resume(["fullRun", "commandRegistration"]);
           continue;
         }
         if (!global.app.config.development && command.commandSettings().devOnly)
@@ -658,20 +639,15 @@ declare const global: IRISGlobal;
         if (global.app.config.development && command.commandSettings().mainOnly)
           continue;
 
-        
-        performance.pause("fullRun")
-        performance.pause("commandRegistration");
-        /* prettier-ignore */
-        global.logger.debug(`Registering command: ${chalk.blueBright(file)}`,returnFileName());
-        performance.resume("fullRun")
-        performance.resume("commandRegistration");
-
-        if (!(await command.setup(client, global.requiredModules))) {
-          performance.pause("fullRun")
-          performance.pause("commandRegistration");
-          global.logger.debugError(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
-          performance.resume("fullRun")
-          performance.resume("commandRegistration");
+        let setupResult = await command.setup(client);
+        if (!setupResult || setupResult == "non-crit") {
+          performance.pause(["fullRun", "commandRegistration"]);
+          if (setupResult == "non-crit") {
+            global.logger.warn(`Command ${chalk.yellowBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
+          } else {
+            global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
+          }
+          performance.resume(["fullRun", "commandRegistration"]);
           continue
 
         }
@@ -683,7 +659,7 @@ declare const global: IRISGlobal;
         ] = command;
         commands.push(command?.getSlashCommand()?.toJSON());
       }
-      const finalCommandRegistrationTime = performance.end("commandRegistration", {silent: true})
+      const finalCommandRegistrationTime = performance.end("commandRegistration", {silent: !global.app.config.debugging})
       global.reload.commands = commands;
       await client.application.fetch();
       if (client.application.owner instanceof Team) {
@@ -694,15 +670,8 @@ declare const global: IRISGlobal;
         global.app.owners = [client.application.owner.id];
       }
       global.app.owners = [...global.app.owners, ...global.app.config.externalOwners];
-      global.logger.log("------------------------", returnFileName());
-      performance.start("eventLoader");
-      const eventsPath = join(__dirname, "events");
-      const eventFiles = readdirSync(eventsPath).filter((file: string) =>
-        file.endsWith(".evt.js")
-      );
-      // const eventFiles = []
-
-      // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
+      global.logger.debug("------------------------", returnFileName());
+      performance.resume("eventLoader");
       for (const file of eventFiles) {
         global.logger.debug(
           `Registering event: ${chalk.blueBright(file)}`,
@@ -717,22 +686,21 @@ declare const global: IRISGlobal;
           continue;
         } else {
           
-          performance.pause("fullRun")
-          performance.pause("eventLoader");
-          /* prettier-ignore */
+          performance.pause(["fullRun", "eventLoader"])
           global.logger.debugError(`Error while loading event: ${chalk.redBright(file)} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
-          performance.resume("fullRun")
-          performance.resume("eventLoader");
+          performance.resume(["fullRun", "eventLoader"])
           continue;
         }
 
-
-        if (!(await event.setup(client, global.requiredModules))) {
-          performance.pause("fullRun")
-          performance.pause("eventLoader");
-          global.logger.debugError(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
-          performance.resume("fullRun")
-          performance.resume("eventLoader");
+        const setupRes = await event.setup(client)
+        if (!setupRes || setupRes == "non-crit") {
+          performance.pause(["fullRun", "eventLoader"])
+          if (setupRes == "non-crit") {
+            global.logger.warn(`Event ${chalk.yellowBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
+          } else {
+            global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
+          }
+          performance.resume(["fullRun", "eventLoader"])
           continue
         }
 
@@ -743,8 +711,8 @@ declare const global: IRISGlobal;
             file.replace(".evt.js", "").slice(1)
         ] = event;
       }
-      const finalEventLoaderTime = performance.end("eventLoader", {silent: true})
-      global.logger.log("------------------------", returnFileName());
+      const finalEventLoaderTime = performance.end("eventLoader", {silent: !global.app.config.debugging})
+      global.logger.debug("------------------------", returnFileName());
       global.rest = new REST({
         version: "9",
       }).setToken(process.env.TOKEN);
@@ -853,13 +821,13 @@ declare const global: IRISGlobal;
               global.logger.debug(`Running '${eventType} (${chalk.cyan.bold("runImmediately")})' event: ${eventName}`, returnFileName());
               performance.resume("fullRun")
               performance.resume("eventRegistration")
-              await global.requiredModules[i].runEvent(client, global.requiredModules);
+              await global.requiredModules[i].runEvent(client);
             }
             setInterval(async () => {
               if (!global.requiredModules[i].running) {
                 /* prettier-ignore */
                 global.logger.debug(`Running '${eventType} (${prettyInterval})' event: ${eventName}`,returnFileName());
-                await global.requiredModules[i].runEvent(client, global.requiredModules);
+                await global.requiredModules[i].runEvent(client);
               } else {
                 /* prettier-ignore */
                 global.logger.debugError(`Not running '${eventType} (${prettyInterval})' event: ${eventName} reason: Previous iteration is still running.`, returnFileName());
@@ -873,7 +841,7 @@ declare const global: IRISGlobal;
                 /* prettier-ignore */
                 if (global.requiredModules[i].getListenerKey() != Events.MessageCreate)
                   global.logger.debug(`Running '${eventType} (${listenerKey})' event: ${eventName}`,returnFileName());
-                await global.requiredModules[i].runEvent(global.requiredModules, ...args);
+                await global.requiredModules[i].runEvent(...args);
               }
             );
           } else if (global.requiredModules[i].eventType() === "onStart") {
@@ -884,11 +852,11 @@ declare const global: IRISGlobal;
             );
             performance.resume("fullRun")
             performance.resume("eventRegistration")
-            await global.requiredModules[i].runEvent(client, global.requiredModules);
+            await global.requiredModules[i].runEvent(client);
           }
         }
       }
-      const finalEventRegistrationTime = performance.end("eventRegistration",{silent: true});
+      const finalEventRegistrationTime = performance.end("eventRegistration",{silent: !global.app.config.debugging});
       const finalTotalTime = performance.end("fullRun", {silent:true})
       global.logger.log("", returnFileName());
       global.logger.log(`All commands and events have been registered. ${chalk.yellowBright(eventFiles.length)} event(s), ${chalk.yellowBright(commands.length)} command(s).`, returnFileName());
@@ -905,12 +873,21 @@ declare const global: IRISGlobal;
       const DaT = DateFormatter.formatDate(new Date(),`MMMM ????, YYYY @ hh:mm:ss A`).replace("????", getOrdinalNum(new Date().getDate()))
       global.logger.log(`Current date & time is: ${chalk.cyanBright(DaT)}`, returnFileName());
       global.logger.log(`Discord.JS version: ${chalk.yellow(version)}`, returnFileName());
+      global.logger.log("Storage mode: " + chalk.yellowBright(storage.method == "file" ? "file" : "MongoDB"), returnFileName());
       
+
       if (global.app.config.development) {
-        global.logger.log(`Database name: ${chalk.cyanBright("IRIS_DEVELOPMENT")}`, returnFileName());
-        global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} collection: ${chalk.cyanBright("DEVSRV_OD_" + mainServer.id)}`, returnFileName());
-        global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} collection: ${chalk.cyanBright("DEVSRV_SD_" + mainServer.id)}`, returnFileName());
-        global.logger.log(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright("DEVSRV_UD_" + mainServer.id)}`, returnFileName());
+        if (storage.method == "file") {
+          global.logger.log(`Storage folder: ${chalk.cyanBright("./" + relative(process.cwd(), join(process.cwd(), app.config.backupStoragePath, "developer"))+"/")}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} file: ${chalk.cyanBright("offensedata_" + mainServer.id + ".json")}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} file: ${chalk.cyanBright("serverdata_" + mainServer.id + ".json")}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("USERDATA")} file: ${chalk.cyanBright("userdata_" + mainServer.id + ".json")}`, returnFileName());
+        } else {
+          global.logger.log(`Database name: ${chalk.cyanBright("IRIS_DEVELOPMENT")}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} collection: ${chalk.cyanBright("DEVSRV_OD_" + mainServer.id)}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} collection: ${chalk.cyanBright("DEVSRV_SD_" + mainServer.id)}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright("DEVSRV_UD_" + mainServer.id)}`, returnFileName());
+        }
         global.logger.log(`Log name: ${chalk.cyanBright(global.logName)}`, returnFileName());
       }
       global.logger.log("------------------------", returnFileName());
@@ -934,4 +911,9 @@ declare const global: IRISGlobal;
 })();
 function returnFileName() {
   return __filename.split(process.platform == "linux" ? "/" : "\\")[ __filename.split(process.platform == "linux" ? "/" : "\\").length - 1 ]
+}
+function sleep(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }

@@ -26,8 +26,7 @@ declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const execPromise = promisify(exec);
 export async function runSubCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) { 
     await interaction.deferReply({ ephemeral: true })
     const messageId = (interaction.options as CommandInteractionOptionResolver).getString("message-id", true).trim()

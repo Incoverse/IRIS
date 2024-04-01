@@ -18,29 +18,16 @@
 import Discord, { CommandInteractionOptionResolver } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-import chalk from "chalk";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
   
-  let ruleNr = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getInteger("index", false) || Number.MAX_SAFE_INTEGER;
-
-
-  const punishmentType = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getString("offenses", true); // warn,mute:1d,ban:3d,ban
-
-  const title = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getString("title", true);
-
-  const description = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getString("description", true);
+  let ruleNr = (interaction.options as CommandInteractionOptionResolver).getInteger("index", false) || Number.MAX_SAFE_INTEGER;
+  const punishmentType = (interaction.options as CommandInteractionOptionResolver).getString("offenses", true); // warn,mute:1d,ban:3d,ban
+  const title = (interaction.options as CommandInteractionOptionResolver).getString("title", true);
+  const description = (interaction.options as CommandInteractionOptionResolver).getString("description", true);
 
   const punishmentTypeArr = punishmentType.toLowerCase().split(",");
   const punishments = [];
@@ -102,28 +89,19 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
 
   global.server.main.rules = alreadyExistingRules.sort((a, b) => a.index - b.index);
 
-  const dbclient = new MongoClient(global.mongoConnectionString);
   try {
-    const serverData = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS").collection(
-      global.app.config.debugging ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
-    )
-
-    await serverData.updateOne({ id: global.app.config.mainServer }, { $set: { rules: alreadyExistingRules } }).then(async () => {
-      
+    await storage.updateOne("server", { id: global.app.config.mainServer }, { $set: { rules: alreadyExistingRules } }).then(async () => {
       await interaction.reply({
         content: `Rule **${ruleNr}. ${title}** has been added.`,
         ephemeral: true,
       });
-
-      dbclient.close();
     })
   } catch (e) {
-    console.error(e);
+    global.logger.error(e.toString(), returnFileName());
     await interaction.reply({
       content: "An error occurred while adding the rule.",
       ephemeral: true,
     });
-    dbclient.close();
   }
 
 

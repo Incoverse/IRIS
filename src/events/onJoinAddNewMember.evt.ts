@@ -17,10 +17,9 @@
 
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import moment from "moment-timezone";
-import { MongoClient } from "mongodb";
 import chalk from "chalk";
 import { fileURLToPath } from "url";
+import storage from "@src/lib/utilities/storage.js";
 
 const eventInfo = {
   type: "discordEvent",
@@ -33,9 +32,8 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => true
 export async function runEvent(
-  RM: object,
   ...args: Array<Discord.GuildMember>
 ) {
   if (args[0].user.bot) return;
@@ -54,12 +52,7 @@ export async function runEvent(
     args[0].roles.add(newMembersRole);
   if (!global.newMembers.includes(args[0].id))
     global.newMembers.push(args[0].id);
-  const dbclient = new MongoClient(global.mongoConnectionString);
   try {
-    const database = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-    const userdata = database.collection(
-      global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-    );
     const entry = {
       ...global.app.config.defaultEntry,
       ...{
@@ -71,12 +64,12 @@ export async function runEvent(
     };
     if (args[0].user.discriminator !== "0" && args[0].user.discriminator)
       entry.discriminator = args[0].user.discriminator;
-    await userdata.insertOne(entry);
+    await storage.insertOne("user",entry);
     const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
     /* prettier-ignore */
     global.logger.debug(`${chalk.yellow(user)} has joined the server. A database entry has been created for them.`, returnFileName())
-  } finally {
-    await dbclient.close();
+  } catch (e) {
+    global.logger.error(e.toString(), returnFileName());
   }
 }
 

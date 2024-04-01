@@ -36,7 +36,7 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export let running = false;
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => true
 
 /*
 
@@ -46,7 +46,7 @@ This was created because my MongoDB server is running with TLS and when the cert
 
 */
 
-export async function runEvent(client: Discord.Client, RM: object) {
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
 
   running = true;

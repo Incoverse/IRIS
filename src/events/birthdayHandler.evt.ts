@@ -18,9 +18,9 @@
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import moment from "moment-timezone";
-import { MongoClient } from "mongodb";
 import chalk from "chalk";
 import { fileURLToPath } from "url";
+import storage from "@src/lib/utilities/storage.js";
 
 const eventInfo = {
   type: "runEvery",
@@ -35,7 +35,7 @@ const eventInfo = {
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
 export let running = false;
-export const setup = async (client:Discord.Client, RM: object) => {
+export const setup = async (client:Discord.Client) => {
   const channels = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.channels.fetch())
   const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
   // check if there is a channel that includes "birthdays" in it's name
@@ -49,7 +49,7 @@ export const setup = async (client:Discord.Client, RM: object) => {
 
   return true
 }
-export async function runEvent(client: Discord.Client, RM: object) {
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
   running = true;
   // -----------
@@ -80,13 +80,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
       }
       if (dSB >= 2) {
         //! Cannot timezone clip into new birthday
-        const dbclient = new MongoClient(global.mongoConnectionString);
         try {
-          let db = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-          let userdata = db.collection(
-            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-          );
-          await userdata.updateOne(
+          await storage.updateOne(
+            "user",
             { id: birthday.id },
             {
               $set: {
@@ -99,8 +95,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
           let copy = global.birthdays.filter((obj) => obj.id !== birthday.id);
           copy.push(bd);
           global.birthdays = copy;
-        } finally {
-          await dbclient.close();
+        } catch (e) {
+          global.logger.error(e.toString(), returnFileName());
         }
       }
 
@@ -189,13 +185,9 @@ export async function runEvent(client: Discord.Client, RM: object) {
             }
           });
         });
-        const dbclient = new MongoClient(global.mongoConnectionString);
         try {
-          let db = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-          let userdata = db.collection(
-            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-          );
-          await userdata.updateOne(
+          await storage.updateOne(
+            "user",
             { id: birthday.id },
             {
               $set: {
@@ -208,8 +200,8 @@ export async function runEvent(client: Discord.Client, RM: object) {
           let copy = global.birthdays.filter((obj) => obj.id !== birthday.id);
           copy.push(bd);
           global.birthdays = copy;
-        } finally {
-          await dbclient.close();
+        } catch (e) {
+          global.logger.error(e.toString(), returnFileName());
         }
       });
     }

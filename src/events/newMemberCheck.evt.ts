@@ -28,15 +28,15 @@ const eventInfo = {
 import moment from "moment-timezone";
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { MongoClient } from "mongodb";
 import chalk from "chalk";
 import { fileURLToPath } from "url";
+import storage from "@src/lib/utilities/storage.js";
 const __filename = fileURLToPath(import.meta.url);
 
 export let running = false;
 declare const global: IRISGlobal;
 
-export const setup = async (client:Discord.Client, RM: object) => {
+export const setup = async (client:Discord.Client) => {
   const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
   // check if there is a role that includes "new member" in it's name
   if (!roles.some((role) => role.name.toLowerCase().includes("new member"))) {
@@ -45,7 +45,7 @@ export const setup = async (client:Discord.Client, RM: object) => {
   }
   return true
 }
-export async function runEvent(client: Discord.Client, RM: object) {
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
 
   running = true;
@@ -79,25 +79,18 @@ export async function runEvent(client: Discord.Client, RM: object) {
       }
     });}
     if (updated.length > 0) {
-      const client = new MongoClient(global.mongoConnectionString);
-        const database = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-        const userdata = database.collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
-
         for (let index in updated) {
           updated[index] = { id: updated[index] };
         }
-        await userdata.updateMany(
+        await storage.updateMany(
+          "user",
           { $or: updated },
           {
             $set: {
               isNew: false,
             },
           }
-        ).then(() => {
-          client.close();
-        });
+        )
     }
   // -----------
   running = false;

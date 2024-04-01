@@ -30,8 +30,8 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(RM: object, message: Discord.Message) {
+export const setup = async (client:Discord.Client) => true
+export async function runEvent(message: Discord.Message) {
   if (message.guildId != global.app.config.mainServer) return;
   if (message.content.startsWith(".IRIS-EVAL ")) {
     await message.client.application.fetch();

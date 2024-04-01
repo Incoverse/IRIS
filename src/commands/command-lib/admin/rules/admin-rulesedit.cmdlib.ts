@@ -18,28 +18,18 @@
 import Discord, { CommandInteractionOptionResolver } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js"
 import { fileURLToPath } from "url";
-import chalk from "chalk";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
   
-  let ruleNr = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getInteger("index", true);
-
-  let newTitle = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getString("title", false);
-
-  let newDescription = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getString("description", false);
-
-  let newPunishments = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getString("offenses", false);
+  let ruleName = (interaction.options as CommandInteractionOptionResolver).getString("rule", true);
+  if (ruleName.match(/^[0-9]+\.\s/gm)) ruleName = ruleName.replace(/^[0-9]+\.\s/gm, ""); //! If the index accidentally gets added to the rule name, remove it.
+  
+  let newTitle = (interaction.options as CommandInteractionOptionResolver).getString("title", false);
+  let newDescription = (interaction.options as CommandInteractionOptionResolver).getString("description", false);
+  let newPunishments = (interaction.options as CommandInteractionOptionResolver).getString("offenses", false);
 
   if (!newTitle && !newDescription && !newPunishments) {
     await interaction.reply({
@@ -50,15 +40,15 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
   }
 
 
-let newRules = global.server.main.rules
+  let newRules = global.server.main.rules
 
-  const rule = newRules.find((r) => r.index === ruleNr);
+  const rule = global.server.main.rules.find((rulee) => rulee.title == ruleName);
+
   if (!rule) {
-    await interaction.reply({
-      content: "No rule with that index exists.",
-      ephemeral: true,
-    });
-    return;
+      return await interaction.reply({
+          content: "Rule not found.",
+          ephemeral: true
+      })
   }
 
   if (newTitle) {
@@ -105,28 +95,19 @@ let newRules = global.server.main.rules
 
   global.server.main.rules = newRules;
 
-  const dbclient = new MongoClient(global.mongoConnectionString);
   try {
-    const serverData = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS").collection(
-      global.app.config.debugging ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
-    )
-
-    await serverData.updateOne({ id: global.app.config.mainServer }, { $set: { rules: newRules } }).then(async () => {
-      
+    await storage.updateOne("server",{ id: global.app.config.mainServer }, { $set: { rules: newRules } }).then(async () => {
       await interaction.reply({
-        content: `Rule ${ruleNr} has been updated.`,
+        content: `Rule ${rule.index} has been updated.`,
         ephemeral: true,
       });
-
-      dbclient.close();
     })
   } catch (e) {
-    console.error(e);
+    global.logger.error(e.toString(), returnFileName());
     await interaction.reply({
       content: "An error occurred while updating the rule.",
       ephemeral: true,
     });
-    dbclient.close();
   }
 
 }

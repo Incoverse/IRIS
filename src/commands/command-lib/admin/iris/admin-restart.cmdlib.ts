@@ -27,7 +27,7 @@ import moment from "moment-timezone";
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
 
   if (process.platform !== "linux") {
     return interaction.reply(

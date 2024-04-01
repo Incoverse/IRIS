@@ -18,13 +18,13 @@
 import Discord, { CommandInteractionOptionResolver, Team } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-import { MongoClient } from "mongodb";
 import moment from "moment-timezone";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
     const user = (
         interaction.options as CommandInteractionOptionResolver
       ).getUser("user", true);
@@ -32,15 +32,8 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         interaction.options as CommandInteractionOptionResolver
       ).getString("timezone");
 
-      const client = new MongoClient(global.mongoConnectionString);
-      const collection = client
-        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-        .collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
       if (timezone == null) {
-        const result = await collection.findOne({ id: user.id });
-        client.close();
+        const result = await storage.findOne("user", { id: user.id });
         if (result == null) {
           await interaction.reply({
             content: "This user does not have an entry in the database!",
@@ -59,18 +52,11 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         });
         return;
       } else if (timezone == "null") {
-        const result = await collection.findOneAndUpdate(
+        await storage.updateOne(
+          "user",
           { id: user.id },
           { $set: { approximatedTimezone: null, timezones: [] } }
         );
-        client.close();
-        if (result.value == null) {
-          await interaction.reply({
-            content: "This user does not have an entry in the database!",
-            ephemeral: true,
-          });
-          return;
-        }
         await interaction.reply({
           content:
             user.username +
@@ -88,7 +74,6 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
               .indexOf(timezone.toLowerCase())
           ];
         if (!timezone) {
-          client.close()
           await interaction.reply({
             content:
               "This timezone is invalid! Please use the format: Region/City. You can find all valid timezones here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List",
@@ -96,18 +81,11 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
           });
           return;
         }
-        const result = await collection.findOneAndUpdate(
+        await storage.updateOne(
+          "user",
           { id: user.id },
           { $set: { approximatedTimezone: timezone, timezones: [timezone] } }
         );
-        client.close();
-        if (result.value == null) {
-          await interaction.reply({
-            content: "This user does not have an entry in the database!",
-            ephemeral: true,
-          });
-          return;
-        }
         let usersBirthday = global.birthdays.find((bd) => bd.id === user.id);
         if (usersBirthday) {
           const dSB = howManyDaysSinceBirthday(

@@ -18,29 +18,27 @@
 import Discord, { CommandInteractionOptionResolver } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-import chalk from "chalk";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
   
 
-  let ruleNr = (
-    interaction.options as CommandInteractionOptionResolver
-  ).getInteger("index", true);
+  let ruleName = (interaction.options as CommandInteractionOptionResolver).getString("rule", true);
+  if (ruleName.match(/^[0-9]+\.\s/gm)) ruleName = ruleName.replace(/^[0-9]+\.\s/gm, ""); //! If the index accidentally gets added to the rule name, remove it.
 
+  const rule = global.server.main.rules.find((rulee) => rulee.title == ruleName);
 
-  const rule = global.server.main.rules.find((r) => r.index === ruleNr);
   if (!rule) {
-    await interaction.reply({
-      content: "No rule with that index exists.",
-      ephemeral: true,
-    });
-    return;
-  }
+      return await interaction.reply({
+          content: "Rule not found.",
+          ephemeral: true
+      })
+   }
 
-  const newRules = global.server.main.rules.filter((r) => r.index !== ruleNr);
+
+  const newRules = global.server.main.rules.filter((r) => r.index !== rule.index);
 
   //fix indexes
   let i = 0;
@@ -51,28 +49,22 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
 
   global.server.main.rules = newRules;
 
-  const dbclient = new MongoClient(global.mongoConnectionString);
   try {
-    const serverData = dbclient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS").collection(
-      global.app.config.debugging ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
-    )
 
-    await serverData.updateOne({ id: global.app.config.mainServer }, { $set: { rules: newRules } }).then(async () => {
+    await storage.updateOne("server",{ id: global.app.config.mainServer }, { $set: { rules: newRules } }).then(async () => {
       
       await interaction.reply({
-        content: `Rule ${ruleNr} has been deleted.`,
+        content: `Rule ${rule.index} has been deleted.`,
         ephemeral: true,
       });
 
-      dbclient.close();
     })
   } catch (e) {
-    console.error(e);
+    global.logger.error(e.toString(), returnFileName());
     await interaction.reply({
       content: "An error occurred while deleting the rule.",
       ephemeral: true,
     });
-    dbclient.close();
   }
 
 }

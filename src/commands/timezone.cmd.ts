@@ -19,7 +19,7 @@ import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import moment from "moment-timezone";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
@@ -32,29 +32,21 @@ const commandInfo = {
     mainOnly: false,
   },
 };
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => true
 export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  RM: object
+  interaction: Discord.CommandInteraction
 ) {
   try {
-    await interaction.deferReply({
-      ephemeral: true,
-    });
-    const client = new MongoClient(global.mongoConnectionString);
-    try {
-      const db = client.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
-      const userdata = db.collection(
-        global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-      );
-      const userinfo = await userdata.findOne({ id: interaction.user.id });
+      await interaction.deferReply({
+        ephemeral: true,
+      });
+      const userinfo = await storage.findOne("user", { id: interaction.user.id });
       if (!userinfo.approximatedTimezone) {
-        client.close();
-        await interaction.editReply({
+        const settimezoneID = (await interaction.guild.commands.fetch()).find((command) => command.name == "settimezone").id;
+        return await interaction.editReply({
           content:
-            "IRIS has not a timezone set for you. Each time you type a message like `timezone 12:34 am`, IRIS will predict your timezone by checking which timezone matches the time that you provided.\n\nYou can also set your timezone manually using `/settimezone`",
+            "IRIS has not a timezone set for you. Each time you type a message like `timezone 12:34 am`, IRIS will predict your timezone by checking which timezone matches the time that you provided.\n\nYou can also set your timezone manually using `"+(settimezoneID? "</settimezone:"+settimezoneID+">":"/settimezone")+"`",
         });
-        return;
       }
       const usersTimezone = userinfo.approximatedTimezone;
       const offset = getOffset(usersTimezone);
@@ -69,9 +61,6 @@ export async function runCommand(
           moment().tz(usersTimezone).format("MMM Do @ hh:mma") +
           "``", // Apr 2nd @ 12:17am
       });
-    } finally {
-      await client.close();
-    }
   } catch (e) {
     global.logger.error(e, returnFileName());
     await interaction.client.application.fetch();

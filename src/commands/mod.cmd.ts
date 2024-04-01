@@ -94,11 +94,10 @@ import Discord, {
     }
   };
   
-  export const setup = async (client:Discord.Client, RM: object) => true
+  export const setup = async (client:Discord.Client) => true
   
   export async function runCommand(
-    interaction: Discord.CommandInteraction,
-    RM: object
+    interaction: Discord.CommandInteraction
   ) {
     try {
 
@@ -369,10 +368,11 @@ import Discord, {
     }
   }
   
-  export const autocomplete = async (interaction: Discord.AutocompleteInteraction, RM: object) => {
-      
-    if (interaction.options.getSubcommand() == "punish") {
-        const focusedValue = interaction.options.getFocused();
+  export const autocomplete = async (interaction: Discord.AutocompleteInteraction) => {
+    const optionName = interaction.options.getFocused(true).name
+    const focusedValue = interaction.options.getFocused();
+    
+    if (optionName == "rule") {
         const choices = global.server.main.rules.map((rule) => {
             return {
                 name: `${rule.index}. ${rule.title}`,

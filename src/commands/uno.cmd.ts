@@ -43,7 +43,7 @@ import UGE, {
   Value,
 } from "uno-game-engine";
 import mergeImg from "join-images";
-import { MongoClient } from "mongodb";
+import storage from "@src/lib/utilities/storage.js";
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 const commandInfo = {
@@ -56,7 +56,14 @@ const commandInfo = {
   },
 };
 
-export const setup = async (client:Discord.Client, RM: object) => true
+export const setup = async (client:Discord.Client) => {
+  const maxPlayers = 4;
+  if (!global.games) global.games = {};
+  global.games.uno = {
+    maxPlayers: maxPlayers,
+  }
+  return true;
+}
 export async function runCommand(
   interaction: Discord.CommandInteraction,
   _RM: object
@@ -206,20 +213,12 @@ export async function runCommand(
     players.set(interaction.user.id, interaction.user);
 
     try {
-      const db = new MongoClient(global.mongoConnectionString);
-      const collection = db
-        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-        .collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
-
-      collection
-        .findOne({
+      storage
+        .findOne("user", {
           id: interaction.user.id,
           "gameData.uno.settings": { $exists: true },
         })
         .then((result) => {
-          db.close();
           if (result) {
             delete result._id;
             settings = { ...settings, ...result.gameData.uno.settings };
@@ -2091,16 +2090,11 @@ export async function runCommand(
         )
       );
       if (shouldSaveSettings) {
-        const db = new MongoClient(global.mongoConnectionString);
         try {
-          const collection = db
-            .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-            .collection(
-              global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-            );
 
-          await collection
+          await storage
             .updateOne(
+              "user",
               { id: interaction.user.id },
               {
                 $set: {
@@ -2112,8 +2106,6 @@ export async function runCommand(
             )
         } catch (e) {
           global.logger.debugError(e, returnFileName());
-        } finally {
-          await db.close();
         }
       }
       return await buttonInteraction.channel.send({

@@ -22,6 +22,6 @@ interface IRISCommand {
         devOnly: boolean;
         mainOnly: boolean;
     }
-    setup: (client: Discord.Client, RM: object) => boolean;
-    runCommand: (interaction: Discord.CommandInteraction, RM: object) => Promise<void>;
+    setup: (client: Discord.Client) => boolean|string;
+    runCommand: (interaction: Discord.CommandInteraction) => Promise<void>;
 }

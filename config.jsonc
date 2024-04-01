@@ -10,8 +10,23 @@
   //? This option shows messages like "registered command xyz", "running event xyz", etc. recommended to be on for satisfication purposes.
   "debugging": true,
 
+  //? This option allows you to skip the 3 second wait that IRIS gives after it fails to connect to the MongoDB server (or if it wasn't provided in the first place).
+  "skipMongoFailWait": false,
+
+  //? This option let's you choose where you want the data to be stored if MongoDB is not available.
+  //! ------------------------------------------------------------------
+  //! Production (user   ): <backupStoragePath>/production/userdata.json
+  //! Production (server ): <backupStoragePath>/production/serverdata.json
+  //! Production (offense): <backupStoragePath>/production/offensedata.json
+  //! ------------------------------------------------------------------
+  //! Development (user   ): <backupStoragePath>/development/userdata_<serverID>.json
+  //! Development (server ): <backupStoragePath>/development/serverdata_<serverID>.json
+  //! Development (offense): <backupStoragePath>/development/offensedata_<serverID>.json
+  //! ------------------------------------------------------------------
+  "backupStoragePath": "./storage", //* The path where the data will be stored (relative to IRIS's root directory)
+
   //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
-  "mainServer": "931616832668958748", // global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
+  "mainServer": "931616832668958748", //* global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
   //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
   "developmentServer": "1217372927981522994",
 

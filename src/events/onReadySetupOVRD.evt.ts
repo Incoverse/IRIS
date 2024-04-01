@@ -18,8 +18,6 @@
 //! OVRD stands for Override.
 
 import Discord, { REST, Routes, SlashCommandOptionsOnlyBuilder } from "discord.js";
-import { MongoClient } from "mongodb";
-import moment from "moment-timezone";
 import chalk from "chalk";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
@@ -36,8 +34,11 @@ const eventInfo = {
 
 const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client, RM: object) => true
-export async function runEvent(client: Discord.Client, RM: object) {
+export const setup = async (client:Discord.Client) => {
+  global.overrides = {};
+  return true;
+}
+export async function runEvent(client: Discord.Client) {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
 
 
@@ -157,13 +158,6 @@ export async function runEvent(client: Discord.Client, RM: object) {
           global.app.config[key] = value;
           resolve(true);
         })}
-
-
-        global.overrides.setMaxUNOPlayers = async (maxPlayers:number) => {
-          return new Promise<boolean>(async (resolve, reject) => {
-            global.games.uno.maxPlayers = maxPlayers;
-            resolve(true);
-          })}
 
 
 }

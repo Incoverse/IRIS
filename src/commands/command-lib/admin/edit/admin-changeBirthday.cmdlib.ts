@@ -18,13 +18,13 @@
 import Discord, { CommandInteractionOptionResolver } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
-import { MongoClient } from "mongodb";
 import moment from "moment-timezone";
+import storage from "@src/lib/utilities/storage.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(interaction: Discord.CommandInteraction, RM: object) {
+export async function runSubCommand(interaction: Discord.CommandInteraction) {
     const user = (
         interaction.options as CommandInteractionOptionResolver
       ).getUser("user", true);
@@ -33,24 +33,11 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
       ).getString("birthday");
 
       if (birthday == "null") {
-        const client = new MongoClient(global.mongoConnectionString);
-        const collection = client
-          .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-          .collection(
-            global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-          );
-        const rresult = await collection.findOneAndUpdate(
+        const rresult = await storage.updateOne(
+          "user",
           { id: user.id },
           { $set: { birthday: null } }
         );
-        client.close();
-        if (rresult.value == null) {
-          await interaction.reply({
-            content: "This user does not have an entry in the database!",
-            ephemeral: true,
-          });
-          return;
-        } else {
           global.birthdays = global.birthdays.filter((obj) => obj.id !== user.id);
           await interaction.reply({
             content:
@@ -61,7 +48,6 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
           });
           return;
         }
-      }
       let hasQuestionMarks = false;
 
       if (birthday.includes("????")) {
@@ -116,13 +102,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         });
         return;
       }
-      const client = new MongoClient(global.mongoConnectionString);
-      const collection = client
-        .db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")
-        .collection(
-          global.app.config.development ? "DEVSRV_UD_"+global.app.config.mainServer : "userdata"
-        );
-      const userDoc = await collection.findOne({ id: user.id });
+      const userDoc = await storage.findOne("user", { id: user.id });
       if (!userDoc) {
         await interaction.reply({
           content: "This user does not have an entry in the database!",
@@ -134,11 +114,11 @@ export async function runSubCommand(interaction: Discord.CommandInteraction, RM:
         birthday,
         userDoc.approximatedTimezone,
       );
-      await collection.updateOne(
+      await storage.updateOne(
+        "user",
         { id: user.id },
         { $set: { birthday: birthday, birthdayPassed: dSB >= 0 && dSB < 2 } }
       )
-      client.close();
 
       let usersBirthday = {
         id: user.id,
