@@ -13,7 +13,7 @@
   //? This option allows you to skip the 3 second wait that IRIS gives after it fails to connect to the MongoDB server (or if it wasn't provided in the first place).
   "skipMongoFailWait": false,
 
-  //? This option let's you choose where you want the data to be stored if MongoDB is not available.
+  //? This option lets you choose where you want the data to be stored if MongoDB is not available.
   //! ------------------------------------------------------------------
   //! Production (user   ): <backupStoragePath>/production/userdata.json
   //! Production (server ): <backupStoragePath>/production/serverdata.json
