@@ -30,7 +30,7 @@ import {
   PermissionsBitField,
   CommandInteractionOptionResolver,
   EmbedBuilder,
-  Interaction,
+  ActivityType
 } from "discord.js";
 import { AppInterface } from "@src/interfaces/appInterface.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
@@ -48,6 +48,7 @@ import { inspect } from "util";
 import performance from "./lib/performance.js";
 import { checkPermissions, getFullCMD } from "./lib/utilities/permissionsCheck.js";
 import storage, { checkMongoAvailability } from "./lib/utilities/storage.js";
+import { IRISEvent } from "./lib/base/IRISEvent.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -56,6 +57,8 @@ declare const global: IRISGlobal;
 //! ------------------------------------------- !\\
 //! -- This is the start of the IRIS journey -- !\\
 //! ------------------------------------------- !\\
+
+let client: Client = null;
 
 (async () => {
   performance.start("fullRun");
@@ -288,11 +291,23 @@ declare const global: IRISGlobal;
   ]
   process.on('uncaughtException', function(err) {
     console.error(err)
+    if (!fullyReady) {
+      client.user.setPresence({
+        activities: [
+          {
+            name: "❌ Encountered an error!",
+            type: ActivityType.Custom,
+          },
+        ],
+        status: "dnd",
+      });
+    }
     global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-ERR");
   });
   const onExit = async (a: string | number) => {
     if (a==2) return
     global.logger.log("IRIS is shutting down...", "IRIS-"+a);
+    await client.destroy()
     await storage.cleanup();
     process.exit(2);
   }
@@ -356,7 +371,7 @@ declare const global: IRISGlobal;
       process.exit(1);
     }
 
-    const client = new Client({
+    client = new Client({
       intents: [
         GatewayIntentBits.AutoModerationConfiguration,
         GatewayIntentBits.AutoModerationExecution,
@@ -537,6 +552,15 @@ declare const global: IRISGlobal;
       const finalLogInTime = performance.end("logInTime", {
         silent: true,
       })
+      client.user.setPresence({
+        activities: [
+          {
+            name: "Starting up...",
+            type: ActivityType.Custom,
+          },
+        ],
+        status: "idle",
+      });
       global.logger.log(`${chalk.white("[I]")} ${chalk.green("Logged in!")} ${chalk.white("[I]")}`, returnFileName());
       global.logger.log("------------------------", returnFileName());
 
@@ -608,8 +632,9 @@ declare const global: IRISGlobal;
       const eventFiles = readdirSync(join(__dirname, "events")).filter((file: string) =>
         file.endsWith(".evt.js")
       );
-      global.dataForSetup.events = eventFiles.map((file: string) => {
-        return file.replace(".evt.js", "");
+      global.dataForSetup.events = []
+      eventFiles.forEach((file: string) => {
+        return (import(`./events/${file}`)).then(a=>global.dataForSetup.events.push(a.default.name))
       })
       performance.pause("eventLoader");
       performance.resume("commandRegistration");
@@ -677,38 +702,72 @@ declare const global: IRISGlobal;
           `Registering event: ${chalk.blueBright(file)}`,
           returnFileName()
         );
-        const event: IRISEvent = await import(`./events/${file}`);
-        if (!(event.eventSettings().devOnly && event.eventSettings().mainOnly)) {
+        const eventClass = (await import(`./events/${file}`)).default;
+        const event: IRISEvent = new eventClass(file)
+        if (!(event.eventSettings.devOnly && event.eventSettings.mainOnly)) {
 
-          if (!global.app.config.development && event.eventSettings().devOnly)
-          continue;
-          if (global.app.config.development && event.eventSettings().mainOnly)
-          continue;
+          if (!global.app.config.development && event.eventSettings.devOnly) {
+            global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+            global.logger.debug(`Event ${chalk.yellowBright(file)} is setup for development only and will not be loaded.`,returnFileName());
+            continue;
+          }
+          if (global.app.config.development && event.eventSettings.mainOnly) {
+            global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+            global.logger.debug(`Event ${chalk.yellowBright(file)} is setup for production only and will not be loaded.`,returnFileName());
+            continue;
+          }
         } else {
           
           performance.pause(["fullRun", "eventLoader"])
           global.logger.debugError(`Error while loading event: ${chalk.redBright(file)} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
+          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
           continue;
         }
 
+        //! Make sure the event is correctly set up
+        switch (event.type) {
+          // discordEvent needs a listenerKey, runEvery needs a ms
+          case "discordEvent":
+            if (!event.listenerKey) {
+              performance.pause(["fullRun", "eventLoader"])
+              global.logger.debugError(`Event ${chalk.redBright(file)} is missing a listenerKey. Event will not be loaded.`,returnFileName());
+              performance.resume(["fullRun", "eventLoader"])
+              global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+              continue
+            }
+            break;
+          case "runEvery":
+            if (!event.ms) {
+              performance.pause(["fullRun", "eventLoader"])
+              global.logger.debugError(`Event ${chalk.redBright(file)} is missing a ms value. Event will not be loaded.`,returnFileName());
+              performance.resume(["fullRun", "eventLoader"])
+              global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+              continue
+            }
+            break;
+        }
+
+
         const setupRes = await event.setup(client)
-        if (!setupRes || setupRes == "non-crit") {
+        if (setupRes == false) {
           performance.pause(["fullRun", "eventLoader"])
-          if (setupRes == "non-crit") {
-            global.logger.warn(`Event ${chalk.yellowBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
-          } else {
-            global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
-          }
+          global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
+          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          continue
+        } else if (!setupRes) {
+          //! Silent fail
+          performance.pause(["fullRun", "eventLoader"])
+          global.logger.debugWarn(`Event ${chalk.yellowBright(file)} failed to complete setup script silently. Event will not be loaded.`,returnFileName());
+          performance.resume(["fullRun", "eventLoader"])
+          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
           continue
         }
 
         
         global.requiredModules[
-          "event" +
-            file.replace(".evt.js", "")[0].toUpperCase() +
-            file.replace(".evt.js", "").slice(1)
+          "event" + event.constructor.name
         ] = event;
       }
       const finalEventLoaderTime = performance.end("eventLoader", {silent: !global.app.config.debugging})
@@ -731,17 +790,6 @@ declare const global: IRISGlobal;
           global.logger.error(error, returnFileName());
         }
       })();
-      if (!global.app.config.development) {
-        client.user.setPresence({
-          activities: [
-            {
-              name: "you",
-              type: 3,
-            },
-          ],
-          status: "online",
-        });
-      }
       const mainServer = await client.guilds.fetch(
         global.app.config.mainServer
       );
@@ -773,7 +821,7 @@ declare const global: IRISGlobal;
       const prioritizedTable: { [key: string]: any } = {};
       for (let i of Object.keys(global.requiredModules)) {
         if (i.startsWith("event")) {
-          const priority: number = global.requiredModules[i].priority() ?? 0;
+          const priority: number = global.requiredModules[i].priority ?? 0;
           const priorityKey: string = Number(priority).toString();
           prioritizedTable[priorityKey] = prioritizedTable[priorityKey] ?? [];
           prioritizedTable[priorityKey].push(i);
@@ -785,79 +833,61 @@ declare const global: IRISGlobal;
         (a: string, b: string) => parseInt(b) - parseInt(a)
       )) {
         for (let i of prioritizedTable[prio]) {
-          const adder = ("discordEvent" === global.requiredModules[i].eventType()? " (" +chalk.cyan.bold(global.requiredModules[i].getListenerKey()) +")": (
-            "runEvery" === global.requiredModules[i].eventType()? " (" +chalk.hex("#FFA500")(prettyMilliseconds(global.requiredModules[i].getMS(), {verbose: !0,})) +")": ""
+        const event = global.requiredModules[i] as IRISEvent;
+
+          const adder = ("discordEvent" === event.type ? " (" +chalk.cyan.bold(event.listenerKey) +")": (
+            "runEvery" === event.type ? " (" +chalk.hex("#FFA500")(prettyMilliseconds(event.ms, {verbose: !0,})) +")": ""
           ))
-          const eventType = chalk.yellowBright(global.requiredModules[i].eventType())
-          const eventName = chalk.blueBright(global.requiredModules[i].returnFileName())
-          if (
-            global.requiredModules[i].eventSettings().devOnly &&
-            global.requiredModules[i].eventSettings().mainOnly
-          ) {
-            performance.pause("fullRun")
-            performance.pause("eventRegistration")
-            /* prettier-ignore */
-            global.logger.debugError(`${chalk.redBright("Error while registering")} '${eventType}${adder}' ${chalk.redBright("event")}: ${chalk.redBright(global.requiredModules[i].returnFileName())} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
-            performance.resume("fullRun")
-            performance.resume("eventRegistration")
-            delete global.requiredModules[i]
-            delete prioritizedTable[prio][i]
-            continue;
-          }
+          const eventType = chalk.yellowBright(event.type)
+          const eventName = chalk.blueBright(event.fileName)
           /* prettier-ignore */
           if (!eventType.includes("onStart")) {
-            performance.pause("fullRun")
-            performance.pause("eventRegistration")
+            performance.pause(["fullRun", "eventRegistration"])
             global.logger.debug(`Registering '${eventType}${adder}' event: ${eventName}`, returnFileName());
-            performance.resume("fullRun")
-            performance.resume("eventRegistration")
+            performance.resume(["fullRun", "eventRegistration"])
           }
-          if (global.requiredModules[i].eventType() === "runEvery") {
-            const prettyInterval = chalk.hex("#FFA500")(prettyMilliseconds(global.requiredModules[i].getMS(),{verbose: true}))
-            if (global.requiredModules[i].runImmediately()) {
-              performance.pause("fullRun")
-              performance.pause("eventRegistration")
+          if (event.type === "runEvery") {
+            const prettyInterval = chalk.hex("#FFA500")(prettyMilliseconds(event.ms,{verbose: true}))
+            if (event.runImmediately) {
+              performance.pause(["fullRun", "eventRegistration"])
               /* prettier-ignore */
               global.logger.debug(`Running '${eventType} (${chalk.cyan.bold("runImmediately")})' event: ${eventName}`, returnFileName());
-              performance.resume("fullRun")
-              performance.resume("eventRegistration")
-              await global.requiredModules[i].runEvent(client);
+              performance.resume(["fullRun", "eventRegistration"])
+              await event.runEvent(client);
             }
             setInterval(async () => {
-              if (!global.requiredModules[i].running) {
+              if (!event.running) {
                 /* prettier-ignore */
                 global.logger.debug(`Running '${eventType} (${prettyInterval})' event: ${eventName}`,returnFileName());
-                await global.requiredModules[i].runEvent(client);
+                await event.runEvent(client);
               } else {
                 /* prettier-ignore */
                 global.logger.debugError(`Not running '${eventType} (${prettyInterval})' event: ${eventName} reason: Previous iteration is still running.`, returnFileName());
               }
-            }, global.requiredModules[i].getMS());
-          } else if (global.requiredModules[i].eventType() === "discordEvent") {
-            const listenerKey = chalk.cyan.bold(global.requiredModules[i].getListenerKey())
+            }, event.ms);
+          } else if (event.type === "discordEvent") {
+            const listenerKey = chalk.cyan.bold(event.listenerKey)
             client.on(
-              global.requiredModules[i].getListenerKey(),
+              event.listenerKey as any,
               async (...args: any) => {
                 /* prettier-ignore */
-                if (global.requiredModules[i].getListenerKey() != Events.MessageCreate)
+                if (event.listenerKey != Events.MessageCreate)
                   global.logger.debug(`Running '${eventType} (${listenerKey})' event: ${eventName}`,returnFileName());
-                await global.requiredModules[i].runEvent(...args);
+                await event.runEvent(...args);
               }
             );
-          } else if (global.requiredModules[i].eventType() === "onStart") {
-            performance.pause("fullRun")
-            performance.pause("eventRegistration")
+          } else if (event.type === "onStart") {
+            performance.pause(["fullRun", "eventRegistration"])
             global.logger.debug(
               `Running '${eventType}' event: ${eventName}`, returnFileName()
             );
-            performance.resume("fullRun")
-            performance.resume("eventRegistration")
-            await global.requiredModules[i].runEvent(client);
+            performance.resume(["fullRun", "eventRegistration"])
+            await event.runEvent(client);
           }
         }
       }
-      const finalEventRegistrationTime = performance.end("eventRegistration",{silent: !global.app.config.debugging});
-      const finalTotalTime = performance.end("fullRun", {silent:true})
+      const finalEventRegistrationTime = performance.end("eventRegistration", {silent: !global.app.config.debugging});
+      const finalTotalTime = performance.end("fullRun", {silent: !global.app.config.debugging})
       global.logger.log("", returnFileName());
       global.logger.log(`All commands and events have been registered. ${chalk.yellowBright(eventFiles.length)} event(s), ${chalk.yellowBright(commands.length)} command(s).`, returnFileName());
       global.logger.debug("------------------------", returnFileName());
@@ -896,6 +926,15 @@ declare const global: IRISGlobal;
       global.logger.log("------------------------", returnFileName());
 
       fullyReady = true;
+      client.user.setPresence({
+        activities: [
+          {
+            name: "you",
+            type: ActivityType.Watching,
+          },
+        ],
+        status: "online",
+      });
     });
 
     /* prettier-ignore */

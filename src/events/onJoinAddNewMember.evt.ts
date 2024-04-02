@@ -16,68 +16,55 @@
  */
 
 import Discord from "discord.js";
-import { IRISGlobal } from "@src/interfaces/global.js";
 import chalk from "chalk";
-import { fileURLToPath } from "url";
 import storage from "@src/lib/utilities/storage.js";
+import { IRISEventTypes, IRISEvent, IRISEventTypeSettings } from "@src/lib/base/IRISEvent.js";
 
-const eventInfo = {
-  type: "discordEvent",
-  listenerkey: Discord.Events.GuildMemberAdd,
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },    
-};
-
-const __filename = fileURLToPath(import.meta.url);
+import { IRISGlobal } from "@src/interfaces/global.js";
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client) => true
-export async function runEvent(
-  ...args: Array<Discord.GuildMember>
-) {
-  if (args[0].user.bot) return;
-  if (args[0].guild.id !== global.app.config.mainServer) return;
+export default class OnJoinAddNewMember extends IRISEvent {
+  protected _type: IRISEventTypes = "discordEvent";
+  protected _typeSettings: IRISEventTypeSettings = {
+    listenerKey: Discord.Events.GuildMemberAdd,
+  };
 
-  const guild = await args[0].client.guilds.fetch(global.app.config.mainServer);
-  let newMembersRole = null;
-  await guild.roles.fetch().then(async (roles) => {
-    roles.forEach((role) => {
-      if (role.name.toLowerCase().includes("new member")) {
-        newMembersRole = role;
-      }
+  public async runEvent(
+  ...args: Array<Discord.GuildMember>
+  ): Promise<void> {
+    if (args[0].user.bot) return;
+    if (args[0].guild.id !== global.app.config.mainServer) return;
+
+    const guild = await args[0].client.guilds.fetch(global.app.config.mainServer);
+    let newMembersRole = null;
+    await guild.roles.fetch().then(async (roles) => {
+      roles.forEach((role) => {
+        if (role.name.toLowerCase().includes("new member")) {
+          newMembersRole = role;
+        }
+      });
     });
-  });
-  if (newMembersRole)
-    args[0].roles.add(newMembersRole);
-  if (!global.newMembers.includes(args[0].id))
-    global.newMembers.push(args[0].id);
-  try {
-    const entry = {
-      ...global.app.config.defaultEntry,
-      ...{
-        id: args[0].id,
-        last_active: new Date().toISOString(),
-        username: args[0].user.username,
-        isNew: true,
-      },
-    };
-    if (args[0].user.discriminator !== "0" && args[0].user.discriminator)
-      entry.discriminator = args[0].user.discriminator;
-    await storage.insertOne("user",entry);
-    const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
-    /* prettier-ignore */
-    global.logger.debug(`${chalk.yellow(user)} has joined the server. A database entry has been created for them.`, returnFileName())
-  } catch (e) {
-    global.logger.error(e.toString(), returnFileName());
+    if (newMembersRole)
+      args[0].roles.add(newMembersRole);
+    if (!global.newMembers.includes(args[0].id))
+      global.newMembers.push(args[0].id);
+    try {
+      const entry = {
+        ...global.app.config.defaultEntry,
+        ...{
+          id: args[0].id,
+          last_active: new Date().toISOString(),
+          username: args[0].user.username,
+          isNew: true,
+        },
+      };
+      if (args[0].user.discriminator !== "0" && args[0].user.discriminator)
+        entry.discriminator = args[0].user.discriminator;
+      await storage.insertOne("user",entry);
+      const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
+      /* prettier-ignore */
+      global.logger.debug(`${chalk.yellow(user)} has joined the server. A database entry has been created for them.`, this.fileName)
+    } catch (e) {
+      global.logger.error(e.toString(), this.fileName);
+    }
   }
 }
-
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const eventType = () => eventInfo.type;
-export const eventSettings = () => eventInfo.settings;
-export const priority = () => 0;
-export const getListenerKey = () => eventInfo.listenerkey;

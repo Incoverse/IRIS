@@ -17,45 +17,36 @@
 
 import Discord from "discord.js";
 import chalk from "chalk";
-import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
 import storage from "@src/lib/utilities/storage.js";
-const eventInfo = {
-  type: "onStart",
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
-const __filename = fileURLToPath(import.meta.url);
+import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
+
+import { IRISGlobal } from "@src/interfaces/global.js";
 declare const global: IRISGlobal;
-export const setup = async (client:Discord.Client) => true
-export async function runEvent(client: Discord.Client) {
-  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
 
-  
+export default class OnReadySetupPunishments extends IRISEvent {
+  protected _type: IRISEventTypes = "onStart";
+  protected _priority: number = 5;
+  protected _typeSettings: IRISEventTypeSettings = {};
 
-  try {
-    const offenses = await storage.find("offense", {});
+  public async runEvent(client: Discord.Client): Promise<void> {
+    try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 
-    global.server.main.offenses = {...offenses.map((uIDObj) => {
-      return {
-        [uIDObj.id]: uIDObj.offenses,
-      };
-    })}
+    
 
-    //TODO: Expand to make sure that the offenses are active. And fixing any inconsistencies.
-    global.logger.debug(`Loaded ${offenses.length} offenses from the database.`, returnFileName());
+    try {
+      const offenses = await storage.find("offense", {});
 
-  } catch (e) {
-    global.logger.error(e, returnFileName());
+      global.server.main.offenses = {...offenses.map((uIDObj) => {
+        return {
+          [uIDObj.id]: uIDObj.offenses,
+        };
+      })}
+
+      //TODO: Expand to make sure that the offenses are active. And fixing any inconsistencies.
+      if (offenses.length > 0) global.logger.debug(`Loaded ${offenses.length} offenses from the database.`, this.fileName);
+
+    } catch (e) {
+      global.logger.error(e, this.fileName);
+    }
   }
 }
-
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const eventType = () => eventInfo.type;
-export const eventSettings = () => eventInfo.settings;
-export const priority = () => 5;

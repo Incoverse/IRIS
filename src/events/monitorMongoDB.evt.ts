@@ -17,82 +17,66 @@
 
 import Discord from "discord.js";
 import { existsSync, unlinkSync } from "fs";
-import { fileURLToPath } from "url";
 import chalk from "chalk";
 import { promisify } from "util";
 import { exec } from "child_process";
+import { IRISEventTypes, IRISEvent, IRISEventTypeSettings, IRISEventSettings } from "@src/lib/base/IRISEvent.js";
+import storage from "@src/lib/utilities/storage.js";
+
 import { IRISGlobal } from "@src/interfaces/global.js";
-const execPromise = promisify(exec);
-const eventInfo = {
-  type: "runEvery",
-  ms: 300000,
-  runImmediately: true,
-  settings: {
-    devOnly: false,
-    mainOnly: true,
-  },
-};
-
-const __filename = fileURLToPath(import.meta.url);
 declare const global: IRISGlobal;
-export let running = false;
-export const setup = async (client:Discord.Client) => true
 
-/*
 
-This event is probably unnecessary for your purposes, it's purpose is to automatically restart MongoDB on the server if it finds a "mongodb.restart" file in the current directory
+const execPromise = promisify(exec);
+export default class MonitorMongoDB extends IRISEvent {
+  protected _type: IRISEventTypes = "runEvery"
+  protected _typeSettings: IRISEventTypeSettings = {
+    ms: 5 * 60 * 1000, // 5 minutes
+    runImmediately: true,
+  };
+  protected _eventSettings: IRISEventSettings = {
+    mainOnly: true,
+    devOnly: false,
+  };
 
-This was created because my MongoDB server is running with TLS and when the certificate for TLS gets renewed, MongoDB has to be restarted to use the new one
+  public async runEvent(client: Discord.Client): Promise<void> {
+    try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 
-*/
-
-export async function runEvent(client: Discord.Client) {
-  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
-
-  running = true;
-  // -----------
-  if (existsSync("./mongodb.restart")) {
-    unlinkSync("./mongodb.restart");
-    global.mongoStatus = global.mongoStatuses.RESTARTING;
-    global.logger.debug(
-      `Restart of MongoDB has been requested and is in progress.`, returnFileName()
-    );
-    global.logger.debug(
-      `Waiting few seconds to let other commands finish...`, returnFileName()
-    );
-    await sleep(3000);
-    global.logger.debug(
-      `Restarting MongoDB...`, returnFileName()
-    );
-    await execPromise("sudo systemctl restart mongod");
-    await sleep(500);
-    try {
-      await execPromise(
-        "systemctl status mongod | grep 'active (running)' "
+    this._running = true;
+    // -----------
+    if (existsSync("./mongodb.restart") && storage.method == "mongo") {
+      unlinkSync("./mongodb.restart");
+      global.mongoStatus = global.mongoStatuses.RESTARTING;
+      global.logger.debug(
+        `Restart of MongoDB has been requested and is in progress.`, this.fileName
       );
-    } catch (e) {
-      /* prettier-ignore */
-      global.logger.debugError(chalk.red("MongoDB failed to start!"), returnFileName());
-      global.mongoStatus = global.mongoStatuses.FAILED;
-      return;
+      global.logger.debug(
+        `Waiting few seconds to let other commands finish...`, this.fileName
+      );
+      await this.sleep(3000);
+      global.logger.debug(
+        `Restarting MongoDB...`, this.fileName
+      );
+      await execPromise("sudo systemctl restart mongod");
+      await this.sleep(500);
+      try {
+        await execPromise(
+          "systemctl status mongod | grep 'active (running)' "
+        );
+      } catch (e) {
+        /* prettier-ignore */
+        global.logger.debugError(chalk.red("MongoDB failed to start!"), this.fileName);
+        global.mongoStatus = global.mongoStatuses.FAILED;
+        return;
+      }
+      global.mongoStatus = global.mongoStatuses.RUNNING;
+      global.logger.debug(chalk.greenBright("MongoDB successfully started back up!"), this.fileName);
     }
-    global.mongoStatus = global.mongoStatuses.RUNNING;
-    global.logger.debug(chalk.greenBright("MongoDB successfully started back up!"), returnFileName());
+    // -----------
+    this._running = false;
   }
-  // -----------
-  running = false;
-}
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  private sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 }
-
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const eventType = () => eventInfo.type;
-export const eventSettings = () => eventInfo.settings;
-export const priority = () => 0;
-export const getMS = () => eventInfo.ms;
-export const runImmediately = () => eventInfo.runImmediately;

@@ -15,93 +15,80 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-const eventInfo = {
-  type: "runEvery",
-  ms: 6 * 60 * 60 * 1000, //6h, 4 times a day
-  runImmediately: true,
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
 
-import moment from "moment-timezone";
 import Discord from "discord.js";
-import { IRISGlobal } from "@src/interfaces/global.js";
 import chalk from "chalk";
-import { fileURLToPath } from "url";
 import storage from "@src/lib/utilities/storage.js";
-const __filename = fileURLToPath(import.meta.url);
+import { IRISEventTypes, IRISEvent, IRISEventTypeSettings } from "@src/lib/base/IRISEvent.js";
 
-export let running = false;
+import { IRISGlobal } from "@src/interfaces/global.js";
 declare const global: IRISGlobal;
+export default class NewMemberCheck extends IRISEvent {
+  protected _type: IRISEventTypes = "runEvery"
+  protected _typeSettings: IRISEventTypeSettings = {
+    ms: 6 * 60 * 60 * 1000, //6h, 4 times a day
+    runImmediately: true,
+  };
 
-export const setup = async (client:Discord.Client) => {
-  const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
-  // check if there is a role that includes "new member" in it's name
-  if (!roles.some((role) => role.name.toLowerCase().includes("new member"))) {
-    global.logger.debugError(`A role with 'new member' in the name could not be found. Cannot continue.`, returnFileName())
-    return false
-  }
-  return true
-}
-export async function runEvent(client: Discord.Client) {
-  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
-
-  running = true;
-  // -----------
-  const guild = await client.guilds.fetch(global.app.config.mainServer);
-  let updated = [];
-  let newMembersRole = null;
-  await guild.roles.fetch().then((roles) => {
-    roles.forEach((role) => {
-      if (role.name.toLowerCase().includes("new member")) {
-        newMembersRole = role;
-      }
-    });
-  });
-  for (let memberID of JSON.parse(JSON.stringify(global.newMembers))) {
-    
-    await guild.members.fetch(memberID).then(async (member) => {
-      if (member.user.bot) return;
-      if (
-        new Date().getTime() - member.joinedAt.getTime() >=
-        7 * 24 * 60 * 60 * 1000
-      ) {
-        global.newMembers = global.newMembers.filter(
-          (item) => item !== memberID
-        );
-        /* prettier-ignore */
-        const user = member.user.discriminator != "0" && member.user.discriminator ? member.user.tag: member.user.username
-        global.logger.debug(`Removing '${newMembersRole.name}' (role) from ${chalk.yellow(user)}`,returnFileName());
-        member.roles.remove(newMembersRole);
-        updated.push(memberID);
-      }
-    });}
-    if (updated.length > 0) {
-        for (let index in updated) {
-          updated[index] = { id: updated[index] };
-        }
-        await storage.updateMany(
-          "user",
-          { $or: updated },
-          {
-            $set: {
-              isNew: false,
-            },
-          }
-        )
+  public async setup(client:Discord.Client) {
+    const roles = await client.guilds.fetch(global.app.config.mainServer).then(guild => guild.roles.fetch())
+    // check if there is a role that includes "new member" in it's name
+    if (!roles.some((role) => role.name.toLowerCase().includes("new member"))) {
+      global.logger.debugError(`A role with 'new member' in the name could not be found. Cannot continue.`,  this.fileName)
+      return false
     }
-  // -----------
-  running = false;
-}
+    return true
+  }
 
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const eventType = () => eventInfo.type;
-export const eventSettings = () => eventInfo.settings;
-export const priority = () => 0;
-export const getMS = () => eventInfo.ms;
-export const runImmediately = () => eventInfo.runImmediately;
+
+  public async runEvent(client: Discord.Client) {
+    try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
+
+    this._running = true;
+    // -----------
+    const guild = await client.guilds.fetch(global.app.config.mainServer);
+    let updated = [];
+    let newMembersRole = null;
+    await guild.roles.fetch().then((roles) => {
+      roles.forEach((role) => {
+        if (role.name.toLowerCase().includes("new member")) {
+          newMembersRole = role;
+        }
+      });
+    });
+    for (let memberID of JSON.parse(JSON.stringify(global.newMembers))) {
+      
+      await guild.members.fetch(memberID).then(async (member) => {
+        if (member.user.bot) return;
+        if (
+          new Date().getTime() - member.joinedAt.getTime() >=
+          7 * 24 * 60 * 60 * 1000
+        ) {
+          global.newMembers = global.newMembers.filter(
+            (item) => item !== memberID
+          );
+          /* prettier-ignore */
+          const user = member.user.discriminator != "0" && member.user.discriminator ? member.user.tag: member.user.username
+          global.logger.debug(`Removing '${newMembersRole.name}' (role) from ${chalk.yellow(user)}`, this.fileName);
+          member.roles.remove(newMembersRole);
+          updated.push(memberID);
+        }
+      });}
+      if (updated.length > 0) {
+          for (let index in updated) {
+            updated[index] = { id: updated[index] };
+          }
+          await storage.updateMany(
+            "user",
+            { $or: updated },
+            {
+              $set: {
+                isNew: false,
+              },
+            }
+          )
+      }
+    // -----------
+    this._running = false;
+  }
+}

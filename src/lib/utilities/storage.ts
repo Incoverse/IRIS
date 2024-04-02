@@ -25,6 +25,8 @@ import chalk from "chalk";
 import crypto from "crypto";
 import { updateObject } from "mingo/updater";
 
+type DataType = "user" | "server" | "offense"
+
 const __filename = fileURLToPath(import.meta.url);
 
 declare const global: IRISGlobal
@@ -81,16 +83,8 @@ export async function setupFiles() {
 }
 
 
-export async function deleteOne(dataType:"user"|"server"|"offense", filter: object) {
-    return await del(dataType, filter, "one")
-}
 
-export async function deleteMany(dataType:"user"|"server"|"offense", filter: object) {
-    return await del(dataType, filter, "many")
-}
-
-// This should update the database with the new data, where it saves is changed by "method"
-async function del(dataType:"user"|"server"|"offense", filter: object, oneOrMany: "one" | "many" = "one") {
+async function del(oneOrMany: "one" | "many", dataType: DataType, filter: object) {
     let collection;
     let filePathRelative; // from defined container folder (relative)
     switch (dataType) {
@@ -142,17 +136,10 @@ async function del(dataType:"user"|"server"|"offense", filter: object, oneOrMany
 }
 
 
-export async function findOne(dataType:"user"|"server"|"offense", filter: object) {
-    return await get(dataType, filter, "one")
-}
-
-export async function find(dataType:"user"|"server"|"offense", filter: object) {
-    return await get(dataType, filter, "many")
-}
 
 
 
-async function get(dataType:"user"|"server"|"offense", filter: object, oneOrMany: "one" | "many" = "one") {
+async function get(oneOrMany: "one" | "many", dataType: DataType, filter: object) {
     let collection;
     let filePathRelative; // from defined container folder (relative)
     switch (dataType) {
@@ -196,15 +183,7 @@ async function get(dataType:"user"|"server"|"offense", filter: object, oneOrMany
 }
 
 
-export async function insertOne(dataType:"user"|"server"|"offense", data: { [key: string]: any }) {
-    return await add(dataType, data, "one")
-}
-
-export async function insertMany(dataType:"user"|"server"|"offense", data: Array<{ [key: string]: any }>) {
-    return await add(dataType, data, "many")
-}
-
-async function add(dataType:"user"|"server"|"offense", data: { [key: string]: any } | Array<{ [key: string]: any }>, oneOrMany: "one" | "many" = "one") {
+async function add(oneOrMany: "one" | "many", dataType: DataType, data: { [key: string]: any } | Array<{ [key: string]: any }>) {
     let collection;
     let filePathRelative; // from defined container folder (relative)
     switch (dataType) {
@@ -266,15 +245,9 @@ async function add(dataType:"user"|"server"|"offense", data: { [key: string]: an
 
 }
 
-export async function updateOne(dataType:"user"|"server"|"offense", filter: object, data: object) {
-    return await update(dataType, filter, data, "one")
-}
 
-export async function updateMany(dataType:"user"|"server"|"offense", filter: object, data: object) {
-    return await update(dataType, filter, data, "many")
-}
 
-async function update(dataType:"user"|"server"|"offense", filter: object, data: object, oneOrMany: "one" | "many" = "one") {
+async function update(oneOrMany: "one" | "many", dataType: DataType, filter: object, data: object) {
     let collection;
     let filePathRelative; // from defined container folder (relative)
     switch (dataType) {
@@ -363,18 +336,33 @@ export async function cleanup() {
 }
 
 
+export const insertOne:  (dataType: DataType, data: { [key: string]: any }) => Promise<any> = add.bind(null, "one")
+export const insertMany: (dataType: DataType, data: Array<{ [key: string]: any }>) => Promise<any> = add.bind(null, "many")
+
+export const findOne:    (dataType: DataType, filter: object) => Promise<any> = get.bind(null, "one")
+export const find:       (dataType: DataType, filter: object) => Promise<any> = get.bind(null, "many")
+
+export const deleteOne:  (dataType: DataType, filter: object) => Promise<any> = del.bind(null, "one")
+export const deleteMany: (dataType: DataType, filter: object) => Promise<any> = del.bind(null, "many")
+
+export const updateOne:  (dataType: DataType, filter: object, data: object) => Promise<any> = update.bind(null, "one")
+export const updateMany: (dataType: DataType, filter: object, data: object) => Promise<any> = update.bind(null, "many")
+
+
 export default {
-    get method() : string {
+    get method() {
         return method //! This is so that you can read the value of method outside of this file, but can't change it
     },
+
+    insertOne,
+    insertMany,
     findOne,
     find,
     deleteOne,
     deleteMany,
-    insertOne,
-    insertMany,
     updateOne,
     updateMany,
+    
     cleanup,
     checkMongoAvailability,
 }

@@ -16,29 +16,26 @@
  */
 
 import Discord from "discord.js";
+import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
 import chalk from "chalk";
-import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
-import express, { Express, Request, Response } from "express";
 import { readFileSync, writeFileSync } from "fs";
+import express, { Express, Request, Response } from "express";
+
+import { IRISGlobal } from "@src/interfaces/global.js";
+declare const global: IRISGlobal;
+
 const app: Express = express();
 const port = 7380;
-const eventInfo = {
-  type: "onStart",
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
 let server = null;
 let completed = false;
 let expires_in = Number.MAX_SAFE_INTEGER
-const __filename = fileURLToPath(import.meta.url);
-declare const global: IRISGlobal;
+export default class OnReadySetupPermsToken extends IRISEvent {
+  protected _type: IRISEventTypes = "onStart";
+  protected _priority: number = 6;
+  protected _typeSettings: IRISEventTypeSettings = {};
 
-export const setup = async (client:Discord.Client) => true
-export async function runEvent(client: Discord.Client) {
-  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(eventInfo.type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(returnFileName())}`, "index.js"); } catch (e) {}
+  public async runEvent(client: Discord.Client): Promise<void> {
+  try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 
 
   async function refreshToken() {
@@ -59,7 +56,7 @@ export async function runEvent(client: Discord.Client) {
     );
     if (tokenResponseData.status == 200) {
       const oauthData: any = await tokenResponseData.json();
-      const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
+      const parsedDotEnv = this.envToObject(readFileSync(".env", "utf-8"));
       parsedDotEnv["ACCESS_TKN"] = '"' + oauthData.access_token + '-' + (new Date().getTime() + (oauthData.expires_in * 1000)) + '"';
       parsedDotEnv["REFRESH_TKN"] = '"' + oauthData.refresh_token + '"';
       process.env.ACCESS_TKN = oauthData.access_token;
@@ -69,16 +66,16 @@ export async function runEvent(client: Discord.Client) {
       if (refreshTokenInterval) clearInterval(refreshTokenInterval);
       refreshTokenInterval = setInterval(refreshToken, (expires_in - 30) * 1000);
 
-      const newDotEnv = objectToEnv(parsedDotEnv);
+      const newDotEnv = this.objectToEnv(parsedDotEnv);
       writeFileSync(".env", newDotEnv);
     } else {
-      global.logger.warn("The token used for controlling command permissions is no longer valid. IRIS will not be able to update command permissions until she is restarted.", returnFileName());
-      const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
+      global.logger.warn("The token used for controlling command permissions is no longer valid. IRIS will not be able to update command permissions until she is restarted.", this.fileName);
+      const parsedDotEnv = this.envToObject(readFileSync(".env", "utf-8"));
       delete parsedDotEnv["ACCESS_TKN"];
       delete parsedDotEnv["REFRESH_TKN"];
       delete process.env.ACCESS_TKN;
       delete process.env.REFRESH_TKN;
-      const newDotEnv = objectToEnv(parsedDotEnv);
+      const newDotEnv = this.objectToEnv(parsedDotEnv);
       writeFileSync(".env", newDotEnv);
       clearInterval(refreshTokenInterval);
     }
@@ -113,7 +110,7 @@ export async function runEvent(client: Discord.Client) {
     // create a function that takes in the .env format and returns an object
 
 
-    const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
+    const parsedDotEnv = this.envToObject(readFileSync(".env", "utf-8"));
     parsedDotEnv["ACCESS_TKN"] = '"' + oauthData.access_token + '-' + (new Date().getTime() + (oauthData.expires_in * 1000)) + '"';
     parsedDotEnv["REFRESH_TKN"] = '"' + oauthData.refresh_token + '"';
     process.env.ACCESS_TKN = oauthData.access_token;
@@ -123,7 +120,7 @@ export async function runEvent(client: Discord.Client) {
     if (refreshTokenInterval) clearInterval(refreshTokenInterval);
     refreshTokenInterval = setInterval(refreshToken, (expires_in - 30) * 1000);
 
-    const newDotEnv = objectToEnv(parsedDotEnv);
+    const newDotEnv = this.objectToEnv(parsedDotEnv);
     writeFileSync(".env", newDotEnv);
     await response.send("Authorization completed. You can close this window now.");
     authenticatedUser = await fetch(
@@ -137,26 +134,26 @@ export async function runEvent(client: Discord.Client) {
     ).then((res) => res.json()).catch(() => null);
     completed = true;
 
-    server.close(() => global.logger.debug(`Express server for oauth2 is no longer listening on port ${chalk.whiteBright(port)}.`, returnFileName()));
+    server.close(() => global.logger.debug(`Express server for oauth2 is no longer listening on port ${chalk.whiteBright(port)}.`, this.fileName));
   });
 
   if (!process.env.ACCESS_TKN || !process.env.REFRESH_TKN) {
     server = app.listen(port, () => {
-        global.logger.debug(`Express server for oauth2 is now running and listening on port ${chalk.whiteBright(port)}.`, returnFileName()
+        global.logger.debug(`Express server for oauth2 is now running and listening on port ${chalk.whiteBright(port)}.`, this.fileName
         )
     });
     const guild = await client.guilds.fetch(global.app.config.mainServer);
     const owner = await guild.fetchOwner();
-    global.logger.log("--------------------", returnFileName())
-    global.logger.log("IRIS requires you to grant her access to change her slash command permissions more accurately.", returnFileName())
-    global.logger.log(`${chalk.yellow.bold("Note:")} The owner of the server (${chalk.yellowBright(`@${owner.user.username}`)}), or someone very high up in the ranks should authorize this.`, returnFileName())
-    global.logger.log(`More information can be found at: ${chalk.blueBright("https://discord.com/developers/docs/interactions/application-commands#permissions")}`, returnFileName())
-    global.logger.log("--------------------", returnFileName())
-    global.logger.log("Please click the link below to grant IRIS the necessary permissions.", returnFileName())
-    global.logger.log(chalk.yellowBright(`https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify`), returnFileName())
-    await waitUntilComplete();
-    global.logger.log("--------------------", returnFileName())
-    global.logger.log(`Authorization was successfully completed by ${chalk.yellowBright(`@${authenticatedUser.user.username}`)}. Resuming boot-up...`, returnFileName())
+    global.logger.log("--------------------", this.fileName)
+    global.logger.log("IRIS requires you to grant her access to change her slash command permissions more accurately.", this.fileName)
+    global.logger.log(`${chalk.yellow.bold("Note:")} The owner of the server (${chalk.yellowBright(`@${owner.user.username}`)}), or someone very high up in the ranks should authorize this.`, this.fileName)
+    global.logger.log(`More information can be found at: ${chalk.blueBright("https://discord.com/developers/docs/interactions/application-commands#permissions")}`, this.fileName)
+    global.logger.log("--------------------", this.fileName)
+    global.logger.log("Please click the link below to grant IRIS the necessary permissions.", this.fileName)
+    global.logger.log(chalk.yellowBright(`https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify`), this.fileName)
+    await this.waitUntilComplete();
+    global.logger.log("--------------------", this.fileName)
+    global.logger.log(`Authorization was successfully completed by ${chalk.yellowBright(`@${authenticatedUser.user.username}`)}. Resuming boot-up...`, this.fileName)
 
   } else {
 
@@ -184,7 +181,7 @@ export async function runEvent(client: Discord.Client) {
         refreshTokenInterval = setInterval(refreshToken, (expiresAt.getTime() - new Date().getTime() - 30 * 1000));
         
         completed = true
-      } else global.logger.debug("Token has expired. Trying to refresh...", returnFileName())
+      } else global.logger.debug("Token has expired. Trying to refresh...", this.fileName)
     }
 
     if (!completed) {
@@ -206,7 +203,7 @@ export async function runEvent(client: Discord.Client) {
       );
       if (tokenResponseData.status == 200) {
           const oauthData:any = await tokenResponseData.json();
-          const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
+          const parsedDotEnv = this.envToObject(readFileSync(".env", "utf-8"));
           parsedDotEnv["ACCESS_TKN"] = '"' + oauthData.access_token + '-' + (new Date().getTime() + (oauthData.expires_in * 1000)) + '"';
           parsedDotEnv["REFRESH_TKN"] = '"' + oauthData.refresh_token + '"';
           process.env.ACCESS_TKN = oauthData.access_token;
@@ -216,40 +213,40 @@ export async function runEvent(client: Discord.Client) {
           if (refreshTokenInterval) clearInterval(refreshTokenInterval);
           refreshTokenInterval = setInterval(refreshToken, (expires_in - 30) * 1000);
 
-          const newDotEnv = objectToEnv(parsedDotEnv);
+          const newDotEnv = this.objectToEnv(parsedDotEnv);
           writeFileSync(".env", newDotEnv);
 
 
           completed = true;
 
       } else {
-          global.logger.debug("Credentials in .env were invalid. Starting oauth2 process...", returnFileName())
+          global.logger.debug("Credentials in .env were invalid. Starting oauth2 process...", this.fileName)
               // clear
-          const parsedDotEnv = envToObject(readFileSync(".env", "utf-8"));
+          const parsedDotEnv = this.envToObject(readFileSync(".env", "utf-8"));
           delete parsedDotEnv["ACCESS_TKN"];
           delete parsedDotEnv["REFRESH_TKN"];
           delete process.env.ACCESS_TKN;
           delete process.env.REFRESH_TKN;
-          const newDotEnv = objectToEnv(parsedDotEnv);
+          const newDotEnv = this.objectToEnv(parsedDotEnv);
           writeFileSync(".env", newDotEnv);
-          await runEvent(client)
+          await this.runEvent(client)
       }
     }
   }
 }
 
-const envToObject = (env: string) => {
-    const envArray = env.split("\n");
-    const envObject = {};
-    envArray.forEach((env) => {
-      const [key, value] = env.split("=");
-      if (!key||key.trim() == "") return;
-      envObject[key] = value;
-    });
-    return envObject;
+  private envToObject(env: string) {
+      const envArray = env.split("\n");
+      const envObject = {};
+      envArray.forEach((env) => {
+        const [key, value] = env.split("=");
+        if (!key||key.trim() == "") return;
+        envObject[key] = value;
+      });
+      return envObject;
   };
 
-  const objectToEnv = (object: object) => {
+  private objectToEnv(object: object) {
     let env = "";
     Object.entries(object).forEach(([key, value]) => {
 
@@ -259,21 +256,15 @@ const envToObject = (env: string) => {
     });
     return env.trim();
   };
-function waitUntilComplete() {
-  return new Promise<void>((resolve) => {
-    const interval = setInterval(() => {
-      if (completed) {
-        clearInterval(interval);
-        resolve();
-      }
-    }, 1000);
-  });
-}
 
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const eventType = () => eventInfo.type;
-export const eventSettings = () => eventInfo.settings;
-export const priority = () => 6;
+  private waitUntilComplete() {
+    return new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        if (completed) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 1000);
+    });
+  }
+}
