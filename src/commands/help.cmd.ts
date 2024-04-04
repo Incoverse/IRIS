@@ -21,28 +21,18 @@ import { fileURLToPath } from "url";
 import { PathLike, readdirSync, readFileSync, statSync } from "fs";
 import { dirname, join } from "path";
 import { checkPermissions } from "../lib/utilities/permissionsCheck.js";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
 
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
-        .setName("help")
-        .setDescription("Shows all commands and their descriptions.")
-    .setDMPermission(false),
-  // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-}
+export default class Help extends IRISCommand {
 
-export const setup = async (client: Discord.Client) => true;
 
-export async function runCommand(
-    interaction: Discord.CommandInteraction
-) {
-  try {
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
+      .setName("help")
+      .setDescription("Shows all commands and their descriptions.")
+      
+  public async runCommand(interaction: Discord.CommandInteraction) {
       const pages = [];
       let commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help")).filter(a=>{
         return global.requiredModules[a].getSlashCommand().options.filter((b)=>{
@@ -164,47 +154,5 @@ export async function runCommand(
         )]
       });
     });
-
-
-    } catch (e) {
-      global.logger.error(e, returnFileName());
-      await interaction.client.application.fetch();
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content:
-            "⚠️ There was an error while executing this command!" +
-            (global.app.config.showErrors == true
-              ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-              : ""),
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content:
-            "⚠️ There was an error while executing this command!" +
-            (global.app.config.showErrors == true
-              ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-              : ""),
-          ephemeral: true,
-        });
-      }
-    }
   }
-
-
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ];
-  
-export const getSlashCommand = () => commandInfo.slashCommand;
-
-export const commandSettings = () => commandInfo.settings;
+}

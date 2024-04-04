@@ -20,7 +20,7 @@ import { existsSync, unlinkSync } from "fs";
 import chalk from "chalk";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { IRISEventTypes, IRISEvent, IRISEventTypeSettings, IRISEventSettings } from "@src/lib/base/IRISEvent.js";
+import { IRISEventTypes, IRISEvent, IRISEventTypeSettings } from "@src/lib/base/IRISEvent.js";
 import storage from "@src/lib/utilities/storage.js";
 
 import { IRISGlobal } from "@src/interfaces/global.js";
@@ -34,7 +34,7 @@ export default class MonitorMongoDB extends IRISEvent {
     ms: 5 * 60 * 1000, // 5 minutes
     runImmediately: true,
   };
-  protected _eventSettings: IRISEventSettings = {
+  protected _eventSettings: IRISEvCoSettings = {
     mainOnly: true,
     devOnly: false,
   };

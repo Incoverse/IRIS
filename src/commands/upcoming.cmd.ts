@@ -17,56 +17,17 @@
 
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
-import moment, { updateLocale } from "moment-timezone";
+import moment from "moment-timezone";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
+
+export default class Upcoming extends IRISCommand {
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
     .setName("upcoming")
     .setDescription("Get the next 5 upcoming birthdays.")
-    .setDMPermission(false),
-  // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
 
-export const setup = async (client:Discord.Client) => true
-export async function runCommand(
-  interaction: Discord.CommandInteraction
-) {
-  try {
-    const getBirthdays = (birthdays: any[]) => {
-      const now = moment.tz();
-      const next5Birthdays = birthdays
-        .filter(a=>!a.passed)
-        .map((birthday: { birthday: string; timezone: string; id: string }) => {
-          const birthdayMoment = moment(birthday.birthday).tz(
-            birthday.timezone ?? "Europe/Berlin"
-          );
-          const nextBirthday = birthdayMoment.year(now.year());
-          if (nextBirthday.isBefore(now)) {
-            nextBirthday.add(1, "year");
-          }
-          return {
-            ...birthday,
-            nextBirthday,
-          };
-        })
-        .sort(
-          (
-            a: { nextBirthday: { diff: (arg0: any) => any } },
-            b: { nextBirthday: any }
-          ) => a.nextBirthday.diff(b.nextBirthday)
-        );
-      return next5Birthdays
-        .slice(0, 5)
-        .map(({ nextBirthday, ...rest }) => rest);
-    };
-
+  public async runCommand(interaction: Discord.CommandInteraction) {
     let upcomingBirthdaysArray = getBirthdays(global.birthdays);
     if (upcomingBirthdaysArray.length == 0) {
       await interaction.reply({
@@ -103,38 +64,9 @@ export async function runCommand(
       });
     }
     await interaction.reply({ embeds: [embed], ephemeral: true });
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    }
   }
 }
+
 /* prettier-ignore */
 function getOrdinalNum(n: number) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
 /* prettier-ignore */
@@ -168,10 +100,31 @@ function howManyDaysUntilBirthday(
       ) * -1;
 }
 
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
 
-export const commandSettings = () => commandInfo.settings;
+const getBirthdays = (birthdays: any[]) => {
+  const now = moment.tz();
+  const next5Birthdays = birthdays
+    .filter(a=>!a.passed)
+    .map((birthday: { birthday: string; timezone: string; id: string }) => {
+      const birthdayMoment = moment(birthday.birthday).tz(
+        birthday.timezone ?? "Europe/Berlin"
+      );
+      const nextBirthday = birthdayMoment.year(now.year());
+      if (nextBirthday.isBefore(now)) {
+        nextBirthday.add(1, "year");
+      }
+      return {
+        ...birthday,
+        nextBirthday,
+      };
+    })
+    .sort(
+      (
+        a: { nextBirthday: { diff: (arg0: any) => any } },
+        b: { nextBirthday: any }
+      ) => a.nextBirthday.diff(b.nextBirthday)
+    );
+  return next5Birthdays
+    .slice(0, 5)
+    .map(({ nextBirthday, ...rest }) => rest);
+};

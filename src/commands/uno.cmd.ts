@@ -32,7 +32,6 @@ import Discord, {
   ThreadChannel,
 } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
 import UGE, {
   Game,
   Card,
@@ -44,31 +43,25 @@ import UGE, {
 } from "uno-game-engine";
 import mergeImg from "join-images";
 import storage from "@src/lib/utilities/storage.js";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const commandInfo = {
-  slashCommand: new Discord.SlashCommandBuilder()
-    .setName("uno")
-    .setDescription("Play UNO with your friends! (max 4)"),
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
 
-export const setup = async (client:Discord.Client) => {
-  const maxPlayers = 4;
-  if (!global.games) global.games = {};
-  global.games.uno = {
-    maxPlayers: maxPlayers,
+export default class Uno extends IRISCommand {
+
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
+    .setName("uno")
+    .setDescription("Play UNO with your friends! (max 4)")
+
+  public async setup(client: Discord.Client) {
+    const maxPlayers = 4;
+    if (!global.games) global.games = {};
+    global.games.uno = {
+      maxPlayers: maxPlayers,
+    }
+    return true;
   }
-  return true;
-}
-export async function runCommand(
-  interaction: Discord.CommandInteraction,
-  _RM: object
-) {
-  try {
+
+  public async runCommand(interaction: Discord.CommandInteraction) {
     const maxPlayers = global.games.uno.maxPlayers;
     let shouldSaveSettings = false;
     let game;
@@ -451,7 +444,7 @@ export async function runCommand(
             ephemeral: true,
           });
         } catch (e) {
-          global.logger.error(e, returnFileName());
+          global.logger.error(e, this.fileName);
           return;
         }
         return;
@@ -830,7 +823,7 @@ export async function runCommand(
             ephemeral: true,
           });
         } catch (e) {
-          global.logger.error(e, returnFileName());
+          global.logger.error(e, this.fileName);
           return;
         }
         return;
@@ -848,7 +841,7 @@ export async function runCommand(
             ephemeral: true,
           });
         } catch (e) {
-          global.logger.error(e, returnFileName());
+          global.logger.error(e, this.fileName);
           return;
         }
         return;
@@ -941,7 +934,7 @@ export async function runCommand(
           try {
             await settings2.toUpdate.edit(toSendData);
           } catch (e) {
-            global.logger.error(e, returnFileName());
+            global.logger.error(e, this.fileName);
             return;
           }
           response = settings2.toUpdate;
@@ -949,7 +942,7 @@ export async function runCommand(
           response = await inter.reply(toSendData);
         }
       } catch (e) {
-        global.logger.error(e, returnFileName());
+        global.logger.error(e, this.fileName);
         return false;
       }
       if (!settings2.updateInteraction) {
@@ -968,7 +961,7 @@ export async function runCommand(
                   "**Heads up!** Your hand is about to be closed in **1 minute** due to Discord's 15 minute time limit on interactions. You can also reset the interaction timer yourself by clicking 'Show Hand' again.\n\nWhen the message gets deleted, please re-open your hand using the 'Show Hand' button to continue playing as normal.\n||.||",
               });
             } catch (e) {
-              global.logger.error(e, returnFileName());
+              global.logger.error(e, this.fileName);
             }
           }, 13 * 60 * 1000),
           close: setTimeout(async () => {
@@ -983,7 +976,7 @@ export async function runCommand(
             try {
               interactions[inter.user.id].delete();
             } catch (e) {
-              global.logger.error(e, returnFileName());
+              global.logger.error(e, this.fileName);
             }
             delete interactions[inter.user.id];
             delete interactionTimers[inter.user.id];
@@ -1193,7 +1186,7 @@ export async function runCommand(
                 ],
               });
             } catch (e) {
-              global.logger.error(e, returnFileName());
+              global.logger.error(e, this.fileName);
               return;
             }
             handleShowHandButtons(inter, "selectCard", {
@@ -1206,7 +1199,7 @@ export async function runCommand(
                 ephemeral: true,
               });
             } catch (e) {
-              global.logger.error(e, returnFileName());
+              global.logger.error(e, this.fileName);
               return;
             }
           }
@@ -1254,7 +1247,7 @@ export async function runCommand(
                 ephemeral: true,
               });
             } catch (e) {
-              global.logger.error(e, returnFileName());
+              global.logger.error(e, this.fileName);
               return;
             }
             return;
@@ -1298,7 +1291,7 @@ export async function runCommand(
                 });
               }
             } catch (e) {
-              // global.logger.error(e, returnFileName());
+              // global.logger.error(e, this.fileName);
               return;
             }
           }
@@ -1369,7 +1362,7 @@ export async function runCommand(
                 toUpdate: interactions[inter.interaction.user.id],
               });
             } catch (e) {
-              // global.logger.error(e, returnFileName());
+              // global.logger.error(e, this.fileName);
               return;
             }
           }
@@ -1412,7 +1405,7 @@ export async function runCommand(
             toUpdate: interactions[player.name],
           });
         } catch (e) {
-          // global.logger.error(e, returnFileName());
+          // global.logger.error(e, this.fileName);
           // return;
         }
         if (settings.drawUntilPlayable) return;
@@ -1591,7 +1584,7 @@ export async function runCommand(
               : players.get(player.name).username) +
             " on a " +
             cardToText(game.discardedCards.cards[0])
-        , returnFileName());
+        , this.fileName);
       }
     }
     async function generateCardCount() {
@@ -2105,7 +2098,7 @@ export async function runCommand(
               }
             )
         } catch (e) {
-          global.logger.debugError(e, returnFileName());
+          global.logger.debugError(e, this.fileName);
         }
       }
       return await buttonInteraction.channel.send({
@@ -2483,42 +2476,5 @@ export async function runCommand(
         }
       }
     }
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    }
   }
 }
-
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
-export const commandSettings = () => commandInfo.settings;

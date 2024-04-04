@@ -17,56 +17,39 @@
 
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
-import { PathLike, readdirSync, readFileSync, statSync } from "fs";
-import { dirname, join } from "path";
+import { PathLike, readdirSync, readFileSync, statSync, existsSync } from "fs";
+import { join } from "path";
 
 import prettyMilliseconds from "pretty-ms";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
-    .setName("stats")
-    .setDescription("Get IRIS' statistics!"),
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
 
-export const setup = async (client:Discord.Client) => true
-export async function runCommand(
-  interaction: Discord.CommandInteraction
-) {
-  try {
-    const getAllFiles = function (dirPath: PathLike, arrayOfFiles: string[]) {
-      const files = readdirSync(dirPath);
-      arrayOfFiles = arrayOfFiles || [];
-      files.forEach(function (file) {
-        if (statSync(dirPath + "/" + file).isDirectory()) {
-          arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles);
-        } else {
-          arrayOfFiles.push(join(dirPath.toString(), "/", file));
-        }
-      });
-      return arrayOfFiles;
-    };
+export default class Stats extends IRISCommand {
+
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
+    .setName("stats")
+    .setDescription("Get IRIS' statistics!")
+
+  public async runCommand(interaction: Discord.CommandInteraction) {
 
     let totalLines: number = 0;
     let totalCharacters: number = 0;
     const finalEmbed: Discord.EmbedBuilder = new Discord.EmbedBuilder()
       .setTitle("IRIS' Statistics")
-      .setColor("Random");
+      .setColor("Random")
 
-    const files: Array<string> = getAllFiles(
-      join(__dirname, "..", "..", "src"),
-      []
-    ).filter((f) => f.endsWith(".ts"));
+    let files: Array<string> = getAllFiles(join(process.cwd(), "src")).filter((file) => file.endsWith(".ts"));
+
+    if (files.length == 0) {
+      files = getAllFiles(join(process.cwd(), "dist")).filter((file) => file.endsWith(".js"));
+      finalEmbed.setFooter({
+        text: "Using compiled code for line and character count.",
+        iconURL: interaction.client.user.displayAvatarURL()
+      })
+    }
+
     for (let path of files) {
-      // Read all files, and get the line count, and add it to the total
       totalLines += readFileSync(path).toString().split("\n").length;
-      // Read all files, and get the character count, and add it to the total
       totalCharacters += readFileSync(path).toString().length;
     }
     finalEmbed.addFields(
@@ -87,7 +70,7 @@ export async function runCommand(
 
       {
         name: ":scroll: Total Lines",
-        value: totalLines.toString(), // +" lines",
+        value: totalLines.toString(),
         inline: true,
       },
       {
@@ -104,7 +87,7 @@ export async function runCommand(
       },
       {
         name: ":memo: Total Characters",
-        value: totalCharacters.toString(), // +" chars",
+        value: totalCharacters.toString(),
         inline: true,
       }
     );
@@ -112,43 +95,20 @@ export async function runCommand(
       embeds: [finalEmbed],
       ephemeral: true,
     });
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    }
+
   }
 }
 
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
-
-export const commandSettings = () => commandInfo.settings;
+const getAllFiles = function (dirPath: PathLike, arrayOfFiles: string[] = []) {
+  if (!existsSync(dirPath)) return arrayOfFiles;
+  const files = readdirSync(dirPath);
+  arrayOfFiles = arrayOfFiles || [];
+  files.forEach(function (file) {
+    if (statSync(dirPath + "/" + file).isDirectory()) {
+      arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles);
+    } else {
+      arrayOfFiles.push(join(dirPath.toString(), "/", file));
+    }
+  });
+  return arrayOfFiles;
+};

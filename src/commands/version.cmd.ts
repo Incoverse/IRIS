@@ -16,25 +16,18 @@
  */
 
 import { IRISGlobal } from "@src/interfaces/global.js";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 import Discord from "discord.js";
-import { fileURLToPath } from "url";
 import { readFileSync } from "fs";
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
+
+export default class Version extends IRISCommand {
+
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
     .setName("version")
-    .setDescription("Check which version IRIS is running."),
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
-export const setup = async (client:Discord.Client) => true
-export async function runCommand(
-  interaction: Discord.CommandInteraction
-) {
-  try {
+    .setDescription("Check which version IRIS is running.")
+
+  public async runCommand(interaction: Discord.CommandInteraction) {
     await interaction.reply({
       content:
         "IRIS is currently running ``v" +
@@ -42,43 +35,6 @@ export async function runCommand(
           .version +
         "``",
       ephemeral: true,
-    });
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    }
-  }
+    });   
+  } 
 }
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
-
-export const commandSettings = () => commandInfo.settings;

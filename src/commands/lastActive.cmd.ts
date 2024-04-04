@@ -17,13 +17,13 @@
 
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
 import storage from "@src/lib/utilities/storage.js";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
+
+export default class LastActive extends IRISCommand {
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
     .setName("lastactive")
     .setDescription("Check when a user was last active.")
     .addUserOption((option) =>
@@ -32,89 +32,34 @@ const commandInfo = {
         .setDescription("The user you want to check")
         .setRequired(true)
     )
-    .setDMPermission(false),
-  // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
+    
+    public async runCommand(interaction: Discord.CommandInteraction) {
+        await interaction.deferReply();
+        const target = interaction.options.getUser("user");
+        try {
+          let userInfo = await storage.findOne("user", { id: target.id });
+          if (userInfo == null || userInfo.last_active == null) {
+            await interaction.editReply(
+              "This user has never interacted with this server."
+            );
+          } else {
+            await interaction.editReply({
+              content:
+                target + " was last active ``" +
+                timeAgo(new Date(userInfo.last_active)) +
+                "``",
+              allowedMentions: { parse: [] },
+            });
+          }
+        } catch (e) {
+          global.logger.error(e.toString(), this.fileName);
+        } 
+        return;
+    }
 };
 
-export const setup = async (client:Discord.Client) => true
-export async function runCommand(
-  interaction: Discord.CommandInteraction
-) {
-  try {
-    await interaction.deferReply();
-    const target = interaction.options.getUser("user");
 
-
-    try {
-      const query = { id: target.id };
-      let userInfo = await storage.findOne("user", query);
-      if (userInfo == null || userInfo.last_active == null) {
-        await interaction.editReply(
-          "This user has never interacted with this server."
-        );
-      } else {
-        await interaction.editReply({
-          content:
-            target + " was last active ``" +
-            timeAgo(new Date(userInfo.last_active)) +
-            "``",
-          allowedMentions: { parse: [] },
-        });
-      }
-    } catch (e) {
-      global.logger.error(e.toString(), returnFileName());
-    } 
-    return;
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    }
-  }
-}
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 function getFormattedDate(
   date: Date,
@@ -156,7 +101,6 @@ function getFormattedDate(
   return `${month} ${day}, ${year} at ${hours}:${minutes}${AMPM} UTC`;
 }
 
-// --- Main function
 function timeAgo(dateParam) {
   if (!dateParam) {
     return null;
@@ -192,10 +136,3 @@ function timeAgo(dateParam) {
 }
 /* prettier-ignore */
 function getOrdinalNum(n:number) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
-
-export const commandSettings = () => commandInfo.settings;

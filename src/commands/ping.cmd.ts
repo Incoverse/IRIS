@@ -17,64 +17,28 @@
 
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
+export default class Ping extends IRISCommand {
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
     .setName("ping")
-    .setDescription("Pong! "),
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
+    .setDescription("Get the bot's ping.")
 
-export const setup = async (client:Discord.Client) => true
-export async function runCommand(
-  interaction: Discord.CommandInteraction
-) {
-  try {
-    // cmd stuff here
-    await interaction.reply("Pong! " + interaction.client.ws.ping + "ms");
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    }
+
+
+  public async runCommand(interaction: Discord.CommandInteraction) {
+    await interaction.reply({
+      embeds: [
+        new Discord.EmbedBuilder()
+          .setColor("NotQuiteBlack")
+          .setTitle("Pong!")
+          .setDescription(`🏓 ${interaction.client.ws.ping}ms`)
+          .setAuthor({
+            name: interaction.user.tag,
+            iconURL: interaction.user.displayAvatarURL()
+          })
+      ]
+    })
   }
-}
-
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
-
-export const commandSettings = () => commandInfo.settings;
+};

@@ -15,92 +15,72 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, {
-    ActivityType,
-    CommandInteractionOptionResolver,
-    GuildMemberRoleManager,
-    Team,
-    TextChannel,
-  } from "discord.js";
-  import { IRISGlobal } from "@src/interfaces/global.js";
-  import { fileURLToPath } from "url";
-  import chalk from "chalk";
-  const __filename = fileURLToPath(import.meta.url);
+import Discord, {CommandInteractionOptionResolver, TextChannel} from "discord.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
   
   
-  const punishmentTypeMap= {
-    "WARNING": "Warning",
-    "TIMEOUT": "Timeout",
-    "KICK": "Kick",
-    "TEMPORARY_BANISHMENT": "Temporary ban",
-    "PERMANENT_BANISHMENT": "Permanent ban"
-  }
+const punishmentTypeMap = {
+  "WARNING": "Warning",
+  "TIMEOUT": "Timeout",
+  "KICK": "Kick",
+  "TEMPORARY_BANISHMENT": "Temporary ban",
+  "PERMANENT_BANISHMENT": "Permanent ban"
+}
 
 
-  declare const global: IRISGlobal;
-  const commandInfo = {
-      slashCommand: new Discord.SlashCommandBuilder()
-      .setName("mod")
-      .setDescription("Mod Commands")  
-        .addSubcommand((subcommand) =>
+declare const global: IRISGlobal;
+
+
+export default class Mod extends IRISCommand {
+
+  protected _slashCommand: IRISSlashCommand =new Discord.SlashCommandBuilder()
+    .setName("mod")
+    .setDescription("Mod Commands")  
+      .addSubcommand((subcommand) =>
         subcommand
-            .setName("punish")
-            .setDescription("Show the rules stored in IRIS database.")
-            .addUserOption((option) =>
-                option
-                    .setName("user")
-                    .setDescription("User to punish")
-                    .setRequired(true)
-            )
-            .addStringOption((option) =>
-            option
-                .setName("rule")
-                .setDescription("The rule that the user violated.")
-                .setRequired(true)
-                .setAutocomplete(true)
-            )
-        ).addSubcommand((subcommand) =>
+          .setName("punish")
+          .setDescription("Show the rules stored in IRIS database.")
+          .addUserOption((option) =>
+              option
+                  .setName("user")
+                  .setDescription("User to punish")
+                  .setRequired(true)
+          )
+          .addStringOption((option) =>
+          option
+              .setName("rule")
+              .setDescription("The rule that the user violated.")
+              .setRequired(true)
+              .setAutocomplete(true)
+          )
+      )
+      .addSubcommand((subcommand) =>
         subcommand
-            .setName("review")
-            .setDescription("Review a case that has been flagged for manual review.")
-            .addUserOption((option) =>
-                option
-                    .setName("user")
-                    .setDescription("User to review")
-                    .setRequired(true)
-            ).addStringOption((option) =>
-            option
-                .setName("decision")
-                .setDescription("The decision made on the case.")
+          .setName("review")
+          .setDescription("Review a case that has been flagged for manual review.")
+          .addUserOption((option) =>
+              option
+                .setName("user")
+                .setDescription("User to review")
                 .setRequired(true)
-                .setChoices(
-                  {name: "Permanent Ban", value: "PERMANENT_BANISHMENT"},
-                  {name: "Temporary Ban", value: "TEMPORARY_BANISHMENT"},
-                  {name: "Kick", value: "KICK"},
-                  {name: "Timeout", value: "TIMEOUT"},
-                  {name: "Warning", value: "WARNING"},
-                  {name: "No Action", value: "NO_ACTION"}
-                )
-            )
-        ),
-  
-  
-      
-  
-      //.setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-    settings: {
-      devOnly: false,
-      mainOnly: false,
-    }
-  };
-  
-  export const setup = async (client:Discord.Client) => true
-  
-  export async function runCommand(
-    interaction: Discord.CommandInteraction
-  ) {
-    try {
+          ).addStringOption((option) =>
+            option  
+              .setName("decision")
+              .setDescription("The decision made on the case.")
+              .setRequired(true)
+              .setChoices(
+                {name: "Permanent Ban", value: "PERMANENT_BANISHMENT"},
+                {name: "Temporary Ban", value: "TEMPORARY_BANISHMENT"},
+                {name: "Kick", value: "KICK"},
+                {name: "Timeout", value: "TIMEOUT"},
+                {name: "Warning", value: "WARNING"},
+                {name: "No Action", value: "NO_ACTION"}
+              )
+          )
+      )
 
+  public async runCommand(interaction: Discord.CommandInteraction) {
         const rule = (interaction.options as CommandInteractionOptionResolver).getString("rule");
         const user = (interaction.options as CommandInteractionOptionResolver).getUser("user");
 
@@ -231,10 +211,6 @@ import Discord, {
                       newOffense.punishment_type == "KICK"    ? Discord.Colors.DarkOrange :
                       Discord.Colors.Red
                     )
-                    // .setFooter({
-                    //   text: interaction.guild.name,
-                    //   iconURL: interaction.guild.iconURL()
-                    // })
                     .setTimestamp()
                     .setFooter({
                       text: "Action taken by " + interaction.user.username,
@@ -257,7 +233,6 @@ import Discord, {
               ]
           });
         } else {
-
           // Trigger a manual review, meaning time the user out for 28d, with reason: Your recent actions have been flagged for manual review. You will be unable to interact with the server until the review is complete. then send a message in mod-logs and DM the user that they have been flagged for manual review and that they will be unable to interact with the server until the review is complete.
           // dont add it to the offenses array, nor make a newOffenses object, just send the message and log it
           
@@ -332,110 +307,71 @@ import Discord, {
               ]
           });
         }
-          
-
-
-    } catch (e) {
-      await interaction.client.application.fetch();
-      global.logger.error(e, returnFileName());
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content:
-            "⚠️ There was an error while executing this command!" +
-            (global.app.config.showErrors == true
-              ? "\n\n``" +
-                (global.app.owners.includes(interaction.user.id)
-                  ? e.stack.toString()
-                  : e.toString()) +
-                "``"
-              : ""),
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content:
-            "⚠️ There was an error while executing this command!" +
-            (global.app.config.showErrors == true
-              ? "\n\n``" +
-                (global.app.owners.includes(interaction.user.id)
-                  ? e.stack.toString()
-                  : e.toString()) +
-                "``"
-              : ""),
-          ephemeral: true,
-        });
-      }
-    }
   }
-  
-  export const autocomplete = async (interaction: Discord.AutocompleteInteraction) => {
+
+  public async autocomplete(interaction: Discord.AutocompleteInteraction) {
     const optionName = interaction.options.getFocused(true).name
     const focusedValue = interaction.options.getFocused();
     
     if (optionName == "rule") {
-        const choices = global.server.main.rules.map((rule) => {
-            return {
-                name: `${rule.index}. ${rule.title}`,
-                value: `${rule.title}`
-            }
-        })
-           
-        await interaction.respond(choices.filter((choice) => choice.name.toLowerCase().includes(focusedValue.toLowerCase())).slice(0, 25));
+      const choices = global.server.main.rules.map((rule) => {
+          return {
+              name: `${rule.index}. ${rule.title}`,
+              value: `${rule.title}`
+          }
+      })
+            
+      await interaction.respond(choices.filter((choice) => choice.name.toLowerCase().includes(focusedValue.toLowerCase())).slice(0, 25));
     }
   }
+}
+  
 
-  function formatDuration(durationMs) {
-    const units = [
-        { label: 'y', ms: 1000 * 60 * 60 * 24 * 365 },
-        { label: 'mo', ms: 1000 * 60 * 60 * 24 * 31},
-        { label: 'w', ms: 1000 * 60 * 60 * 24 * 7 },
-        { label: 'd', ms: 1000 * 60 * 60 * 24 },
-        { label: 'h', ms: 1000 * 60 * 60 },
-        { label: 'm', ms: 1000 * 60 },
-        { label: 's', ms: 1000 },
-        { label: 'ms', ms: 1 }
-    ];
-  
-    let duration = durationMs;
-    let durationStr = '';
-  
-    for (const unit of units) {
-        const count = Math.floor(duration / unit.ms);
-        if (count > 0) {
-            durationStr += `${count}${unit.label} `;
-            duration -= count * unit.ms;
-        }
-    }
-  
-    return durationStr.trim();
+function formatDuration(durationMs) {
+  const units = [
+      { label: 'y', ms: 1000 * 60 * 60 * 24 * 365 },
+      { label: 'mo', ms: 1000 * 60 * 60 * 24 * 31},
+      { label: 'w', ms: 1000 * 60 * 60 * 24 * 7 },
+      { label: 'd', ms: 1000 * 60 * 60 * 24 },
+      { label: 'h', ms: 1000 * 60 * 60 },
+      { label: 'm', ms: 1000 * 60 },
+      { label: 's', ms: 1000 },
+      { label: 'ms', ms: 1 }
+  ];
+
+  let duration = durationMs;
+  let durationStr = '';
+
+  for (const unit of units) {
+      const count = Math.floor(duration / unit.ms);
+      if (count > 0) {
+          durationStr += `${count}${unit.label} `;
+          duration -= count * unit.ms;
+      }
   }
+
+  return durationStr.trim();
+}
+
+function parseDuration(durationStr) {
+  const units = {
+      'ms': 1,
+      's': 1000,
+      'm': 60 * 1000,
+      'h': 60 * 60 * 1000,
+      'd': 24 * 60 * 60 * 1000,
+      'w': 7 * 24 * 60 * 60 * 1000,
+      'mo': 1000 * 60 * 60 * 24 * 31,
+      'y': 365 * 24 * 60 * 60 * 1000
+  };
   
-  function parseDuration(durationStr) {
-    const units = {
-        'ms': 1,
-        's': 1000,
-        'm': 60 * 1000,
-        'h': 60 * 60 * 1000,
-        'd': 24 * 60 * 60 * 1000,
-        'w': 7 * 24 * 60 * 60 * 1000,
-        'mo': 1000 * 60 * 60 * 24 * 31,
-        'y': 365 * 24 * 60 * 60 * 1000
-    };
-    
-    const time = parseInt(durationStr.replace(/[a-zA-Z]/g,""))
-    const unit = durationStr.match(/[a-zA-Z]/g).join("")  
-  
-    const duration = time * units[unit];
-    return duration;
-  }
-    /* prettier-ignore */
-    const getOrdinalNum = (n:number)=> { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
+  const time = parseInt(durationStr.replace(/[a-zA-Z]/g,""))
+  const unit = durationStr.match(/[a-zA-Z]/g).join("")  
+
+  const duration = time * units[unit];
+  return duration;
+}
+  /* prettier-ignore */
+  const getOrdinalNum = (n:number)=> { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
 
   
-
-  export const returnFileName = () =>
-    __filename.split(process.platform == "linux" ? "/" : "\\")[
-      __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-    ];
-  export const getSlashCommand = () => commandInfo.slashCommand;
-  export const commandSettings = () => commandInfo.settings;

@@ -18,11 +18,13 @@
 import Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
+
+export default class Birthday extends IRISCommand {
+
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
     .setName("birthday")
     .setDescription("Get your/someones birthday.")
     .addUserOption((option) =>
@@ -30,20 +32,9 @@ const commandInfo = {
         .setName("user")
         .setDescription("Select the user you want to get the birthday of")
     )
-    .setDMPermission(false),
-  // .setDefaultMemberPermissions(Discord.PermissionFlagsBits.ManageMessages), // just so normal people dont see the command
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-  defaultPermissions: null
-};
-export const setup = async (client:Discord.Client) => true
-export async function runCommand(
-  interaction: Discord.CommandInteraction
-) {
-  let isHidden = false;
-  try {
+    
+  public async runCommand(interaction: Discord.CommandInteraction) {
+    let isHidden = false;
     if (
       interaction.options.getUser("user") == null ||
       interaction.options.getUser("user").id == interaction.user.id
@@ -56,14 +47,15 @@ export async function runCommand(
         );
         date = date.birthday;
         if (date.startsWith("0000")) isHidden = true;
-        await interaction.reply(
-          "Your birthday is set to ``" +
+        await interaction.reply({
+          content: "Your birthday is set to ``" +
             DateFormatter.formatDate(
               new Date(date),
               isHidden ? `MMMM ????` : `MMMM ????, YYYY`
             ).replace("????", getOrdinalNum(new Date(date).getDate())) +
-            "``"
-        );
+            "``",
+          ephemeral: true,
+          });
         return;
       } else {
         await interaction.reply({
@@ -92,55 +84,21 @@ export async function runCommand(
             ).replace("????", getOrdinalNum(new Date(date).getDate())) +
             "``",
           allowedMentions: { parse: [] },
+          ephemeral: true,
         });
       } else {
         await interaction.reply({
           content: "<@" + user.id + "> has not set their birthday yet.",
           allowedMentions: { parse: [] },
+          ephemeral: true,
         });
       }
     }
     return;
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
-        ephemeral: true,
-      });
-    }
   }
-}
+};
 /* prettier-ignore */
 function getOrdinalNum(n:number) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
 /* prettier-ignore */
 const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e:any, t:any) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t:any) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t:any) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e:any, t:any, r:any) { return e.replace(t, (function (e:any) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e:any) { return (e + 24) % 12 || 12 }, getAmPm: function (e:any) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e:any, t:any, r:any, g:any) { return e.replace(t, (function (e:any) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
 
-export const commandSettings = () => commandInfo.settings;

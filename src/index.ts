@@ -49,6 +49,7 @@ import performance from "./lib/performance.js";
 import { checkPermissions, getFullCMD } from "./lib/utilities/permissionsCheck.js";
 import storage, { checkMongoAvailability } from "./lib/utilities/storage.js";
 import { IRISEvent } from "./lib/base/IRISEvent.js";
+import { IRISCommand } from "./lib/base/IRISCommand.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -401,13 +402,11 @@ let client: Client = null;
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
       if (interaction.isAutocomplete()) {
-        const responsibleHandler = global.requiredModules[
-          "cmd" +
-            interaction.commandName[0].toUpperCase() +
-            interaction.commandName.slice(1)
-        ];
 
-        if (!responsibleHandler) return;
+        const responsibleHandler = global.requiredModules[Object.keys(global.requiredModules).filter((a) => a.startsWith("cmd"))
+        .find((a) => global.requiredModules[a].slashCommand.name == interaction.commandName)]
+
+        if (!responsibleHandler) return
 
         if (responsibleHandler.autocomplete) {
           try {
@@ -427,7 +426,7 @@ let client: Client = null;
 
 
       client.on(Events.InteractionCreate, async (interaction: any) => {
-      if (interaction.isAutocomplete()) return;
+      if (interaction.isChatInputCommand()) {
       if (!fullyReady) {
         return await interaction.reply({
           content:
@@ -447,7 +446,7 @@ let client: Client = null;
           ":x: This command can only be used in a server."
         );
       if (interaction.guildId !== global.app.config.mainServer) return;
-
+    }
 
       try {
         const query = { id: interaction.user.id };
@@ -468,9 +467,10 @@ let client: Client = null;
             if (
               interaction.user.discriminator !== "0" &&
               interaction.user.discriminator
-            )
-              (entry.discriminator = interaction.user.discriminator),
-                storage.insertOne("user", entry)
+            ) {
+              entry.discriminator = interaction.user.discriminator;
+              storage.insertOne("user", entry);
+            }
           } else {
             const updateDoc = {
               $set: {
@@ -494,19 +494,28 @@ let client: Client = null;
         fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommand()}`;
       }
       
-      let found = false
-      for (let command in global.requiredModules) {
-        if (command.startsWith("cmd")) {
-          if (
-            interaction.commandName == command.replace("cmd", "").toLowerCase()
-          ) {
-            found = true
-            if (await checkPermissions(interaction, fullCmd)) {
-                global.requiredModules[command].runCommand(interaction, global.requiredModules).then(async (res)=>{
+      if (interaction.isAutocomplete()) return;
+
+      const responsibleHandler = global.requiredModules[Object.keys(global.requiredModules).filter((a) => a.startsWith("cmd"))
+        .find((a) => global.requiredModules[a].slashCommand.name == interaction.commandName)]
+
+
+      if (!responsibleHandler) return await interaction.reply({
+        embeds: [
+          new EmbedBuilder().setTitle("Command failed").setDescription(
+            "We're sorry, a handler for this command could not be located, please try again later."
+          ).setColor("Red")
+        ],
+        ephemeral: true,
+      })
+
+          if (await checkPermissions(interaction, fullCmd)) {
+              try {
+                responsibleHandler.runCommand(interaction).then(async (res)=>{
                   if (res == false) return
                   if (!interaction.replied && !interaction.deferred) {
                     global.logger.debugWarn(
-                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(global.requiredModules[command].returnFileName())}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
+                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(responsibleHandler.fileName)}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
                       returnFileName()
                     );
                     await interaction.reply({
@@ -518,8 +527,38 @@ let client: Client = null;
                     ephemeral: true,
                   })
                 }
-              })
-              } else {
+                })
+              } catch (e) {
+                global.logger.error(e, (responsibleHandler as IRISCommand).fileName);
+                if (interaction.replied || interaction.deferred) {
+                  await interaction.followUp({
+                    content:
+                      "⚠️ There was an error while executing this command!" +
+                      (global.app.config.showErrors == true
+                        ? "\n\n``" +
+                          (global.app.owners.includes(interaction.user.id)
+                            ? e.stack.toString()
+                            : e.toString()) +
+                          "``"
+                        : ""),
+                    ephemeral: true,
+                  });
+                } else {
+                  await interaction.reply({
+                    content:
+                      "⚠️ There was an error while executing this command!" +
+                      (global.app.config.showErrors == true
+                        ? "\n\n``" +
+                          (global.app.owners.includes(interaction.user.id)
+                            ? e.stack.toString()
+                            : e.toString()) +
+                          "``"
+                        : ""),
+                    ephemeral: true,
+                  });
+                }
+              }
+            } else {
               // global.logger.debugError(`${interaction.user.username} tried to run command '/${fullCmd}' but was denied access.`, returnFileName())
               await interaction.reply({
                 embeds: [
@@ -533,19 +572,6 @@ let client: Client = null;
                 ephemeral: true,
               });
             }
-          }
-        }
-      }
-      if (!found) {
-        await interaction.reply({
-          embeds: [
-            new EmbedBuilder().setTitle("Command failed").setDescription(
-              "We're sorry, a handler for this command could not be located, please try again later."
-            ).setColor("Red")
-          ],
-          ephemeral: true,
-        })
-      }
     });
 
     client.on(Events.ClientReady, async () => {
@@ -639,8 +665,9 @@ let client: Client = null;
       performance.pause("eventLoader");
       performance.resume("commandRegistration");
 
-      global.dataForSetup.commands = commandFiles.map((file: string) => {
-        return file.replace(".cmd.js", "");
+      global.dataForSetup.commands = []
+      commandFiles.forEach((file: string) => {
+        return (import(`./commands/${file}`)).then(a=>global.dataForSetup.commands.push(a.default.name))
       })
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
@@ -649,40 +676,66 @@ let client: Client = null;
         performance.resume(["fullRun", "commandRegistration"]);
 
 
-        const command: IRISCommand = await import(`./commands/${file}`);
+        const commandClass = (await import(`./commands/${file}`)).default
+        const command: IRISCommand = new commandClass(file);
         if (
-          command.commandSettings().devOnly &&
-          command.commandSettings().mainOnly
+          command.commandSettings.devOnly &&
+          command.commandSettings.mainOnly
         ) {
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.debugError(`Error while registering command: ${chalk.redBright(file)} (${chalk.redBright("Command cannot be both devOnly and mainOnly!")})`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
+          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
           continue;
         }
-        if (!global.app.config.development && command.commandSettings().devOnly)
+        if (!global.app.config.development && command.commandSettings.devOnly) {
+          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          performance.pause(["fullRun", "commandRegistration"]);
+          global.logger.debug(`Command ${chalk.yellowBright(file)} is setup for development only and will not be loaded.`,returnFileName());
+          performance.resume(["fullRun", "commandRegistration"]);
           continue;
-        if (global.app.config.development && command.commandSettings().mainOnly)
+        }
+        if (global.app.config.development && command.commandSettings.mainOnly) {
+          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          performance.pause(["fullRun", "commandRegistration"]);
+          global.logger.debug(`Command ${chalk.yellowBright(file)} is setup for production only and will not be loaded.`,returnFileName());
+          performance.resume(["fullRun", "commandRegistration"]);
           continue;
+        }
+
+        if (Object.keys(global.requiredModules).includes("cmd" + command.constructor.name)) {
+          const duplicatedCmd = global.requiredModules["cmd" + command.constructor.name]
+          performance.pause(["fullRun", "commandRegistration"]);
+          global.logger.debugError(`Error while registering command: ${chalk.redBright(file)} (${chalk.redBright("Command class with the same name already exists!")})`,returnFileName());
+          global.logger.debugError(`Command ${chalk.bold(file)} collides with ${chalk.bold(duplicatedCmd.fileName)}. Command will not be loaded and duplicate command will be unloaded.`,returnFileName());
+          performance.resume(["fullRun", "commandRegistration"]);
+          delete commands[commands.indexOf(command?.slashCommand?.toJSON() as any)]
+          await duplicatedCmd.unload(client)
+          delete global.requiredModules["cmd" + command.constructor.name]
+          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          continue;
+        }
 
         let setupResult = await command.setup(client);
-        if (!setupResult || setupResult == "non-crit") {
+        if (setupResult == false) {
           performance.pause(["fullRun", "commandRegistration"]);
-          if (setupResult == "non-crit") {
-            global.logger.warn(`Command ${chalk.yellowBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
-          } else {
-            global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
-          }
+          global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
+          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
           continue
-
+        } else if (!setupResult) {
+          //! Silent fail
+          performance.pause(["fullRun", "commandRegistration"]);
+          global.logger.debugWarn(`Command ${chalk.yellowBright(file)} failed to complete setup script silently. Command will not be loaded.`,returnFileName());
+          performance.resume(["fullRun", "commandRegistration"]);
+          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          continue
         }
 
         global.requiredModules[
-          "cmd" +
-            command.getSlashCommand().name[0].toUpperCase() +
-            command.getSlashCommand().name.slice(1)
+          "cmd" + command.constructor.name
         ] = command;
-        commands.push(command?.getSlashCommand()?.toJSON());
+        commands.push(command?.slashCommand?.toJSON() as any);
       }
       const finalCommandRegistrationTime = performance.end("commandRegistration", {silent: !global.app.config.debugging})
       global.reload.commands = commands;
@@ -717,13 +770,13 @@ let client: Client = null;
             continue;
           }
         } else {
-          
           performance.pause(["fullRun", "eventLoader"])
           global.logger.debugError(`Error while loading event: ${chalk.redBright(file)} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
           global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
           continue;
         }
+
 
         //! Make sure the event is correctly set up
         switch (event.type) {
@@ -746,6 +799,16 @@ let client: Client = null;
               continue
             }
             break;
+        }
+
+        if (Object.keys(global.requiredModules).includes("event" + event.constructor.name)) {
+          performance.pause(["fullRun", "eventLoader"])
+          global.logger.debugError(`Error while registering event: ${chalk.redBright(file)} (${chalk.redBright("Event class with the same name already exists!")})`,returnFileName());
+          global.logger.debugError(`Event ${chalk.bold(file)} collides with ${chalk.bold(global.requiredModules["event" + event.constructor.name].fileName)}. Event will not be loaded and duplicate event will be unloaded.`,returnFileName());
+          performance.resume(["fullRun", "eventLoader"])
+          delete global.requiredModules["event" + event.constructor.name]
+          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          continue;
         }
 
 

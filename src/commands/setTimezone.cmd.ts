@@ -17,14 +17,15 @@
 
 import Discord, { CommandInteractionOptionResolver } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { fileURLToPath } from "url";
 import moment from "moment-timezone";
 import storage from "@src/lib/utilities/storage.js";
+import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
 
 declare const global: IRISGlobal;
-const __filename = fileURLToPath(import.meta.url);
-const commandInfo = {
-    slashCommand: new Discord.SlashCommandBuilder()
+
+export default class SetTimezone extends IRISCommand {
+
+  protected _slashCommand: IRISSlashCommand = new Discord.SlashCommandBuilder()
     .setName("settimezone")
     .setDescription("Set your timezone!")
     .addStringOption((option) =>
@@ -34,156 +35,86 @@ const commandInfo = {
           "Use https://webbrowsertools.com/timezone/ to find your timezone. (will be in the 'Timezone' field)"
         )
     )
-    .setDMPermission(false),
-  settings: {
-    devOnly: false,
-    mainOnly: false,
-  },
-};
-export const setup = async (client: Discord.Client) => true;
-export async function runCommand(
-  interaction: Discord.CommandInteraction
-) {
-  try {
-      const commandOptions =
-        interaction.options as CommandInteractionOptionResolver;
+    
+  public async runCommand(interaction: Discord.CommandInteraction) {
+    const commandOptions =
+    interaction.options as CommandInteractionOptionResolver;
 
-      if (!commandOptions.getString("timezone")) {
-        await interaction.reply({
-          embeds: [
-            new Discord.EmbedBuilder()
-              .setTitle("/settimezone")
-              .setDescription(
-                "You need to specify your timezone! Please use https://webbrowsertools.com/timezone/ to find your timezone. It will be in the 'Timezone' field. You can also specify 'none' to let IRIS automatically set your timezone."
-              )
-              .setColor(Discord.Colors.Red),
-          ],
-          ephemeral: true,
-        });
-        return;
-      }
-
-      //! Check if the timezone is valid
-      if (
-        moment.tz.names().map(a=>a.toLowerCase()).indexOf(commandOptions.getString("timezone").toLowerCase()) === -1 &&
-        commandOptions.getString("timezone").toLowerCase() !== "none"
-      ) {
-        await interaction.reply({
-          embeds: [
-            new Discord.EmbedBuilder()
-              .setTitle("/settimezone")
-              .setDescription(
-                "The timezone you specified is invalid! Please use https://webbrowsertools.com/timezone/ to find your timezone. It will be in the 'Timezone' field. You can also specify 'none' to let IRIS automatically set your timezone."
-              )
-              .setColor(Discord.Colors.Red),
-          ],
-          ephemeral: true,
-        });
-        return;
-      }
-      
-        if (commandOptions.getString("timezone").toLowerCase() === "none") {
-          let user = await storage.findOne("user", { id: interaction.user.id });
-          await storage.updateOne(
-            "user",
-            { id: interaction.user.id },
-            {
-              $set: {
-                approximatedTimezone:
-                  user.timezones.length > 0 ? mode(user.timezones) : null,
-                "settings.changeTimezone": true,
-              },
-            }
-          );
-          await interaction.reply({
-            content:
-              "Your timezone will now automatically get set by IRIS when you type `timezone <time for you>`.",
-            ephemeral: true,
-          });
-        } else {
-          let timezone = moment.tz.names()[moment.tz.names().map(a=>a.toLowerCase()).indexOf(commandOptions.getString("timezone").toLowerCase())]
-          await storage.updateOne(
-            "user",
-            { id: interaction.user.id },
-            {
-              $set: {
-                approximatedTimezone: timezone,
-                "settings.changeTimezone": false,
-              },
-            }
-          );
-          await interaction.reply({
-            content:
-              "Your timezone has been set to `" +
-              timezone +
-              "`!",
-            ephemeral: true,
-          });
-        }
-  } catch (e) {
-    global.logger.error(e, returnFileName());
-    await interaction.client.application.fetch();
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
+    if (!commandOptions.getString("timezone")) {
+      await interaction.reply({
+        embeds: [
+          new Discord.EmbedBuilder()
+            .setTitle("/settimezone")
+            .setDescription(
+              "You need to specify your timezone! Please use https://webbrowsertools.com/timezone/ to find your timezone. It will be in the 'Timezone' field. You can also specify 'none' to let IRIS automatically set your timezone."
+            )
+            .setColor(Discord.Colors.Red),
+        ],
         ephemeral: true,
       });
-    } else {
+      return;
+    }
+
+    //! Check if the timezone is valid
+    if (
+      moment.tz.names().map(a=>a.toLowerCase()).indexOf(commandOptions.getString("timezone").toLowerCase()) === -1 &&
+      commandOptions.getString("timezone").toLowerCase() !== "none"
+    ) {
+      await interaction.reply({
+        embeds: [
+          new Discord.EmbedBuilder()
+            .setTitle("/settimezone")
+            .setDescription(
+              "The timezone you specified is invalid! Please use https://webbrowsertools.com/timezone/ to find your timezone. It will be in the 'Timezone' field. You can also specify 'none' to let IRIS automatically set your timezone."
+            )
+            .setColor(Discord.Colors.Red),
+        ],
+        ephemeral: true,
+      });
+      return;
+    }
+  
+    if (commandOptions.getString("timezone").toLowerCase() === "none") {
+      let user = await storage.findOne("user", { id: interaction.user.id });
+      await storage.updateOne(
+        "user",
+        { id: interaction.user.id },
+        {
+          $set: {
+            approximatedTimezone:
+              user.timezones.length > 0 ? mode(user.timezones) : null,
+            "settings.changeTimezone": true,
+          },
+        }
+      );
       await interaction.reply({
         content:
-          "⚠️ There was an error while executing this command!" +
-          (global.app.config.showErrors == true
-            ? "\n\n``" +
-              (global.app.owners.includes(interaction.user.id)
-                ? e.stack.toString()
-                : e.toString()) +
-              "``"
-            : ""),
+          "Your timezone will now automatically get set by IRIS when you type `timezone <time for you>`.",
+        ephemeral: true,
+      });
+    } else {
+      let timezone = moment.tz.names()[moment.tz.names().map(a=>a.toLowerCase()).indexOf(commandOptions.getString("timezone").toLowerCase())]
+      await storage.updateOne(
+        "user",
+        { id: interaction.user.id },
+        {
+          $set: {
+            approximatedTimezone: timezone,
+            "settings.changeTimezone": false,
+          },
+        }
+      );
+      await interaction.reply({
+        content:
+          "Your timezone has been set to `" +
+          timezone +
+          "`!",
         ephemeral: true,
       });
     }
+
   }
-}
-function mode(arr) {
-  return arr
-    .sort(
-      (a, b) =>
-        arr.filter((v) => v === a).length - arr.filter((v) => v === b).length
-    )
-    .pop();
-}
-function getOffset(timezone) {
-  let offset = moment().tz(timezone).utcOffset() / 60;
-  let stringOffset = "";
-  if (offset !== 0) {
-    if (offset < 0) {
-      stringOffset += "-";
-    } else {
-      stringOffset += "+";
-    }
-    if (offset.toString().includes(".")) {
-      let fullHourOffset = Math.abs(offset);
-      let minuteOffset = 60 * (Math.abs(offset) - fullHourOffset);
-      stringOffset += fullHourOffset + ":" + minuteOffset;
-    } else {
-      stringOffset += Math.abs(offset);
-    }
-  }
-  return "UTC" + stringOffset;
+
 }
 
-export const returnFileName = () =>
-  __filename.split(process.platform == "linux" ? "/" : "\\")[
-    __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
-  ];
-export const getSlashCommand = () => commandInfo.slashCommand;
-
-export const commandSettings = () => commandInfo.settings;
+function mode(arr) {return arr.sort((a, b) =>arr.filter((v) => v === a).length - arr.filter((v) => v === b).length).pop();}
