@@ -24,6 +24,7 @@ import { readFileSync } from "fs";
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
 
 import { IRISGlobal } from "@src/interfaces/global.js";
+import { reloadCommands, removeCommand } from "@src/lib/utilities/misc.js";
 declare const global: IRISGlobal;
 
 export default class OnReadySetupOVRD extends IRISEvent {
@@ -40,27 +41,7 @@ export default class OnReadySetupOVRD extends IRISEvent {
     try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 
 
-      global.overrides.reloadCommands = async () => {
-          return new Promise<boolean>(async (resolve, reject) => {
-              try {
-                await global.rest.put(
-                  Routes.applicationGuildCommands(
-                    client.user.id,
-                    global.app.config.mainServer
-                  ),
-                  {
-                    body: Object.keys(global.requiredModules).filter(a => a.startsWith("cmd")).map(a => {
-                      return global.requiredModules[a].getSlashCommand().toJSON();
-                  })
-                  }
-                );
-                  resolve(true);
-              } catch (error) {
-                global.logger.error(error, this.fileName);
-                  reject(false);
-              }
-          })
-      }
+      global.overrides.reloadCommands = async() => (await reloadCommands(client))
 
       global.overrides.updateChoices = async (commandPath:string, option:string, update:(option: SlashCommandOptionsOnlyBuilder) => Promise<SlashCommandOptionsOnlyBuilder>) => {
         const commandSplit = commandPath.split(" ")
@@ -110,37 +91,7 @@ export default class OnReadySetupOVRD extends IRISEvent {
         return await global.overrides.reloadCommands()
       }
 
-      global.overrides.removeCommand = async (commandName:string, guildId:string) => {
-          return new Promise<boolean>(async (resolve, reject) => {
-                  // message.guild.commands.fetch().then(e=>c=message.channel.send({content:"</uno:"+e.find(a=>a.name=="uno").id+">"}))
-              try {
-                  if (commandName == "*") {
-                      await global.rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body: [] })
-                      resolve(true);
-                  } else {
-                      const guild = await client.guilds.fetch(guildId);
-                      if (!guild) return reject(false);
-                      const command = await guild.commands.fetch();
-                      const commandId = command.find(a=>a.name==commandName).id;
-                      if (!commandId) return reject(false);
-                      await global.rest.delete(
-                          Routes.applicationGuildCommand(client.user.id, guildId, commandId)
-                      )
-                      
-                    resolve(true);
-                      
-                  }
-              } catch (error) {
-                  global.logger.error(error, this.fileName);
-                  reject(false);
-              }
-
-
-
-          })
-
-      }
-
+      global.overrides.removeCommand = async(commandName) => (await removeCommand(client, commandName))
 
       global.overrides.reloadConfig = async () => {
         return new Promise<boolean>(async (resolve, reject) => {

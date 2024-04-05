@@ -26,12 +26,12 @@ interface IRISGlobal extends NodeJS.Global {
   }
   logName: string;
   logger: {
-    log: (...args) => void;
-    error: (message: any, sender: string) => void;
-    warn: (message: any, sender: string) => void;
-    debug: (message: any, sender: string) => void;
-    debugError: (message: any, sender: string) => void;
-    debugWarn: (message: any, sender: string) => void;
+    log: (message: any, sender: string) => Promise<void>;
+    error: (message: any, sender: string) => Promise<void>;
+    warn: (message: any, sender: string) => Promise<void>;
+    debug: (message: any, sender: string) => Promise<void>;
+    debugError: (message: any, sender: string) => Promise<void>;
+    debugWarn: (message: any, sender: string) => Promise<void>;
   }
   server: {
     main: {
@@ -59,7 +59,6 @@ interface IRISGlobal extends NodeJS.Global {
     }
   };
 
-  bannedUsers: Array<string>;
   mongoStatus: number;
   mongoStatuses: {
       RUNNING: number,
@@ -70,11 +69,17 @@ interface IRISGlobal extends NodeJS.Global {
     }
   overrides: {
     reloadCommands?: () => Promise<boolean>;
-    removeCommand?: (commandName: string, guildId: string)=> Promise<boolean>;
+    removeCommand?: (commandName: string)=> Promise<boolean>;
     updateChoices?: (commandPath: string, option: string, update: (option: any) => Promise<any>) => Promise<boolean>;
     reloadConfig?: () => Promise<boolean>;
     changeConfig?: (key: string, value: any) => Promise<boolean>;
   }
+  eventInfo: Map<string, {
+    type: string;
+    now?: number;
+    timeout?: NodeJS.Timeout;
+    listenerFunction?: (...args: any[]) => any;
+  }>;
   dataForSetup: {
     events: string[]
     commands: string[]

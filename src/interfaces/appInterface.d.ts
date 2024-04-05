@@ -30,12 +30,13 @@ interface AppInterface {
   owners: Array<string>;
   config: {
     externalOwners: Array<string>;
+    mainServer: string;
+    developmentServer: string;
+    autoCompile: boolean;
     showErrors: boolean;
     debugging: boolean;
     skipMongoFailWait: boolean;
     backupStoragePath: string;
-    mainServer: string;
-    developmentServer: string;
     development: boolean;
     mongoDBServer: string;
     permissions: Permissions;

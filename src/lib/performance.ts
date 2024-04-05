@@ -27,13 +27,13 @@ const timers: {
     }
 } = {}
 
-export const start = (label: string) => {
-    const currentTime = process.hrtime.bigint()
+export const start = (label: string, startTime = process.hrtime.bigint()) => {
     if (!label) throw new Error("A label must be provided to start the timer.")
     if (timers[label]) throw new Error("A timer with that label already exists.")
     timers[label] = {
-        startTime: currentTime
+        startTime: startTime
     }
+    global.logger.debug(`Timer started with label: ${chalk.yellowBright(label)}`, "PERFORMANCE")
 }
 export const getTime = (label: string) => {
     const currentTime = process.hrtime.bigint()

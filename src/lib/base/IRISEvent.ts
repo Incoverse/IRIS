@@ -18,6 +18,8 @@
 import Discord from "discord.js";
 import path from "path";
 import prettyMilliseconds from "pretty-ms";
+import crypto from "crypto";
+import { readFileSync } from "fs";
 
 export type IRISEventTypes = "discordEvent" | "onStart" | "runEvery"
 export type IRISEventTypeSettings = {runImmediately?: boolean, ms?: number, listenerKey?: Discord.Events}
@@ -29,6 +31,7 @@ export abstract class IRISEvent {
     protected           _running: boolean = false;
     private            _filename: string = "";
     protected          _cacheContainer: Map<Date, any> = new Map();
+    private            _hash: string = ""; //! Used to detect changes during reloads 
 
 
     /**
@@ -46,8 +49,11 @@ export abstract class IRISEvent {
         if (filename) this._filename = filename;
         else {
             //! Find the class caller, get their filename, and set it as the filename
-            this._filename = path.basename(new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, ""))
+            this._filename = path.basename(new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, "")).replace(/\?.*/, "")
         }
+
+        this._hash = crypto.createHash("md5").update(readFileSync(process.cwd() + "/dist/events/" + this._filename)).digest("hex")
+        
     }
 
     public abstract runEvent(...args: any[]): Promise<void>;
@@ -76,6 +82,9 @@ export abstract class IRISEvent {
     public get fileName() {
         return this._filename
     }
+    public get hash() {
+        return this._hash
+    }
 
 
     public get priority()      {return this._priority};
@@ -83,13 +92,52 @@ export abstract class IRISEvent {
     public get eventSettings() {return this._eventSettings}
 
 
-    public async setup(client: Discord.Client): Promise<boolean> {return true};
-    public async unload(client: Discord.Client): Promise<boolean> {return true}
+    public async setup(client: Discord.Client, reason: "reload"|"startup"|"duringRun"|null): Promise<boolean> {return true};
+    public async unload(client: Discord.Client, reason: "reload"|"shuttingDown"|null): Promise<boolean> {return true}
 
-    public get cacheContainer() {
+
+    /**
+     * Get the expiration time for a cache entry
+     * @param duration The duration, (e.g. 1ms, 2s, 3m, 4h, 5d, 6w, 7mo, 8y)
+     */
+    protected getExpirationTime(duration: string) {
+        return new Date(Date.now() + this.parseDuration(duration))
+    }
+    
+    public async validateCache() {
+        const now = Date.now()
+        const cache = this._cacheContainer.entries()
+        for (const [key] of cache) {
+            if (key.getTime() < now) {
+                this._cacheContainer.delete(key)
+            }
+        }
+        return true
+    }
+
+    private parseDuration(durationStr) {
+        const units = {
+            'ms': 1,
+            's': 1000,
+            'm': 60 * 1000,
+            'h': 60 * 60 * 1000,
+            'd': 24 * 60 * 60 * 1000,
+            'w': 7 * 24 * 60 * 60 * 1000,
+            'mo': 1000 * 60 * 60 * 24 * 31,
+            'y': 365 * 24 * 60 * 60 * 1000
+        };
+        
+        const time = parseInt(durationStr.replace(/[a-zA-Z]/g,""))
+        const unit = durationStr.match(/[a-zA-Z]/g).join("")  
+      
+        const duration = time * units[unit];
+        return duration;
+    }
+
+    public get cache() {
         return this._cacheContainer
     }
-    public set cacheContainer(value) {
+    public set cache(value) {
         this._cacheContainer = value
     }
 

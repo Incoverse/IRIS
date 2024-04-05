@@ -62,7 +62,180 @@ declare const global: IRISGlobal;
 let client: Client = null;
 
 (async () => {
-  performance.start("fullRun");
+  const fullRunStart = process.hrtime.bigint();
+  console.clear();
+  global.logger = {
+    log: async (message: any, sender: string) => {
+      return new Promise(async (resolve) => {
+        if (typeof message !== "string") message = inspect(message, { depth: 1 });
+        console.log(
+          chalk.white.bold(
+            "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] [" +
+            sender +
+            "]"), message
+        );
+            // clear chalk coloring for log file
+        message = message.replace(/\u001b\[.*?m/g, "");
+         logStream.write(
+          "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] [LOG] [" +
+          sender +
+          "] " +
+          message +
+          "\n", (err) => {
+            if (err) console.error(err)
+            resolve()   
+          }
+        )
+      })
+    },
+    error: async (message: any, sender: string) => {
+      return new Promise((resolve) => {
+        message = (message && message.stack) ? message.stack : message
+        if (typeof message !== "string") message = inspect(message, { depth: 1 });
+        console.error(
+          chalk.white.bold(
+            "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] ")+chalk.redBright("[" +
+            sender +
+            "]"), message
+        );
+        message = message.replace(/\u001b\[.*?m/g, "");
+        logStream.write(
+          "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] [ERR] [" +
+          sender +
+          "] " +
+          message +
+          "\n", (err) => {
+            if (err) console.error(err)
+            resolve()   
+          }
+        );
+        resolve();
+      })
+    },
+    warn: async (message: any, sender: string) => {
+      return new Promise((resolve) => {
+        if (typeof message !== "string") message = inspect(message, { depth: 1 });
+        console.log(
+          chalk.white.bold(
+            "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] ")+chalk.yellow("[" +
+            sender +
+            "]"), message
+        );
+        message = message.replace(/\u001b\[.*?m/g, "");
+        logStream.write(
+          "[" +
+          moment().format("M/D/y HH:mm:ss") +
+          "] [WRN] [" +
+          sender +
+          "] " +
+          message +
+          "\n", (err) => {
+            if (err) console.error(err)
+            resolve()   
+          }
+        );
+        resolve()
+      })
+    },
+    debug: async (message: any, sender: string) => {
+      return new Promise((resolve) => {
+        if (config.debugging) {
+          if (typeof message !== "string") message = inspect(message, { depth: 1 });
+          console.log(
+            chalk.white.bold(
+              "[" +
+              moment().format("M/D/y HH:mm:ss") +
+              "] [" +
+              sender +
+              "]"), message
+          );
+          message = message.replace(/\u001b\[.*?m/g, "");
+          logStream.write(
+            "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] [DBG] [" +
+            sender +
+            "] " +
+            message +
+            "\n", (err) => {
+              if (err) console.error(err)
+              resolve()   
+            }
+          );
+          resolve()
+        } else resolve()
+      })
+    },
+    debugError: async (message: any, sender: string) => {
+      return new Promise((resolve) => {
+        if (config.debugging) {
+          message = (message && message.stack) ? message.stack : message
+          if (typeof message !== "string") message = inspect(message, { depth: 1 });
+          console.error(
+            chalk.white.bold(
+              "[" +
+              moment().format("M/D/y HH:mm:ss") +
+              "] ")+chalk.redBright("[" +
+              sender +
+              "]"), message
+          );
+          message = message.replace(/\u001b\[.*?m/g, "");
+          logStream.write(
+            "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] [DER] [" +
+            sender +
+            "] " +
+            message +
+            "\n", (err) => {
+              if (err) console.error(err)
+              resolve()   
+            }
+          );
+          resolve()
+        } else resolve()
+      })
+    },
+    debugWarn: async (message: any, sender: string) => {
+      return new Promise((resolve) => {
+        if (config.debugging) {
+          if (typeof message !== "string") message = inspect(message, { depth: 1 });
+          console.log(
+            chalk.white.bold(
+              "[" +
+              moment().format("M/D/y HH:mm:ss") +
+              "] ")+chalk.yellow("[" +
+              sender +
+              "]"), message
+            );
+          message = message.replace(/\u001b\[.*?m/g, "");
+          logStream.write(
+            "[" +
+            moment().format("M/D/y HH:mm:ss") +
+            "] [DWR] [" +
+            sender +
+            "] " +
+            message +
+            "\n", (err) => {
+              if (err) console.error(err)
+              resolve()   
+            }
+          );
+          resolve()
+        } else resolve()
+      })
+    } 
+  }
   let fullyReady = false;
   const config = JsonCParser.parse(
     readFileSync("./config.jsonc", { encoding: "utf-8" })
@@ -81,152 +254,18 @@ let client: Client = null;
     }
   }
   const logStream = createWriteStream(`./logs/${global.logName}`);
-  global.logger = {
-    log: (message: any, sender: string) => {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.log(
-        chalk.white.bold(
-          "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [" +
-          sender +
-          "]"), message
-      );
-          // clear chalk coloring for log file
-      message = message.replace(/\u001b\[.*?m/g, "");
-      logStream.write(
-        "[" +
-        moment().format("M/D/y HH:mm:ss") +
-        "] [LOG] [" +
-        sender +
-        "] " +
-        message +
-        "\n"
-      );
-    },
-    error: (message: any, sender: string) => {
-      message = (message && message.stack) ? message.stack : message
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.error(
-        chalk.white.bold(
-          "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] ")+chalk.redBright("[" +
-          sender +
-          "]"), message
-      );
-      message = message.replace(/\u001b\[.*?m/g, "");
-      logStream.write(
-        "[" +
-        moment().format("M/D/y HH:mm:ss") +
-        "] [ERR] [" +
-        sender +
-        "] " +
-        message +
-        "\n"
-      );
-    },
-    warn: (message: any, sender: string) => {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.log(
-        chalk.white.bold(
-          "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] ")+chalk.yellow("[" +
-          sender +
-          "]"), message
-      );
-      message = message.replace(/\u001b\[.*?m/g, "");
-      logStream.write(
-        "[" +
-        moment().format("M/D/y HH:mm:ss") +
-        "] [WRN] [" +
-        sender +
-        "] " +
-        message +
-        "\n"
-      );
-    },
-    debug: (message: any, sender: string) => {
-      if (config.debugging) {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.log(
-          chalk.white.bold(
-            "[" +
-            moment().format("M/D/y HH:mm:ss") +
-            "] [" +
-            sender +
-            "]"), message
-        );
-      message = message.replace(/\u001b\[.*?m/g, "");
-      logStream.write(
-          "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [DBG] [" +
-          sender +
-          "] " +
-          message +
-          "\n"
-        );
-      }
-    },
-    debugError: (message: any, sender: string) => {
-      if (config.debugging) {
-        message = (message && message.stack) ? message.stack : message
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.error(
-          chalk.white.bold(
-            "[" +
-            moment().format("M/D/y HH:mm:ss") +
-            "] ")+chalk.redBright("[" +
-            sender +
-            "]"), message
-        );
-      message = message.replace(/\u001b\[.*?m/g, "");
-      logStream.write(
-          "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [DER] [" +
-          sender +
-          "] " +
-          message +
-          "\n"
-        );
-      }
-    },
-    debugWarn: (message: any, sender: string) => {
-      if (config.debugging) {
-      if (typeof message !== "string") message = inspect(message, { depth: 1 });
-      console.log(
-          chalk.white.bold(
-            "[" +
-            moment().format("M/D/y HH:mm:ss") +
-            "] ")+chalk.yellow("[" +
-            sender +
-            "]"), message
-        );
-      message = message.replace(/\u001b\[.*?m/g, "");
-      logStream.write(
-          "[" +
-          moment().format("M/D/y HH:mm:ss") +
-          "] [DWR] [" +
-          sender +
-          "] " +
-          message +
-          "\n"
-        );
-      }
-    }
-  }
+
   const app: AppInterface = {
     version: JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
       .version,
     config: config,
     owners: [], //? this will be filled in later
   };
-  
   global.app = app;
-  global.bannedUsers = [];
+
+  performance.start("fullRun", fullRunStart);
+
+  global.eventInfo = new Map();
   global.birthdays = [];
   global.communicationChannel = new EventEmitter();
 
@@ -305,16 +344,34 @@ let client: Client = null;
     }
     global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-ERR");
   });
-  const onExit = async (a: string | number) => {
-    if (a==2) return
-    global.logger.log("IRIS is shutting down...", "IRIS-"+a);
+  let exiting = false
+  const onExit = async (signal: string | number) => {
+    if (exiting) return global.logger.log("Exit already in progress...", "IRIS-"+signal)
+    if (signal == 2) return //! prevents loop
+    exiting = true
+    global.logger.log(chalk.redBright.bold("IRIS is shutting down..."), "IRIS-"+signal);
+    global.logger.debug("Unloading all modules...", "IRIS-"+signal);
+    for (let i in global.requiredModules) {
+      try {
+        await global.requiredModules[i].unload(client, "shuttingDown");
+      } catch (e) {
+        global.logger.error(e, "IRIS-"+signal); 
+      } 
+    }
+    global.logger.debug("Logging out...", "IRIS-"+signal);
     await client.destroy()
+    global.logger.debug("Closing storage connections...", "IRIS-"+signal);
     await storage.cleanup();
-    process.exit(2);
+    await global.logger.debug("Ready to exit. Goodbye!", "IRIS-"+signal).then(() => {
+      logStream.end(()=>process.exit(2))
+    })
   }
   //catches ctrl+c event
   process.on('exit', onExit.bind("exit"));
   process.on('SIGINT', onExit.bind("SIGINT"));
+
+  // catches signal termination
+  process.on('SIGTERM', onExit.bind("SIGTERM")); 
 
   // catches "kill pid" (for example: nodemon restart)
   process.on('SIGUSR1', onExit.bind("SIGUSR1"));
@@ -352,7 +409,6 @@ let client: Client = null;
   //! Becomes something like: mongodb://username:password@server.com:27017/?authMechanism=DEFAULT&tls=true&family=4
 
   //!--------------------------
-  console.clear();
 
   global.logger.log(`${chalk.green("IRIS")} ${chalk.bold.white(`v${app.version}`)} ${chalk.green("is starting up!")}`, returnFileName());
   global.logger.log("------------------------", returnFileName());
@@ -576,7 +632,7 @@ let client: Client = null;
 
     client.on(Events.ClientReady, async () => {
       const finalLogInTime = performance.end("logInTime", {
-        silent: true,
+        silent: !global.app.config.debugging,
       })
       client.user.setPresence({
         activities: [
@@ -610,18 +666,16 @@ let client: Client = null;
           );
           hasAllPerms = false
         } else {
-          performance.pause("fullRun")
-          performance.pause("permissionCheck"); // pause the timer so that the log time isn't included 
+          performance.pause(["fullRun", "permissionCheck"]);
           global.logger.log(
             `${chalk.yellowBright(client.user.username)} has permission ${chalk.yellowBright(new PermissionsBitField(i).toArray()[0])}.`,
             returnFileName()
           )
-          performance.resume("fullRun")
-          performance.resume("permissionCheck");
+          performance.resume(["fullRun", "permissionCheck"]);
         }
       }
       const finalPermissionCheckTime = performance.end("permissionCheck", { //1.234ms 
-        silent: true,
+        silent: !global.app.config.debugging,
       })
       
       global.logger.log("------------------------", returnFileName());
@@ -716,7 +770,7 @@ let client: Client = null;
           continue;
         }
 
-        let setupResult = await command.setup(client);
+        let setupResult = await command.setup(client,"startup");
         if (setupResult == false) {
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
@@ -812,7 +866,7 @@ let client: Client = null;
         }
 
 
-        const setupRes = await event.setup(client)
+        const setupRes = await event.setup(client, "startup")
         if (setupRes == false) {
           performance.pause(["fullRun", "eventLoader"])
           global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
@@ -904,7 +958,7 @@ let client: Client = null;
           const eventType = chalk.yellowBright(event.type)
           const eventName = chalk.blueBright(event.fileName)
           /* prettier-ignore */
-          if (!eventType.includes("onStart")) {
+          if (event.type !== "onStart") {
             performance.pause(["fullRun", "eventRegistration"])
             global.logger.debug(`Registering '${eventType}${adder}' event: ${eventName}`, returnFileName());
             performance.resume(["fullRun", "eventRegistration"])
@@ -918,26 +972,34 @@ let client: Client = null;
               performance.resume(["fullRun", "eventRegistration"])
               await event.runEvent(client);
             }
-            setInterval(async () => {
-              if (!event.running) {
-                /* prettier-ignore */
-                global.logger.debug(`Running '${eventType} (${prettyInterval})' event: ${eventName}`,returnFileName());
-                await event.runEvent(client);
-              } else {
-                /* prettier-ignore */
-                global.logger.debugError(`Not running '${eventType} (${prettyInterval})' event: ${eventName} reason: Previous iteration is still running.`, returnFileName());
-              }
-            }, event.ms);
+            global.eventInfo.set(event.constructor.name, {
+              type: "runEvery",
+              now: Date.now(),
+              timeout: setInterval(async () => {
+                if (!event.running) {
+                  /* prettier-ignore */
+                  global.logger.debug(`Running '${eventType} (${prettyInterval})' event: ${eventName}`,returnFileName());
+                  await event.runEvent(client);
+                } else {
+                  /* prettier-ignore */
+                  global.logger.debugError(`Not running '${eventType} (${prettyInterval})' event: ${eventName} reason: Previous iteration is still running.`, returnFileName());
+                }
+              }, event.ms)
+            });
           } else if (event.type === "discordEvent") {
             const listenerKey = chalk.cyan.bold(event.listenerKey)
-            client.on(
-              event.listenerKey as any,
-              async (...args: any) => {
+            global.eventInfo.set(event.constructor.name, {
+              type: "discordEvent",
+              listenerFunction: async (...args: any) => {
                 /* prettier-ignore */
                 if (event.listenerKey != Events.MessageCreate)
                   global.logger.debug(`Running '${eventType} (${listenerKey})' event: ${eventName}`,returnFileName());
                 await event.runEvent(...args);
               }
+            });
+            client.on(
+              event.listenerKey as any,
+              global.eventInfo.get(event.constructor.name).listenerFunction
             );
           } else if (event.type === "onStart") {
             performance.pause(["fullRun", "eventRegistration"])

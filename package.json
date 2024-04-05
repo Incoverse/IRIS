@@ -4,8 +4,9 @@
   "description": "IRIS (Intelligent Response Interface System) is a Discord bot that is focused on fun and utlities, as well as helping people understand TypeScript.",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && npx resolve-tspaths",
-    "cleanup": "rm -rf dist || del dist /f /s /q",
+    "build": "tsc && node makeRunnable.js",
+    "cleanup": "rm -rf dist pre-dist || del dist pre-dist /f /s /q",
+    "watch": "npx tsc-watch --onSuccess \"node makeRunnable.js\"",
     "compile": "npm run cleanup && npm run build",
     "start": "node --no-warnings ./dist/index.js",
     "CnR": "npm run cleanup && npm install && npm run build && npm run start"
@@ -42,8 +43,10 @@
     "node-ipc": "^10.1.0",
     "pretty-ms": "^8.0.0",
     "resolve-tspaths": "^0.8.18",
+    "tsc-watch": "^6.2.0",
     "uno-game-engine": "^3.2.1",
-    "uuid4": "^2.0.3"
+    "uuid4": "^2.0.3",
+    "watcher": "^2.3.0"
   },
   "devDependencies": {
     "@types/uuid4": "^2.0.0",

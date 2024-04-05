@@ -17,9 +17,9 @@
 
 import Discord from "discord.js";
 import path from "path";
-import prettyMilliseconds from "pretty-ms";
 export type IRISSlashCommand = Discord.SlashCommandBuilder | Discord.SlashCommandSubcommandsOnlyBuilder | Discord.SlashCommandOptionsOnlyBuilder | Omit<Discord.SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup"> | Omit<Discord.SlashCommandSubcommandsOnlyBuilder, "addSubcommand" | "addSubcommandGroup"> | Omit<Discord.SlashCommandOptionsOnlyBuilder, "addSubcommand" | "addSubcommandGroup">;
-
+import crypto from "crypto";
+import { readFileSync } from "fs";
 
 
 export abstract class IRISCommand {
@@ -27,14 +27,17 @@ export abstract class IRISCommand {
     protected          _cacheContainer: Map<Date, any> = new Map();
     protected          _commandSettings: IRISEvCoSettings = {devOnly: false, mainOnly: false}
     protected abstract _slashCommand: IRISSlashCommand;
+    private            _hash: string = ""; //! Used to detect changes during reloads 
     
     
     constructor(filename?: string) {
         if (filename) this._filename = filename;
         else {
             //! Find the class caller, get their filename, and set it as the filename
-            this._filename = path.basename(new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, ""))
+            this._filename = path.basename(new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, "")).replace(/\?.*/, "")
         }
+
+        this._hash = crypto.createHash("md5").update(readFileSync(process.cwd() + "/dist/commands/" + this._filename)).digest("hex")
     }
 
     public abstract runCommand(interaction: Discord.CommandInteraction): Promise<any>;
@@ -47,8 +50,46 @@ export abstract class IRISCommand {
     public get commandSettings() {return this._commandSettings}
 
 
-    public async setup(client: Discord.Client): Promise<boolean> {return true};
-    public async unload(client: Discord.Client): Promise<boolean> {return true}
+    public async setup(client: Discord.Client, reason: "reload"|"startup"|"duringRun"|null): Promise<boolean> {return true};
+    public async unload(client: Discord.Client, reason: "reload"|"shuttingDown"|null): Promise<boolean> {return true}
+
+    /**
+     * Get the expiration time for a cache entry
+     * @param duration The duration, (e.g. 1ms, 2s, 3m, 4h, 5d, 6w, 7mo, 8y)
+     */
+    protected getExpirationTime(duration: string) {
+        return new Date(Date.now() + this.parseDuration(duration))
+    }
+
+    public async validateCache() {
+        const now = Date.now()
+        const cache = this._cacheContainer.entries()
+        for (const [key] of cache) {
+            if (key.getTime() < now) {
+                this._cacheContainer.delete(key)
+            }
+        }
+        return true
+    }
+
+    private parseDuration(durationStr) {
+        const units = {
+            'ms': 1,
+            's': 1000,
+            'm': 60 * 1000,
+            'h': 60 * 60 * 1000,
+            'd': 24 * 60 * 60 * 1000,
+            'w': 7 * 24 * 60 * 60 * 1000,
+            'mo': 1000 * 60 * 60 * 24 * 31,
+            'y': 365 * 24 * 60 * 60 * 1000
+        };
+        
+        const time = parseInt(durationStr.replace(/[a-zA-Z]/g,""))
+        const unit = durationStr.match(/[a-zA-Z]/g).join("")  
+      
+        const duration = time * units[unit];
+        return duration;
+    }
 
     public get fileName() {
         return this._filename
@@ -56,6 +97,10 @@ export abstract class IRISCommand {
 
     public toString() {
         return this.valueOf()
+    }
+
+    public get hash() {
+        return this._hash
     }
     
     public valueOf() {
@@ -68,10 +113,10 @@ export abstract class IRISCommand {
         )
     }
 
-    public get cacheContainer() {
+    public get cache() {
         return this._cacheContainer
     }
-    public set cacheContainer(value) {
+    public set cache(value) {
         this._cacheContainer = value
     }
 

@@ -29,12 +29,12 @@ export default class OnJoinAddNewMember extends IRISEvent {
   };
 
   public async runEvent(
-  ...args: Array<Discord.GuildMember>
+    member: Discord.GuildMember
   ): Promise<void> {
-    if (args[0].user.bot) return;
-    if (args[0].guild.id !== global.app.config.mainServer) return;
+    if (member.user.bot) return;
+    if (member.guild.id !== global.app.config.mainServer) return;
 
-    const guild = await args[0].client.guilds.fetch(global.app.config.mainServer);
+    const guild = await member.client.guilds.fetch(global.app.config.mainServer);
     let newMembersRole = null;
     await guild.roles.fetch().then(async (roles) => {
       roles.forEach((role) => {
@@ -44,23 +44,23 @@ export default class OnJoinAddNewMember extends IRISEvent {
       });
     });
     if (newMembersRole)
-      args[0].roles.add(newMembersRole);
-    if (!global.newMembers.includes(args[0].id))
-      global.newMembers.push(args[0].id);
+      member.roles.add(newMembersRole);
+    if (!global.newMembers.includes(member.id))
+      global.newMembers.push(member.id);
     try {
       const entry = {
         ...global.app.config.defaultEntry,
         ...{
-          id: args[0].id,
+          id: member.id,
           last_active: new Date().toISOString(),
-          username: args[0].user.username,
+          username: member.user.username,
           isNew: true,
         },
       };
-      if (args[0].user.discriminator !== "0" && args[0].user.discriminator)
-        entry.discriminator = args[0].user.discriminator;
+      if (member.user.discriminator !== "0" && member.user.discriminator)
+        entry.discriminator = member.user.discriminator;
       await storage.insertOne("user",entry);
-      const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
+      const user = member.user.discriminator != "0" && member.user.discriminator ? member.user.tag: member.user.username
       /* prettier-ignore */
       global.logger.debug(`${chalk.yellow(user)} has joined the server. A database entry has been created for them.`, this.fileName)
     } catch (e) {

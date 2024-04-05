@@ -3,6 +3,16 @@
   //! If you are working in a team, but the bot is not in a Discord Developer team and is only owned by one person, it is recommended to add your team member's user IDs here.
   "externalOwners": [],
 
+  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
+  "mainServer": "931616832668958748", //* global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
+  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
+  "developmentServer": "1217372927981522994",
+
+  //? This will automatically compile changes to IRIS' source code while she is running.
+  //? The command ran by the automatic compiler is: npx tsc-watch --onSuccess "node makeRunnable.js"
+  //! This will automatically be set to false if IRIS is running in production mode.
+  "autoCompile": true,
+
   //? Show errors on "There was an error while executing this command!".
   //? If the user that ran the command is an owner, detailed error information will be shown.
   //! For development purposes, it is recommended to keep this on.
@@ -24,11 +34,6 @@
   //! Development (offense): <backupStoragePath>/development/offensedata_<serverID>.json
   //! ------------------------------------------------------------------
   "backupStoragePath": "./storage", //* The path where the data will be stored (relative to IRIS's root directory)
-
-  //? This the main server that the bot will operate on if "DEVELOPMENT" is set to "NO" in .env (ID)
-  "mainServer": "931616832668958748", //* global.app.config.mainServer will automatically get replaced with global.app.config.developmentServer if "DEVELOPMENT" is set to "YES" in .env
-  //? This is the development server that the bot will operate on if "DEVELOPMENT" is set to "YES" in .env (ID)
-  "developmentServer": "1217372927981522994",
 
   //? This is the MongoDB server that IRIS will connect to and use for data storage.
   //! The database credentials are in .env

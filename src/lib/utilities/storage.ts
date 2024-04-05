@@ -122,7 +122,7 @@ async function del(oneOrMany: "one" | "many", dataType: DataType, filter: object
             let toBeDeleted = oneOrMany == "one" ? data.find((doc) => query.test(doc)) : data.filter((doc) => query.test(doc))
             
             if (oneOrMany == "one") {
-                data = data.filter((doc) => doc._id != toBeDeleted._id)
+                data = data.filter((doc) => doc?._id != toBeDeleted?._id)
             } else {
                 data = data.filter((doc) => !query.test(doc))
             }
@@ -131,7 +131,7 @@ async function del(oneOrMany: "one" | "many", dataType: DataType, filter: object
         } catch (error) {
             global.logger.error(error.toString(), returnFileName())
             return false
-        }
+        } 
     }
 }
 

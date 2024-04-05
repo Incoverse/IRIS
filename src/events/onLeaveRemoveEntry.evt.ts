@@ -29,19 +29,18 @@ export default class OnLeaveRemoveEntry extends IRISEvent {
   };
 
   public async runEvent(
-  ...args: Array<Discord.GuildMember>
+    member: Discord.GuildMember
   ): Promise<void> {
-    if (args[0].user.bot) return;
-    if (args[0].guild.id !== global.app.config.mainServer) return;
-
-    if (global.newMembers.includes(args[0].user.id)) global.newMembers.splice(global.newMembers.indexOf(args[0].user.id),1)
+    if (member.user.bot) return;
+    if (member.guild.id !== global.app.config.mainServer) return;
+    if (global.newMembers.includes(member.user.id)) global.newMembers.splice(global.newMembers.indexOf(member.user.id),1)
     try {
-      await storage.deleteOne("user", { id: args[0].id });
-      const user = args[0].user.discriminator != "0" && args[0].user.discriminator ? args[0].user.tag: args[0].user.username
+      await storage.deleteOne("user", { id: member.id });
+      const user = member.user.discriminator != "0" && member.user.discriminator ? member.user.tag: member.user.username
       /* prettier-ignore */
       global.logger.debug(`${chalk.yellow(user)} has left the server. Their entry has been removed from the database.`, this.fileName)
     } catch (e) {
-      global.logger.error(`Failed to remove entry for ${chalk.yellow(args[0].user.tag)}: ${e}`, this.fileName)
+      global.logger.error(`Failed to remove entry for ${chalk.yellow(member.user.tag)}: ${e}`, this.fileName)
     }
   }
 }
