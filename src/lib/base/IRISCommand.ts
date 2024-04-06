@@ -64,7 +64,13 @@ export abstract class IRISCommand {
     public async validateCache() {
         const now = Date.now()
         const cache = this._cacheContainer.entries()
-        for (const [key] of cache) {
+        for (let [key] of cache) {
+            if (!(key instanceof Date)) {
+                let oldKey = key
+                key = new Date(key)
+                this._cacheContainer.set(key, this._cacheContainer.get(oldKey))
+                this._cacheContainer.delete(oldKey)
+            }
             if (key.getTime() < now) {
                 this._cacheContainer.delete(key)
             }
