@@ -1,6 +1,8 @@
 import { IRISGlobal } from "@src/interfaces/global.js";
-import { Routes } from "discord.js";
+import { Client, Routes } from "discord.js";
 import { fileURLToPath } from "url";
+import { IRISEvent } from "../base/IRISEvent.js";
+import { IRISCommand } from "../base/IRISCommand.js";
 
 declare const global: IRISGlobal;
 
@@ -72,4 +74,27 @@ export async function addCommand(client, command) {
         reject(false);
       }
   })
+}
+
+
+export async function unloadHandler(timeout: number, handler:IRISEvent|IRISCommand, client: Client, reason?: "reload"|"shuttingDown") {
+  return await Promise.race([
+      new Promise((resolve) => {
+          handler.unload(client, reason).then(resolve)
+      }),
+      new Promise((resolve) => {
+          setTimeout(resolve, timeout, "timeout")
+      })
+  ])
+}
+
+export async function  setupHandler(timeout: number, handler:IRISEvent|IRISCommand, client: Client, reason?: "reload"|"startup"|"duringRun") {
+  return await Promise.race([
+      new Promise((resolve) => {
+          handler.setup(client, reason).then(resolve)
+      }),
+      new Promise((resolve) => {
+          setTimeout(resolve, timeout, "timeout")
+      })
+  ])
 }

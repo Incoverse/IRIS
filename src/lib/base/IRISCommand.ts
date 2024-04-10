@@ -23,9 +23,19 @@ import { readFileSync } from "fs";
 
 
 export abstract class IRISCommand {
+
+    static defaultSetupTimeoutMS = 30000;
+    static defaultUnloadTimeoutMS = 30000;
+
+    
     private            _filename: string = "";
     protected          _cacheContainer: Map<Date, any> = new Map();
-    protected          _commandSettings: IRISEvCoSettings = {devOnly: false, mainOnly: false}
+    protected          _commandSettings: IRISEvCoSettings = {
+        devOnly: false,
+        mainOnly: false,
+        setupTimeoutMS: IRISCommand.defaultSetupTimeoutMS,
+        unloadTimeoutMS: IRISCommand.defaultUnloadTimeoutMS
+    }
     protected abstract _slashCommand: IRISSlashCommand;
     private            _hash: string = ""; //! Used to detect changes during reloads 
     

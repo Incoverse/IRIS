@@ -50,6 +50,7 @@ import { checkPermissions, getFullCMD } from "./lib/utilities/permissionsCheck.j
 import storage, { checkMongoAvailability } from "./lib/utilities/storage.js";
 import { IRISEvent } from "./lib/base/IRISEvent.js";
 import { IRISCommand } from "./lib/base/IRISCommand.js";
+import { setupHandler, unloadHandler } from "./lib/utilities/misc.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -346,20 +347,35 @@ let client: Client = null;
   });
   let exiting = false
   const onExit = async (signal: string | number) => {
-    if (exiting) return global.logger.log("Exit already in progress...", "IRIS-"+signal)
     if (signal == 2) return //! prevents loop
+    if (exiting) return global.logger.log("Exit already in progress...", "IRIS-"+signal)
     exiting = true
     global.logger.log(chalk.redBright.bold("IRIS is shutting down..."), "IRIS-"+signal);
     global.logger.debug("Unloading all modules...", "IRIS-"+signal);
     for (let i in global.requiredModules) {
       try {
-        await global.requiredModules[i].unload(client, "shuttingDown");
+        let timeout;
+        let properName = global.requiredModules[i] instanceof IRISCommand ? "Command" : "Event"
+        if (global.requiredModules[i] instanceof IRISCommand) {
+          timeout = global.requiredModules[i].commandSettings.unloadTimeoutMS ?? IRISCommand.defaultUnloadTimeoutMS;
+        } else if (global.requiredModules[i] instanceof IRISEvent) {
+          timeout = global.requiredModules[i].eventSettings.unloadTimeoutMS ?? IRISEvent.defaultUnloadTimeoutMS;
+        } else {
+          global.logger.error(`An unknown module was found while unloading all modules: ${chalk.yellowBright(i)}`, "IRIS-"+signal);
+          continue
+        }
+        const unloadResult = await unloadHandler(timeout, global.requiredModules[i], client, "shuttingDown")
+        if (unloadResult == "timeout") {
+          global.logger.error(`${properName} ${chalk.redBright(global.requiredModules[i].constructor.name)} failed to unload within the ${chalk.yellowBright(timeout)} ms timeout.`, "IRIS-"+signal);
+          continue
+        }
       } catch (e) {
         global.logger.error(e, "IRIS-"+signal); 
       } 
     }
     global.logger.debug("Logging out...", "IRIS-"+signal);
     await client.destroy()
+    
     global.logger.debug("Closing storage connections...", "IRIS-"+signal);
     await storage.cleanup();
     await global.logger.debug("Ready to exit. Goodbye!", "IRIS-"+signal).then(() => {
@@ -770,7 +786,8 @@ let client: Client = null;
           continue;
         }
 
-        let setupResult = await command.setup(client,"startup");
+        let timeout = command.commandSettings.setupTimeoutMS ?? IRISCommand.defaultSetupTimeoutMS;
+        let setupResult = await setupHandler(timeout, command, client, "startup")
         if (setupResult == false) {
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
@@ -781,6 +798,12 @@ let client: Client = null;
           //! Silent fail
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.debugWarn(`Command ${chalk.yellowBright(file)} failed to complete setup script silently. Command will not be loaded.`,returnFileName());
+          performance.resume(["fullRun", "commandRegistration"]);
+          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          continue
+        } else if (setupResult == "timeout") {
+          performance.pause(["fullRun", "commandRegistration"]);
+          global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script within the ${chalk.yellowBright(timeout)} ms timeout. Command will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
           global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
           continue
@@ -866,7 +889,7 @@ let client: Client = null;
         }
 
 
-        const setupRes = await event.setup(client, "startup")
+        const setupRes = await setupHandler(event.eventSettings.setupTimeoutMS ?? IRISEvent.defaultSetupTimeoutMS, event, client, "startup")
         if (setupRes == false) {
           performance.pause(["fullRun", "eventLoader"])
           global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
@@ -877,6 +900,12 @@ let client: Client = null;
           //! Silent fail
           performance.pause(["fullRun", "eventLoader"])
           global.logger.debugWarn(`Event ${chalk.yellowBright(file)} failed to complete setup script silently. Event will not be loaded.`,returnFileName());
+          performance.resume(["fullRun", "eventLoader"])
+          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          continue
+        } else if (setupRes == "timeout") {
+          performance.pause(["fullRun", "eventLoader"])
+          global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script within the ${chalk.yellowBright(event.eventSettings.setupTimeoutMS ?? IRISEvent.defaultSetupTimeoutMS)} ms timeout. Event will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
           global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
           continue

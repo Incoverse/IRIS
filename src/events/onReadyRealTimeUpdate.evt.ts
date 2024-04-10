@@ -18,7 +18,7 @@
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { IRISCommand } from "@src/lib/base/IRISCommand.js";
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
-import { addCommand, reloadCommands } from "@src/lib/utilities/misc.js";
+import { addCommand, reloadCommands, setupHandler, unloadHandler } from "@src/lib/utilities/misc.js";
 import chalk from "chalk";
 import { Client, NewsChannel } from "discord.js";
 import fs from "fs";
@@ -26,6 +26,7 @@ import crypto from "crypto";
 import { resolveTsPaths } from "resolve-tspaths";
 import Watcher from "watcher";
 import path from "path";
+import treeKill from "tree-kill";
 
 import { removeCommand } from "@src/lib/utilities/misc.js";
 import { spawn, ChildProcessWithoutNullStreams } from "child_process"
@@ -40,27 +41,59 @@ let eventWatcher: Watcher
 
 
 const automaticFileCompilationCmd = "npx tsc-watch --onSuccess \"node makeRunnable.js\""
-
-export default class OnStartRealTimeUpdate extends IRISEvent {
+export default class OnReadyRealTimeUpdate extends IRISEvent {
     protected _type: IRISEventTypes = "onStart"
     protected _typeSettings: IRISEventTypeSettings;
     protected _eventSettings: IRISEvCoSettings = {
         devOnly: true,
         mainOnly: false
     }
+    protected _canBeReloaded: boolean = true
 
     public async unload(client: Client) {
-        if (aFCProcess) {
-            aFCProcess.kill()
-        }
-        if (commandWatcher) {
-            commandWatcher.close()
-        }
-        if (eventWatcher) {
-            eventWatcher.close()
-        }
-
+        await this.killAFC()
+        await this.closeCommandWatcher()
+        await this.closeEventWatcher()
         return true
+    }
+
+    private async killAFC() {
+        return new Promise((resolve) => {
+            if (aFCProcess && !aFCProcess.killed) {
+                aFCProcess.on("exit", () => {
+                    resolve(true)
+                })
+                treeKill(aFCProcess.pid)
+            } else {
+                resolve(true)
+            }
+        })
+    }
+
+    private async closeCommandWatcher() {
+        return new Promise((resolve) => {
+            if (commandWatcher && !commandWatcher.isClosed()) {
+                commandWatcher.on("close", () => {
+                    resolve(true)
+                })
+                commandWatcher.close()
+            } else {
+                resolve(true)
+            }
+        })
+    }
+
+    private async closeEventWatcher() {
+        return new Promise((resolve) => {
+            if (eventWatcher && !eventWatcher.isClosed()) {
+                eventWatcher.on("close", () => {
+                    resolve(true)
+                })
+                eventWatcher.close()
+            } else {
+                resolve(true)
+            }
+        })
     }
 
     public async runEvent(client: Client) {
@@ -70,8 +103,9 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
 
             aFCProcess = spawn(automaticFileCompilationCmd.split(" ")[0], automaticFileCompilationCmd.split(" ").slice(1), {
                 shell: true,
-                detached: false
-            })
+                detached: false,
+            }) 
+
             let tempReady = false
             aFCProcess.stdout.on("data", (data) => {
                 if (data.toString().includes("Done!")) {
@@ -84,12 +118,13 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                     }
                 } 
             })
-
+ 
             aFCProcess.stderr.on("data", (data) => {
+                console.log(data.toString())
                 global.logger.error("Errors were detected in the changes made to the source code. Compilation failed.", this.fileName)
             })
 
-            aFCProcess.on("close", (code) => {
+            aFCProcess.on("exit", (code) => {
                 global.logger.log(`Automatic file compilation has ${chalk.redBright("stopped")}.`, this.fileName)
             })
 
@@ -139,14 +174,24 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                 
                 
                 if (oldPathClassName == newHandlerClassName) {
+                    global.logger.debug(`The file containing command ${chalk.yellowBright(oldPathClassName)} (${chalk.yellowBright(path.basename(oldPath))}) was renamed to ${chalk.yellowBright(path.basename(newPath))}. Reloading...`, this.fileName)
+
                     //! Unload the old handler
                     const removedHandler = responsibleHandler as IRISCommand
-                    await removedHandler.unload(client, "reload")
+                    const unloadResult = await unloadHandler(removedHandler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS, removedHandler, client, "reload")
                     delete global.requiredModules[`cmd${removedHandler.constructor.name}`]
+                    if (unloadResult == "timeout") {
+                        global.logger.error(`Command ${chalk.redBright(removedHandler.constructor.name)} failed to unload within the ${chalk.yellowBright(removedHandler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
+                        return
+                    }
                     const newHandler = new newHandlerClass() as IRISCommand
                     newHandler.cache = removedHandler.cache
                     await newHandler.validateCache()
-                    await newHandler.setup(client, "reload")
+                    const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "reload")
+                    if (setupResult == "timeout") {
+                        global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
+                        return
+                    }
                     global.requiredModules[`cmd${newHandler.constructor.name}`] = newHandler
 
                     if (removedHandler?.slashCommand?.toJSON() != newHandler?.slashCommand?.toJSON()) {
@@ -154,7 +199,7 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                         global.reload.commands = newCommands
                         await reloadCommands(client, newCommands)
                     }
-                    global.logger.log(`Command ${chalk.greenBright(newHandler.constructor.name)} was reloaded due to a rename.`, this.fileName)
+                    global.logger.log(`Command ${chalk.greenBright(newHandler.constructor.name)} has been reloaded.`, this.fileName)
 
                 }                       
             })
@@ -165,19 +210,25 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                     Object.keys(global.requiredModules).filter(key => key.startsWith("cmd")).find(key => global.requiredModules[key].fileName == path.basename(filePath))
                 ]
                 if (!responsibleHandler) return
-                const handler = responsibleHandler as IRISCommand
-                await handler.unload(client, null)
-                delete global.requiredModules[`cmd${handler.constructor.name}`]
-                await removeCommand(client, handler.slashCommand.name)
-                global.logger.log(`Command ${chalk.redBright(handler.constructor.name)} was removed.`, this.fileName)
-            })
+                global.logger.debug(`The file containing command ${chalk.yellowBright(responsibleHandler.constructor.name)} was deleted. Removing command...`, this.fileName)
 
+                const handler = responsibleHandler as IRISCommand
+                const unloadResult = await unloadHandler(handler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS, handler, client, null)
+                delete global.requiredModules[`cmd${handler.constructor.name}`]
+                if (unloadResult == "timeout") {
+                    global.logger.error(`Command ${chalk.redBright(handler.constructor.name)} failed to unload within the ${chalk.yellowBright(handler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
+                    return
+                }
+                await removeCommand(client, handler.slashCommand.name)
+                global.logger.log(`Command ${chalk.redBright(handler.constructor.name)} has been removed.`, this.fileName)
+            })
 
             commandWatcher.on("add", async (filePath)=>{
                 if (!filePath.endsWith(".cmd.js") || !ready) return; // TODO: Add support for command libraries (.cmdlib.js)
                 try {
                     const antiCacheValue = new Date().getTime().toString()
-                    const newHandlerClass = (await import(filePath + "?_="+antiCacheValue)).default
+                    const newHandlerClass = (await import(filePath + "?_="+antiCacheValue))?.default
+                    global.logger.debug(`A new file containing command ${chalk.yellowBright(newHandlerClass.name??"Unknown")} (${chalk.yellowBright(path.basename(filePath))}) was detected. Loading...`, this.fileName)
                     
                     
                     if (Object.keys(global.requiredModules).includes(`cmd${newHandlerClass.name}`)) {
@@ -187,28 +238,34 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                     }
                     
                     const newHandler = new newHandlerClass() as IRISCommand
-                    await newHandler.setup(client, "duringRun")                    
+                    const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "duringRun")
+                    if (setupResult == "timeout") {
+                        global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
+                        return
+                    }
                     global.requiredModules[`cmd${newHandler.constructor.name}`] = newHandler
                     await addCommand(client, newHandler.slashCommand.toJSON())
-                    global.logger.log(`Command ${chalk.greenBright(newHandler.constructor.name)} was loaded.`, this.fileName)
+                    global.logger.log(`Command ${chalk.greenBright(newHandler.constructor.name)} has been loaded.`, this.fileName)
                 } catch (e) {
                     global.logger.error(`Command ${chalk.redBright(path.basename(filePath))} failed to load due to invalid syntax: ${e.toString()}`, this.fileName)
                 }
             })
 
-
             commandWatcher.on("change", async (filePath)=>{
                 if (!filePath.endsWith(".cmd.js") || !ready) return;
 
-                if (updateCooldown.has(filePath) && new Date().getTime() - updateCooldown.get(filePath) < 250) {
-                    return global.logger.debugWarn(`Command ${chalk.redBright(path.basename(filePath))} was modified, but the cooldown is still active for ${chalk.redBright((250 - (new Date().getTime() - updateCooldown.get(filePath))))} ms.`, this.fileName)
-                }
-                updateCooldown.set(filePath, new Date().getTime())
                 const antiCacheValue = new Date().getTime().toString()
                 const responsibleHandler = global.requiredModules[
                     Object.keys(global.requiredModules).filter(key => key.startsWith("cmd")).find(key => global.requiredModules[key].fileName == path.basename(filePath))
                 ]
                 if (!responsibleHandler) return
+                global.logger.debug(`A change was detected in the file containing command ${chalk.yellowBright(responsibleHandler.constructor.name)} (${chalk.yellowBright(path.basename(filePath))}). Reloading...`, this.fileName)
+
+
+                if (updateCooldown.has(filePath) && new Date().getTime() - updateCooldown.get(filePath) < 250) {
+                    return global.logger.debugWarn(`Command ${chalk.redBright(path.basename(filePath))} was modified, but the cooldown is still active for ${chalk.redBright((250 - (new Date().getTime() - updateCooldown.get(filePath))))} ms.`, this.fileName)
+                }
+                updateCooldown.set(filePath, new Date().getTime())
                 const fileContents = fs.readFileSync(filePath).toString()
 
                 const fileHash = crypto.createHash("md5").update(fileContents).digest("hex")
@@ -220,20 +277,28 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                 }
 
                 const handler = responsibleHandler as IRISCommand
-                await handler.unload(client, "reload")
+                const unloadResult = await unloadHandler(handler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS, handler, client, "reload")
                 delete global.requiredModules[`cmd${handler.constructor.name}`]
+                if (unloadResult == "timeout") {
+                    global.logger.error(`Command ${chalk.redBright(handler.constructor.name)} failed to unload within the ${chalk.yellowBright(handler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
+                    return
+                }
                 const newHandlerClass = (await import(filePath + "?_="+antiCacheValue)).default
                 const newHandler = new newHandlerClass() as IRISCommand
                 newHandler.cache = handler.cache
                 await newHandler.validateCache()
-                await newHandler.setup(client, "reload")
+                const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "reload")
+                if (setupResult == "timeout") {
+                    global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
+                    return
+                }
                 global.requiredModules[`cmd${newHandler.constructor.name}`] = newHandler
                 if (handler?.slashCommand?.toJSON() != newHandler?.slashCommand?.toJSON()) {
                     const newCommands = Object.keys(global.requiredModules).filter(a=>a.startsWith("cmd")).map(key => global.requiredModules[key].slashCommand.toJSON())
                     global.reload.commands = newCommands
                     await reloadCommands(client, newCommands)
                 }
-                global.logger.log(`Command ${chalk.greenBright(newHandler.constructor.name)} was reloaded.`, this.fileName)
+                global.logger.log(`Command ${chalk.greenBright(newHandler.constructor.name)} has been reloaded.`, this.fileName)
             })
         })
 
@@ -256,24 +321,26 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                     Object.keys(global.requiredModules).filter(a=>a.startsWith("event")).find(key => global.requiredModules[key].fileName == path.basename(oldPath))
                 ]
                 if (!responsibleHandler) return
-            
+                
+                
                 const antiCacheValue = new Date().getTime().toString()
                 const newHandlerClass = (await import(newPath + "?_="+antiCacheValue)).default
                 const oldPathClassName = responsibleHandler.constructor.name
                 const newHandlerClassName = newHandlerClass.name
-
+                
                 if (oldPathClassName == newHandlerClassName) {
+                    global.logger.debug(`The file containing event ${chalk.yellowBright(oldPathClassName)} (${chalk.yellowBright(path.basename(oldPath))}) was renamed to ${chalk.yellowBright(path.basename(newPath))}. Reloading...`, this.fileName)
 
-                    if (responsibleHandler.type == "onStart") {
-                        global.logger.warn(`Event ${chalk.redBright(responsibleHandler.constructor.name)} is an ${chalk.yellowBright("onStart")} event and cannot be reloaded.`, this.fileName)
+                    if (responsibleHandler.type == "onStart" && !responsibleHandler.canBeReloaded) {
+                        global.logger.warn(`Event ${chalk.redBright(responsibleHandler.constructor.name)} is an ${chalk.yellowBright("onStart")} event and has ${chalk.yellowBright("_canBeReloaded")} set to false. This event cannot be reloaded.`, this.fileName)
                         return
                     }
 
                     //! Unload the old handler
                     const removedHandler = responsibleHandler as IRISEvent
                     const newHandler = new newHandlerClass() as IRISEvent
-                    if (newHandler.type == "onStart") {
-                        global.logger.warn(`Event ${chalk.redBright(newHandler.constructor.name)} has become an ${chalk.yellowBright("onStart")} event and cannot be loaded using automatic compilation.`, this.fileName)
+                    if (newHandler.type == "onStart" && !responsibleHandler.canBeReloaded) {
+                        global.logger.warn(`Event ${chalk.redBright(newHandler.constructor.name)} has become an ${chalk.yellowBright("onStart")} event and has ${chalk.yellowBright("_canBeReloaded")} set to false. This event cannot be loaded using automatic compilation.`, this.fileName)
                         return
                     }
 
@@ -282,15 +349,26 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                         return
                     }
 
-                    await removedHandler.unload(client, "reload")
+                    const unloadResult = await unloadHandler(removedHandler.eventSettings.unloadTimeoutMS??IRISEvent.defaultUnloadTimeoutMS, removedHandler, client, "reload")
                     delete global.requiredModules[`event${removedHandler.constructor.name}`]
+                    if (unloadResult == "timeout") {
+                        global.logger.error(`Event ${chalk.redBright(removedHandler.constructor.name)} failed to unload within the ${chalk.yellowBright(removedHandler.eventSettings.unloadTimeoutMS??IRISEvent.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
+                        return
+                    }
                     newHandler.cache = removedHandler.cache
                     await newHandler.validateCache()
-                    await newHandler.setup(client, "reload")
+                    const setupResult = await setupHandler(newHandler.eventSettings.setupTimeoutMS??IRISEvent.defaultSetupTimeoutMS, newHandler, client, "reload")
+                    if (setupResult == "timeout") {
+                        global.logger.error(`Event ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.eventSettings.setupTimeoutMS??IRISEvent.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
+                        return
+                    }
                     global.requiredModules[`event${newHandler.constructor.name}`] = newHandler
 
                     await updateEvents(removedHandler, newHandler)
-                    global.logger.log(`Event ${chalk.greenBright(newHandler.constructor.name)} (${newHandler.type}) was reloaded due to a rename.`, this.fileName)
+                    global.logger.log(`Event ${chalk.greenBright(newHandler.constructor.name)} (${newHandler.type}) has been reloaded.`, this.fileName)
+                    if (newHandler.type == "onStart") {
+                        await newHandler.runEvent(client, "reload")
+                    }
                 }
             })
 
@@ -300,11 +378,16 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                     Object.keys(global.requiredModules).filter(a=>a.startsWith("event")).find(key => global.requiredModules[key].fileName == path.basename(filePath))
                 ]
                 if (!responsibleHandler) return
+                global.logger.debug(`The file containing event ${chalk.yellowBright(responsibleHandler.constructor.name)} was deleted. Removing event...`, this.fileName)
                 const handler = responsibleHandler as IRISEvent
                 await removeCaller(handler)
-                await handler.unload(client, null)
+                const unloadResult = await unloadHandler(handler.eventSettings.unloadTimeoutMS??IRISEvent.defaultUnloadTimeoutMS, handler, client, null)
                 delete global.requiredModules[`event${handler.constructor.name}`]
-                global.logger.log(`Event ${chalk.redBright(handler.constructor.name)} was removed.`, this.fileName)
+                if (unloadResult == "timeout") {
+                    global.logger.error(`Event ${chalk.redBright(handler.constructor.name)} failed to unload within the ${chalk.yellowBright(handler.eventSettings.unloadTimeoutMS??IRISEvent.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
+                    return
+                }
+                global.logger.log(`Event ${chalk.redBright(handler.constructor.name)} has been removed.`, this.fileName)
             })
 
             eventWatcher.on("add", async (filePath)=>{
@@ -312,40 +395,47 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                 try {
                     const antiCacheValue = new Date().getTime().toString()
                     const newHandlerClass = (await import(filePath + "?_="+antiCacheValue)).default
+
+                    global.logger.debug(`A new file containing event ${chalk.yellowBright(newHandlerClass.name??"Unknown")} (${chalk.yellowBright(path.basename(filePath))}) was detected. Loading...`, this.fileName)
+
                     if (Object.keys(global.requiredModules).includes(`event${newHandlerClass.name}`)) {
                         const conflictedFile = global.requiredModules[`event${newHandlerClass.name}`].fileName
                         global.logger.error(`Event ${chalk.redBright(path.basename(filePath))} failed to load due to a name conflict with ${chalk.redBright(conflictedFile)}.`, this.fileName)
                         return
                     }
                     const newHandler = new newHandlerClass() as IRISEvent
-                    if (newHandler.type == "onStart") {
-                        global.logger.warn(`Event ${chalk.redBright(newHandler.constructor.name)} is an ${chalk.yellowBright("onStart")} event and cannot be loaded using automatic compilation.`, this.fileName)
+                    if (newHandler.type == "onStart" && !newHandler.canBeReloaded) {
+                        global.logger.warn(`Event ${chalk.redBright(newHandler.constructor.name)} is an ${chalk.yellowBright("onStart")} event and has ${chalk.yellowBright("_canBeReloaded")} set to false. This event cannot be loaded using automatic compilation.`, this.fileName)
                         return
                     }
-                    await newHandler.setup(client, "duringRun")
+                    const setupResult = await setupHandler(newHandler.eventSettings.setupTimeoutMS??IRISEvent.defaultSetupTimeoutMS, newHandler, client, "duringRun")
+                    if (setupResult == "timeout") {
+                        global.logger.error(`Event ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.eventSettings.setupTimeoutMS??IRISEvent.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
+                        return
+                    }
                     global.requiredModules[`event${newHandler.constructor.name}`] = newHandler
                     await addCaller(newHandler)
-                    global.logger.log(`Event ${chalk.greenBright(newHandler.constructor.name)} was loaded.`, this.fileName)
+                    global.logger.log(`Event ${chalk.greenBright(newHandler.constructor.name)} has been loaded.`, this.fileName)
                 } catch (e) {
                     global.logger.error(`Event ${chalk.redBright(path.basename(filePath))} failed to load due to invalid syntax: ${e.toString()}`, this.fileName)
                 }
             })
 
-            eventWatcher.on("change", async (filePath)=>{
+            eventWatcher.on("change", async (filePath) => {
                 if (!filePath.endsWith(".evt.js") || !ready) return;
-                if (updateCooldown.has(filePath) && new Date().getTime() - updateCooldown.get(filePath) < 250) {
-                    return global.logger.debugWarn(`Event ${chalk.redBright(path.basename(filePath))} was modified, but the cooldown is still active for ${chalk.redBright((250 - (new Date().getTime() - updateCooldown.get(filePath))))} ms.`, this.fileName)
-                }
-                updateCooldown.set(filePath, new Date().getTime())
                 const antiCacheValue = new Date().getTime().toString()
                 const responsibleHandler = global.requiredModules[
                     Object.keys(global.requiredModules).filter(a=>a.startsWith("event")).find(key => global.requiredModules[key].fileName == path.basename(filePath))
                 ]  
                 if (!responsibleHandler) return
-                if (responsibleHandler.type == "onStart") {
-                    global.logger.warn(`Event ${chalk.redBright(responsibleHandler.constructor.name)} is an ${chalk.yellowBright("onStart")} event and cannot be reloaded.`, this.fileName)
-                    return
+
+                global.logger.debug(`A change was detected in the file containing event ${chalk.yellowBright(responsibleHandler.constructor.name)} (${chalk.yellowBright(path.basename(filePath))}). Reloading...`, this.fileName)
+
+                if (updateCooldown.has(filePath) && new Date().getTime() - updateCooldown.get(filePath) < 250) {
+                    return global.logger.debugWarn(`Event ${chalk.redBright(path.basename(filePath))} was modified, but the cooldown is still active for ${chalk.redBright((250 - (new Date().getTime() - updateCooldown.get(filePath))))} ms.`, this.fileName)
                 }
+                updateCooldown.set(filePath, new Date().getTime())
+
                 const fileContents = fs.readFileSync(filePath).toString()
                 const fileHash = crypto.createHash("md5").update(fileContents).digest("hex")
                 const handlerHash = responsibleHandler.hash
@@ -353,17 +443,34 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                     global.logger.debug(`Event ${chalk.greenBright(responsibleHandler.constructor.name)} was modified, but the hash is the same.`, this.fileName)
                     return
                 }
+
+                if (responsibleHandler.type == "onStart" && !responsibleHandler.canBeReloaded) {
+                    global.logger.warn(`Event ${chalk.redBright(responsibleHandler.constructor.name)} is an ${chalk.yellowBright("onStart")} event and has ${chalk.yellowBright("_canBeReloaded")} set to false. This event cannot be reloaded.`, this.fileName)
+                    return
+                } 
+
                 const handler = responsibleHandler as IRISEvent
-                await handler.unload(client, "reload")
+                const unloadResult = await unloadHandler(handler.eventSettings.unloadTimeoutMS??IRISEvent.defaultUnloadTimeoutMS, handler, client, "reload")
                 delete global.requiredModules[`event${handler.constructor.name}`]
+                if (unloadResult == "timeout") {
+                    global.logger.error(`Event ${chalk.redBright(handler.constructor.name)} failed to unload within the ${chalk.yellowBright(handler.eventSettings.unloadTimeoutMS??IRISEvent.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
+                    return
+                }
                 const newHandlerClass = (await import(filePath + "?_="+antiCacheValue)).default
                 const newHandler = new newHandlerClass() as IRISEvent
                 newHandler.cache = handler.cache
                 await newHandler.validateCache()
-                await newHandler.setup(client, "reload")
+                const setupResult = await setupHandler(newHandler.eventSettings.setupTimeoutMS??IRISEvent.defaultSetupTimeoutMS, newHandler, client, "reload")
+                if (setupResult == "timeout") {
+                    global.logger.error(`Event ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.eventSettings.setupTimeoutMS??IRISEvent.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
+                    return
+                }
                 global.requiredModules[`event${newHandler.constructor.name}`] = newHandler
                 await updateEvents(handler, newHandler)
-                global.logger.log(`Event ${chalk.greenBright(newHandler.constructor.name)} (${newHandler.type}) was reloaded.`, this.fileName)
+                global.logger.log(`Event ${chalk.greenBright(newHandler.constructor.name)} (${newHandler.type}) has been reloaded.`, this.fileName)
+                if (newHandler.type == "onStart") {
+                    await newHandler.runEvent(client, "reload")
+                }
             })
         })   
 
@@ -426,6 +533,8 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
                     listenerKey: handler.listenerKey
                 }
                 client.on(handler.listenerKey as any, global.eventInfo[handler.constructor.name].listenerFunction)
+            } else if (handler.type == "onStart") {
+                await handler.runEvent(client, "reload")
             }
         }
 
@@ -440,7 +549,7 @@ export default class OnStartRealTimeUpdate extends IRISEvent {
 
                 if (oldHandler.ms != newHandler.ms) {
                     await removeCaller(oldHandler)
-                    await addCaller(newHandler)
+                    await addCaller(newHandler);
                 } else {
                     await removeCaller(oldHandler)
                     await addCaller(newHandler, {willStrikeNextAt})

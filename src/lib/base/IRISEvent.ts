@@ -25,13 +25,26 @@ export type IRISEventTypes = "discordEvent" | "onStart" | "runEvery"
 export type IRISEventTypeSettings = {runImmediately?: boolean, ms?: number, listenerKey?: Discord.Events}
 
 export abstract class IRISEvent {
+
+    static defaultSetupTimeoutMS = 30000;
+    static defaultUnloadTimeoutMS = 30000;
+
     protected          _priority: number = 0;
     protected abstract _type: IRISEventTypes;
-    protected          _eventSettings: IRISEvCoSettings = {devOnly: false, mainOnly: false}
+    protected          _eventSettings: IRISEvCoSettings = {
+        devOnly: false,
+        mainOnly: false,
+        setupTimeoutMS: IRISEvent.defaultSetupTimeoutMS,
+        unloadTimeoutMS: IRISEvent.defaultUnloadTimeoutMS
+    }
     protected           _running: boolean = false;
     private            _filename: string = "";
     protected          _cacheContainer: Map<Date, any> = new Map();
     private            _hash: string = ""; //! Used to detect changes during reloads 
+    /**
+     * Only used for onStart events, whether the event can be reloaded or not
+     */
+    protected          _canBeReloaded: boolean = false; //! Required for onStart events to be reloaded
 
 
     /**
@@ -60,7 +73,9 @@ export abstract class IRISEvent {
 
     
 
-
+    public get canBeReloaded() {
+        return this.type == "onStart" ? this._canBeReloaded : true
+    }
     public get listenerKey() {
         if (this._type != "discordEvent") throw new Error("listenerKey is only available for discordEvent events");
         if (!this._typeSettings.listenerKey) throw new Error("listenerKey is not defined for this event");
