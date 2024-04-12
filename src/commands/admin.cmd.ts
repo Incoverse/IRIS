@@ -286,7 +286,6 @@ export default class Admin extends IRISCommand {
       )
   )
 
-  public async setup(client:Discord.Client) {return true}
   public async autocomplete(interaction: Discord.AutocompleteInteraction) {
     const optionName = interaction.options.getFocused(true).name
     const focusedValue = interaction.options.getFocused();

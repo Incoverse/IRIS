@@ -80,7 +80,10 @@ export async function addCommand(client, command) {
 export async function unloadHandler(timeout: number, handler:IRISEvent|IRISCommand, client: Client, reason?: "reload"|"shuttingDown") {
   return await Promise.race([
       new Promise((resolve) => {
-          handler.unload(client, reason).then(resolve)
+          handler.unload(client, reason).then((...args)=>{
+              handler._loaded = false
+              resolve(args)
+          })
       }),
       new Promise((resolve) => {
           setTimeout(resolve, timeout, "timeout")
@@ -91,7 +94,10 @@ export async function unloadHandler(timeout: number, handler:IRISEvent|IRISComma
 export async function  setupHandler(timeout: number, handler:IRISEvent|IRISCommand, client: Client, reason?: "reload"|"startup"|"duringRun") {
   return await Promise.race([
       new Promise((resolve) => {
-          handler.setup(client, reason).then(resolve)
+          handler.setup(client, reason).then((...args)=>{
+              handler._loaded = true
+              resolve(args)
+          })
       }),
       new Promise((resolve) => {
           setTimeout(resolve, timeout, "timeout")

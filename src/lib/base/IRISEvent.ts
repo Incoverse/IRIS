@@ -30,6 +30,7 @@ export abstract class IRISEvent {
     static defaultUnloadTimeoutMS = 30000;
 
     protected          _priority: number = 0;
+    public             _loaded: boolean = false;
     protected abstract _type: IRISEventTypes;
     protected          _eventSettings: IRISEvCoSettings = {
         devOnly: false,

@@ -28,7 +28,8 @@ export default class OnReadySetupPerms extends IRISEvent {
   protected _typeSettings: IRISEventTypeSettings = {};
 
   public async setup(client:Discord.Client) {
-    return global.dataForSetup.events.includes("OnReadySetupPermsToken");
+    this._loaded = global.dataForSetup.events.includes("OnReadySetupPermsToken");
+    return this._loaded;
   }
 
   public async runEvent(client: Discord.Client): Promise<void> {

@@ -54,6 +54,7 @@ export default class WordleHandler extends IRISEvent {
           ).split("\n"),
       };
     }
+    this._loaded = true;
     return true;
   }
   public async runEvent(client: Discord.Client): Promise<void> {

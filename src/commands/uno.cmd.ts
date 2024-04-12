@@ -58,6 +58,7 @@ export default class Uno extends IRISCommand {
     global.games.uno = {
       maxPlayers: maxPlayers,
     }
+    this._loaded = true;
     return true;
   }
 

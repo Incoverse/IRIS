@@ -54,6 +54,7 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
         await this.killAFC()
         await this.closeCommandWatcher()
         await this.closeEventWatcher()
+        this._loaded = false
         return true
     }
 
@@ -144,6 +145,14 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
             ignoreInitial: true,
             renameTimeout: 1250,
             debounce: 500
+        })
+
+        commandWatcher.on("close", () => {
+            global.logger.log(`Command watcher has been ${chalk.redBright("closed")}.`, this.fileName)
+        })
+
+        eventWatcher.on("close", () => {
+            global.logger.log(`Event watcher has been ${chalk.redBright("closed")}.`, this.fileName)
         })
 
         commandWatcher.on("ready", () => {

@@ -43,6 +43,7 @@ export default class BirthdayHandler extends IRISEvent {
       return false
     }
 
+    this._loaded = true
     return true
   }
   public async runEvent(client: Discord.Client) {

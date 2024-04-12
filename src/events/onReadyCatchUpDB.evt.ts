@@ -34,6 +34,7 @@ export default class OnReadyCatchUpDB extends IRISEvent {
       global.logger.debugError(`A role with 'new member' in the name could not be found. Cannot continue.`, this.fileName)
       return false
     }
+    this._loaded = true
     return true
   }
   public async runEvent(client: Discord.Client): Promise<void> {

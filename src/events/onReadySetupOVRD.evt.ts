@@ -34,6 +34,7 @@ export default class OnReadySetupOVRD extends IRISEvent {
 
   public async setup(client:Discord.Client) {
     global.overrides = {};
+    this._loaded = true
     return true;
   }
 

@@ -75,7 +75,8 @@ export default class Wordle extends IRISCommand {
             ).split("\n"),
         };
       }
-      return true;   
+      this._loaded = true;
+      return true;
     }
 
     public async runCommand(interaction: Discord.CommandInteraction) {

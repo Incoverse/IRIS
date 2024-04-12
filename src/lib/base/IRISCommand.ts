@@ -29,6 +29,7 @@ export abstract class IRISCommand {
 
     
     private            _filename: string = "";
+    public             _loaded: boolean = false;
     protected          _cacheContainer: Map<Date, any> = new Map();
     protected          _commandSettings: IRISEvCoSettings = {
         devOnly: false,
@@ -60,8 +61,14 @@ export abstract class IRISCommand {
     public get commandSettings() {return this._commandSettings}
 
 
-    public async setup(client: Discord.Client, reason: "reload"|"startup"|"duringRun"|null): Promise<boolean> {return true};
-    public async unload(client: Discord.Client, reason: "reload"|"shuttingDown"|null): Promise<boolean> {return true}
+    public async setup(client: Discord.Client, reason: "reload"|"startup"|"duringRun"|null): Promise<boolean> {
+        this._loaded = true;    
+        return true;
+    };
+    public async unload(client: Discord.Client, reason: "reload"|"shuttingDown"|null): Promise<boolean> {
+        this._loaded = false;
+        return true;
+    }
 
     /**
      * Get the expiration time for a cache entry
