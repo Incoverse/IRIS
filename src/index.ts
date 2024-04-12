@@ -353,7 +353,6 @@ let client: Client = null;
     global.logger.log(chalk.redBright.bold("IRIS is shutting down..."), "IRIS-"+signal);
     global.logger.debug("Unloading all modules...", "IRIS-"+signal);
     for (let i in global.requiredModules) {
-      console.log(global.requiredModules[i])  
       if (!global.requiredModules[i]._loaded) {
         global.logger.debug(`Module ${chalk.yellowBright(i)} is not loaded, skipping...`, "IRIS-"+signal);
         continue
