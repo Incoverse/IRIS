@@ -1077,7 +1077,7 @@ export default class Uno extends IRISCommand {
             // previous player
             const previousPlayer = getPreviousPlayer();
             if (!unoCallTable.includes(previousPlayer.name)) {
-              game.draw(previousPlayer, settings.noUNOCallPenalty, false);
+              game.draw(previousPlayer, settings.noUNOCallPenalty, false, false, false, true)
               await int.update({
                 components: [
                   ...(await generateShowHandButtons(int, "selectCardColor", {
