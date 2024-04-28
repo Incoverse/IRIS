@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/Incoverse/IRIS#readme",
   "dependencies": {
+    "@types/md5": "^2.3.5",
     "@types/node-ipc": "^9.2.3",
     "chalk": "^5.2.0",
     "discord.js": "^14.12.1",

@@ -20,7 +20,7 @@ import { IRISCommand } from "@src/lib/base/IRISCommand.js";
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
 import { addCommand, reloadCommands, setupHandler, unloadHandler } from "@src/lib/utilities/misc.js";
 import chalk from "chalk";
-import { Client, NewsChannel } from "discord.js";
+import { Client, Events, NewsChannel } from "discord.js";
 import fs from "fs";
 import crypto from "crypto";
 import { resolveTsPaths } from "resolve-tspaths";
@@ -486,9 +486,10 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
 
         async function removeCaller(handler:IRISEvent) {
             if (handler.type == "runEvery") {
-                clearInterval(global.eventInfo[handler.constructor.name].interval)
+                clearInterval(global.eventInfo.get(handler.constructor.name).timeout)
             } else if (handler.type == "discordEvent") {
-                client.off(handler.listenerKey as any, global.eventInfo[handler.constructor.name].listenerFunction)
+                console.log(handler.constructor.name)
+                client.off(handler.listenerKey as any, global.eventInfo.get(handler.constructor.name).listenerFunction)
             }
             global.eventInfo.delete(handler.constructor.name)
         }
@@ -528,20 +529,16 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                     })
                 }
             } else if (handler.type == "discordEvent") {
-                global.eventInfo[handler.constructor.name] = {
+                global.eventInfo.set(handler.constructor.name, {
+                    type: handler.type,
                     listenerFunction: async (...args) => {
-                        if (!handler.running) {
-                          /* prettier-ignore */
-                          global.logger.debug(`Running '${chalk.yellowBright(handler.type)}' event: ${chalk.blueBright(handler.fileName)}`,"index.js");
-                          await handler.runEvent(...args);
-                        } else {
-                          /* prettier-ignore */
-                          global.logger.debugError(`Not running '${chalk.yellowBright(handler.type)}' event: ${chalk.blueBright(handler.fileName)} reason: Previous iteration is still running.`, "index.js");
-                        }
+                        if (handler.listenerKey != Events.MessageCreate)
+                            global.logger.debug(`Running '${chalk.yellowBright(handler.type)}' event: ${chalk.blueBright(handler.fileName)}`,"index.js");
+                        await handler.runEvent(...args);
                     },
                     listenerKey: handler.listenerKey
-                }
-                client.on(handler.listenerKey as any, global.eventInfo[handler.constructor.name].listenerFunction)
+                })
+                client.on(handler.listenerKey as any, global.eventInfo.get(handler.constructor.name).listenerFunction)
             } else if (handler.type == "onStart") {
                 await handler.runEvent(client, "reload")
             }
@@ -564,10 +561,8 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                     await addCaller(newHandler, {willStrikeNextAt})
                 }
             } else if (oldHandler.type == "discordEvent" && newHandler.type == "discordEvent") {
-                if (oldHandler.listenerKey != newHandler.listenerKey) {
-                    await removeCaller(oldHandler)
-                    await addCaller(newHandler)
-                }
+                await removeCaller(oldHandler)
+                await addCaller(newHandler)
             }
         }
     }

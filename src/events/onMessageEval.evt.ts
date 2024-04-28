@@ -29,8 +29,10 @@ export default class OnMessageEval extends IRISEvent {
 
   public async runEvent(message: Discord.Message): Promise<void> {
     if (message.guildId != global.app.config.mainServer) return;
-    if (message.content.startsWith(".IRIS-EVAL ")) {
+    const edition = global.app.config.development ? "DEV" : "PROD";
+    if (message.content.startsWith(".IRIS-EVAL ") || message.content.startsWith(`.IRIS-EVAL-${edition} `) || message.content.startsWith(`.IRIS-EVAL-${global.identifier} `)) {
       await message.client.application.fetch();
+      
       if (
         global.app.owners.includes(message.author.id)
       ) {
@@ -63,10 +65,10 @@ export default class OnMessageEval extends IRISEvent {
         const startRegex = /```(.*?\n)/;
         const endRegex = /(|\n)```$/;
         const input = message.content
-          .replace(".IRIS-EVAL ", "")
+          .replace(new RegExp("^(\.IRIS-EVAL(-DEV|-PROD|-"+global.identifier+")? )","m"), "")
           .replace(startRegex, "")
           .replace(endRegex, "");
-        let msg = await message.channel.send("Running....");
+        let msg = await message.channel.send("IRIS ID: ``"+global.identifier+"``\nRunning....");
         let cleaned;
         try {
           // Evaluate (execute) our input
@@ -76,16 +78,14 @@ export default class OnMessageEval extends IRISEvent {
           cleaned = await clean(evaled);
 
           // Reply in the channel with our result
-          const parts = cleaned.match(/(.|[\r\n]){1,1990}/g) ?? [];
+          const parts = cleaned.match(/(.|[\r\n]){1,1970}/g) ?? [];
 
-          msg.edit(`\`\`\`js\n${parts.shift()}\n\`\`\``);
+          msg.edit(`IRIS ID: \`\`${global.identifier}\`\`\n\`\`\`js\n${parts.shift()}\n\`\`\``);
           for (let msg of parts) {
             message.channel.send(`\`\`\`js\n${msg}\n\`\`\``);
           }
         } catch (err) {
-          global.logger.error(err, this.fileName);
-          // Reply in the channel with our error
-          msg.edit(`\`ERROR\` \`\`\`xl\n${err}\n\`\`\``);
+            msg.edit(`IRIS ID: \`\`${global.identifier}\`\`\n***An error occurred during execution*** \`\`\`xl\n${err.stack ? err.stack : err}\n\`\`\``);
         }
       }
     }

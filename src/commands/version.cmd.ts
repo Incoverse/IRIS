@@ -33,7 +33,7 @@ export default class Version extends IRISCommand {
         "IRIS is currently running ``v" +
         JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
           .version +
-        "``",
+        "``\nIRIS' unique identifier is ``" + global.identifier + "``",
       ephemeral: true,
     });   
   } 

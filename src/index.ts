@@ -51,6 +51,9 @@ import storage, { checkMongoAvailability } from "./lib/utilities/storage.js";
 import { IRISEvent } from "./lib/base/IRISEvent.js";
 import { IRISCommand } from "./lib/base/IRISCommand.js";
 import { setupHandler, unloadHandler } from "./lib/utilities/misc.js";
+import os from "os";
+import md5 from "md5";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config();
@@ -61,6 +64,17 @@ declare const global: IRISGlobal;
 //! ------------------------------------------- !\\
 
 let client: Client = null;
+
+global.identifier = md5(os.hostname() + "-" + os.userInfo().username);
+
+const split = global.identifier.match(/\w{4}/g)
+let total = 0
+split.forEach((e) => {
+  total += parseInt(e, 16)
+});
+
+global.identifier = total.toString(16);
+
 
 (async () => {
   const fullRunStart = process.hrtime.bigint();
@@ -318,7 +332,6 @@ let client: Client = null;
   }
   global.communicationChannel.removeListener = global.communicationChannel.off
 
-
   global.newMembers = [];
   const requiredPermissions = [
     PermissionsBitField.Flags.AddReactions,
@@ -425,8 +438,8 @@ let client: Client = null;
 
   global.dirName = __dirname;
   global.mongoConnectionString =
-    `mongodb://${process.env.DBUSERNAME}:${process.env.DBPASSWD}@${global.app.config.mongoDBServer}:27017/?authMechanism=DEFAULT&tls=true&family=4`;
-  //! Becomes something like: mongodb://username:password@server.com:27017/?authMechanism=DEFAULT&tls=true&family=4
+    `mongodb://${process.env.DBUSERNAME}:${process.env.DBPASSWD}@${global.app.config.mongoDBServer}/?authMechanism=DEFAULT&tls=true&family=4`;
+  //! Becomes something like: mongodb://username:password@server.com/?authMechanism=DEFAULT&tls=true&family=4
 
   //!--------------------------
 
@@ -511,7 +524,7 @@ let client: Client = null;
         });
       }
       if (global.mongoStatus == global.mongoStatuses.RESTARTING) {
-        return await interaction.reply({
+        return await interaction.reply({  
           content:
             "The database is currently restarting, please wait a few seconds and try again.",
           ephemeral: true,
@@ -707,7 +720,7 @@ let client: Client = null;
         process.exit(1);
       }
 
-      if (global.mongoConnectionString.match(/^(mongodb(?:\+srv)?(\:)(?:\/{2}){1})(?:\w+\:\w+\@)?(\w+?(?:\.\w+?)*)(\:)(\d+(?:\/){0,1})(?:\/\w+?)?(?:\?\w+?\=\w+?(?:\&\w+?\=\w+?)*)?$/gm)) { //! Credits: https://regex101.com/library/jxxyRm
+      if (global.mongoConnectionString.match(/^(mongodb(?:\+srv)?(\:)?(?:\/{2}){1})(?:\w+\:\w+\@)?(\w+?(?:\.\w+?)*)(?::(\d+))?((?:\/\w+?)?)(?:\/)(?:\?\w+?\=\w+(?:\&\w+?\=\w+)*)?$/gm)) { //! Partial credits: https://regex101.com/library/jxxyRm
 
         const isMongoAvailable = await checkMongoAvailability();
         if (isMongoAvailable) {

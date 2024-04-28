@@ -40,6 +40,7 @@
   //! The database needs to have a database called "IRIS" (production) and "IRIS_DEVELOPMENT" (dev). IRIS will automatically fill these databases with the required collections.
   //?
   //! Check this guide out on how to make a local MongoDB server: https://www.prisma.io/dataguide/mongodb/setting-up-a-local-mongodb-database
+  //! You can also specify a port by adding ":<port>" after the server name (e.g "inimicalpart.com:27017"). The default port is 27017.
   "mongoDBServer": "inimicalpart.com",
 
   // "development": true //* 'global.app.config.development' will be automatically set true if 'DEVELOPMENT' is set to 'YES' in .env
@@ -193,8 +194,7 @@
           "y": "<:green_y:1109421977401303040>",
           "z": "<:green_z:1109421979326500935>"
         }
-      }
-      
+      } 
     }
   }
 }

@@ -20,6 +20,7 @@ import { EventEmitter } from "events";
 import { AppInterface } from "./appInterface.js";
 
 interface IRISGlobal extends NodeJS.Global {
+  identifier: any;
   app: AppInterface;
   reload: {
     commands: Array<string>;
@@ -75,10 +76,11 @@ interface IRISGlobal extends NodeJS.Global {
     changeConfig?: (key: string, value: any) => Promise<boolean>;
   }
   eventInfo: Map<string, {
-    type: string;
+    type?: string;
     now?: number;
     timeout?: NodeJS.Timeout;
     listenerFunction?: (...args: any[]) => any;
+    listenerKey?: any;
   }>;
   dataForSetup: {
     events: string[]
