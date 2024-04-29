@@ -421,6 +421,7 @@ global.identifier = total.toString(16);
   global.reload = {
     commands: []
   };
+  global.status = {}
   global.server = {
     main: {
       rules: [],
@@ -490,6 +491,7 @@ global.identifier = total.toString(16);
     global.logger.log(`${chalk.white("[I]")} ${chalk.yellow("Logging in...")} ${chalk.white("[I]")}`, returnFileName());
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
+      if (global.status.noInteract) return
       if (interaction.isAutocomplete()) {
 
         const responsibleHandler = global.requiredModules[Object.keys(global.requiredModules).filter((a) => a.startsWith("cmd"))
@@ -515,6 +517,7 @@ global.identifier = total.toString(16);
 
 
       client.on(Events.InteractionCreate, async (interaction: any) => {
+      if (global.status.noInteract) return
       if (interaction.isChatInputCommand()) {
       if (!fullyReady) {
         return await interaction.reply({

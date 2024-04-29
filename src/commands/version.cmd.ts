@@ -31,9 +31,8 @@ export default class Version extends IRISCommand {
     await interaction.reply({
       content:
         "IRIS is currently running ``v" +
-        JSON.parse(readFileSync("./package.json", { encoding: "utf-8" }))
-          .version +
-        "``\nIRIS' unique identifier is ``" + global.identifier + "``",
+        JSON.parse(readFileSync("./package.json", { encoding: "utf-8" })).version + "``" +
+        (global.app.owners.includes(interaction.user.id) ? "\nIRIS' unique identifier is ``" + global.identifier + "``" : ""),
       ephemeral: true,
     });   
   } 

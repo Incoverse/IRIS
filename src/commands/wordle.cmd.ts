@@ -116,6 +116,7 @@ export default class Wordle extends IRISCommand {
             ephemeral: true,
           });
         }
+        await interaction.deferReply({ephemeral: true})
         wordle.currentlyPlaying[interaction.user.id] = {
           boardMessage: null,
           guesses: [],
@@ -175,13 +176,11 @@ export default class Wordle extends IRISCommand {
           allowedMentions: { parse: [] },
         });
         interaction
-          .reply({
-            content: "Started!",
-            ephemeral: true,
-            allowedMentions: { parse: [], repliedUser: false, users: [] },
+          .editReply({
+            content: "Game started!"
           })
           .then(async (msg) => {
-            await msg.delete();
+            setTimeout(() => interaction.deleteReply(), 3000)
           });
         wordle.currentlyPlaying[interaction.user.id].boardMessage =
           await message.fetch();
@@ -574,13 +573,13 @@ export default class Wordle extends IRISCommand {
       }
   
       function generateBoard(
-        guesssies: string[] = global.games.wordle.currentlyPlaying[
+        guesses: string[] = global.games.wordle.currentlyPlaying[
           interaction.user.id
         ].guesses,
         includeEmpty = true,
         cover = false
       ) {
-        let emptyRows = 6 - guesssies.length;
+        let emptyRows = 6 - guesses.length;
         let board = "";
         function howMany(string: string, ltr: string) {
           let a = string.split("");
@@ -598,43 +597,43 @@ export default class Wordle extends IRISCommand {
         for (let letter of noDuplicate) {
           lettersRemaining[letter] = howMany(wordle.word, letter);
         }
-        for (let guess of guesssies) {
+        for (let guess of guesses) {
           let lettersRemainingCopy = JSON.parse(JSON.stringify(lettersRemaining));
           // Add the guess to the board. go from left to right when it comes to checking, if that letter is in the right spot, add the letter as green and subtract it from the lettersRemaining object. if it is in the wrong spot, add it as yellow if lettersRemaining[letter] > 0, otherwise add it as gray. If the letter is not in the word, add it as gray. Make you check them in the correct order: green, yellow, gray. That means that you should go through all the letters checking if its green, then go through all of them again for yellow and the same for gray.
-          let boardd: string[] | string = ["", "", "", "", ""];
+          let boardArray: string[] = ["", "", "", "", ""];
           for (let i = 0; i < guess.length; i++) {
-            if (boardd[i] !== "") continue;
+            if (boardArray[i] !== "") continue;
             if (guess[i] == wordle.word[i]) {
-              boardd[i] = cover ? emojis.blank.green : emojis.green[guess[i]];
+              boardArray[i] = cover ? emojis.blank.green : emojis.green[guess[i]];
               lettersRemainingCopy[guess[i]]--;
             }
           }
           for (let i = 0; i < guess.length; i++) {
-            if (boardd[i] !== "") continue;
+            if (boardArray[i] !== "") continue;
             if (
               guess[i] != wordle.word[i] &&
               lettersRemainingCopy[guess[i]] > 0
             ) {
-              boardd[i] = cover ? emojis.blank.yellow : emojis.yellow[guess[i]];
+              boardArray[i] = cover ? emojis.blank.yellow : emojis.yellow[guess[i]];
               lettersRemainingCopy[guess[i]]--;
             }
           }
           for (let i = 0; i < guess.length; i++) {
-            if (boardd[i] !== "") continue;
+            if (boardArray[i] !== "") continue;
             if (
               guess[i] != wordle.word[i] &&
               lettersRemainingCopy[guess[i]] == 0
             ) {
-              boardd[i] = cover ? emojis.blank.gray : emojis.gray[guess[i]];
+              boardArray[i] = cover ? emojis.blank.gray : emojis.gray[guess[i]];
             }
           }
           for (let i = 0; i < guess.length; i++) {
-            if (boardd[i] !== "") continue;
+            if (boardArray[i] !== "") continue;
             if (!wordle.word.split("").includes(guess[i])) {
-              boardd[i] = cover ? emojis.blank.gray : emojis.gray[guess[i]];
+              boardArray[i] = cover ? emojis.blank.gray : emojis.gray[guess[i]];
             }
           }
-          board += boardd.join("");
+          board += boardArray.join("");
           board += "\n";
         }
         if (includeEmpty) {

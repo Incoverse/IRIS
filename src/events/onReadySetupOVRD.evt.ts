@@ -31,6 +31,7 @@ export default class OnReadySetupOVRD extends IRISEvent {
   protected _type: IRISEventTypes = "onStart";
   protected _priority: number = 9;
   protected _typeSettings: IRISEventTypeSettings = {};
+  protected _canBeReloaded: boolean = true;
 
   public async setup(client:Discord.Client) {
     global.overrides = {};
@@ -109,6 +110,34 @@ export default class OnReadySetupOVRD extends IRISEvent {
           global.app.config[key] = value;
           resolve(true);
         })
+      }
+
+      global.overrides.interact = async () => {
+        if (!global.status.noInteract) {
+          throw new Error("IRIS is currently not in noInteract mode.")
+        }
+
+        for (let command of Object.keys(global.requiredModules).filter(mod=>mod.startsWith("cmd")).map(mod=>global.requiredModules[mod])) {
+          command.runCommand = command.suspendedRunCommand
+          command.suspendedRunCommand = undefined
+        }
+        global.status.noInteract = false
+
+        return "IRIS is now in interact mode."
+      }
+
+      global.overrides.noInteract = async () => {
+        if (global.status.noInteract) {
+          throw new Error("IRIS is currently in noInteract mode.")
+        }
+
+        for (let command of Object.keys(global.requiredModules).filter(mod=>mod.startsWith("cmd")).map(mod=>global.requiredModules[mod])) {
+          command.suspendedRunCommand = command.runCommand
+          command.runCommand = async () => {} 
+        }
+        global.status.noInteract = true
+
+        return "IRIS is now in noInteract mode."
       }
   }
 }

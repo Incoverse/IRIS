@@ -67,8 +67,13 @@ interface IRISGlobal extends NodeJS.Global {
       STOPPED: number,
       FAILED: number,
       NOT_AVAILABLE: number,
-    }
+  }
+  status: {
+    [key: string]: boolean
+  }
   overrides: {
+    noInteract?: () => Promise<string>;
+    interact?: () => Promise<string>;
     reloadCommands?: () => Promise<boolean>;
     removeCommand?: (commandName: string)=> Promise<boolean>;
     updateChoices?: (commandPath: string, option: string, update: (option: any) => Promise<any>) => Promise<boolean>;
