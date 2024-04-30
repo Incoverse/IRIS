@@ -1,6 +1,6 @@
 {
   "name": "iris",
-  "version": "2.6.2",
+  "version": "2.7.0",
   "description": "IRIS (Intelligent Response Interface System) is a Discord bot that is focused on fun and utlities, as well as helping people understand TypeScript.",
   "main": "index.js",
   "scripts": {

@@ -32,7 +32,7 @@ export default class OnReadyFetchServerRules extends IRISEvent {
     try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 
     try {
-      const serverdataDocument = await storage.findOne("server",{id:global.app.config.mainServer})
+      const serverdataDocument = await storage.findOne("server", {})
       if (!serverdataDocument) {
         global.logger.debugError(
           `ServerData document for '${global.app.config.mainServer}' could not be found. Cannot continue.`,
