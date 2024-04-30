@@ -1,3 +1,20 @@
+/*
+  * Copyright (c) 2024 Inimi | InimicalPart | Incoverse
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { Client, Routes } from "discord.js";
 import { fileURLToPath } from "url";
@@ -6,7 +23,7 @@ import { IRISCommand } from "../base/IRISCommand.js";
 
 declare const global: IRISGlobal;
 
-export async function reloadCommands(client, commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd")).map(a => global.requiredModules[a].getSlashCommand().toJSON()) ) {
+export async function reloadCommands(client: Client, commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd")).map(cmdKey => global.requiredModules[cmdKey].getSlashCommand().toJSON()) ) {
     return new Promise<boolean>(async (resolve, reject) => {
         try {
           await global.rest.put(
@@ -18,10 +35,10 @@ export async function reloadCommands(client, commands = Object.keys(global.requi
               body: commands
             }
           );
-            resolve(true);
+          resolve(true);
         } catch (error) {
           global.logger.error(error, returnFileName());
-            reject(false);
+          reject(false);
         }
     })
 }
@@ -31,8 +48,6 @@ function returnFileName() {
   const separator = __filename.includes("/") ? "/" : "\\";
   return __filename.split(separator).pop();
 }
-
-
 
 export async function removeCommand(client, commandName:string) {
   return new Promise<boolean>(async (resolve, reject) => {
@@ -44,7 +59,7 @@ export async function removeCommand(client, commandName:string) {
             const guild = await client.guilds.fetch(global.app.config.mainServer);
             if (!guild) return reject(false);
             const command = await guild.commands.fetch();
-            const commandId = command.find(a=>a.name==commandName).id;
+            const commandId = command.find(cmd=>cmd.name == commandName).id;
             if (!commandId) return reject(false);
             await global.rest.delete(Routes.applicationGuildCommand(client.user.id, global.app.config.mainServer, commandId))
             resolve(true);
@@ -56,7 +71,7 @@ export async function removeCommand(client, commandName:string) {
   })
 }
 
-export async function addCommand(client, command) {
+export async function addCommand(client: Client, command: any) {
   return new Promise<boolean>(async (resolve, reject) => {
       try {
           await global.rest.post(
@@ -77,7 +92,7 @@ export async function addCommand(client, command) {
 }
 
 
-export async function unloadHandler(timeout: number, handler:IRISEvent|IRISCommand, client: Client, reason?: "reload"|"shuttingDown") {
+export async function unloadHandler(timeout: number, handler: IRISEvent | IRISCommand, client: Client, reason?: "reload" | "shuttingDown") {
   return await Promise.race([
       new Promise((resolve) => {
           handler.unload(client, reason).then((...args)=>{
@@ -91,7 +106,7 @@ export async function unloadHandler(timeout: number, handler:IRISEvent|IRISComma
   ])
 }
 
-export async function  setupHandler(timeout: number, handler:IRISEvent|IRISCommand, client: Client, reason?: "reload"|"startup"|"duringRun") {
+export async function setupHandler(timeout: number, handler: IRISEvent | IRISCommand, client: Client, reason?: "reload" | "startup" | "duringRun") {
   return await Promise.race([
       new Promise((resolve) => {
           handler.setup(client, reason).then((...args)=>{

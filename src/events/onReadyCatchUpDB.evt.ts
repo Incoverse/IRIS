@@ -45,10 +45,9 @@ export default class OnReadyCatchUpDB extends IRISEvent {
 
 
     try {
-      const serverdataDocument = await storage.findOne("server", {id:global.app.config.mainServer})
+      const serverdataDocument = await storage.findOne("server", {})
       if (!serverdataDocument) {
         await storage.insertOne("server", {
-          id: global.app.config.mainServer,
           rules: [],
           games: [],        
         });

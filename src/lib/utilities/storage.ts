@@ -34,6 +34,13 @@ declare const global: IRISGlobal
 var method: string = "file"
 var connectionClient: MongoClient = null
 
+export let dataLocations = {
+    offensedata: null,
+    serverdata: null,
+    userdata: null
+};
+
+
 export const returnFileName = () =>
     __filename.split(process.platform == "linux" ? "/" : "\\")[
       __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
@@ -59,18 +66,35 @@ export async function checkMongoAvailability() {
     }
 }
 
-export async function setupFiles() {
-    const shouldExist = []
-    if (global.app.config.development) {
-        shouldExist.push("development/userdata_" + global.app.config.mainServer + ".json")
-        shouldExist.push("development/serverdata_" + global.app.config.mainServer + ".json")
-        shouldExist.push("development/offensedata_" + global.app.config.mainServer + ".json")
-    } else {
-        shouldExist.push("production/userdata.json")
-        shouldExist.push("production/serverdata.json")
-        shouldExist.push("production/offensedata.json")
+function parseDataType(input): { collection: string, filePathRelative: string } {
+    switch (input) {
+        case "user":
+            return {
+                collection: "USERDATA_" + global.app.config.mainServer,
+                filePathRelative: `${global.app.config.development ? "development" : "production"}/userdata/${global.app.config.mainServer}.json`
+            }
+        case "server":
+            return {
+                collection: "SERVERDATA_" + global.app.config.mainServer,
+                filePathRelative: `${global.app.config.development ? "development" : "production"}/serverdata/${global.app.config.mainServer}.json`
+            }
+        case "offense":
+            return {
+                collection: "OFFENSEDATA_" + global.app.config.mainServer,
+                filePathRelative: `${global.app.config.development ? "development" : "production"}/offensedata/${global.app.config.mainServer}.json`
+            }
+        default:
+            global.logger.debugError("Invalid data type: " + input, returnFileName())
+            return { collection: null, filePathRelative: null }
     }
+}
 
+export async function setupFiles() {
+    const shouldExist = [
+        `${global.app.config.development ? "development" : "production"}/userdata/${global.app.config.mainServer}.json`,
+        `${global.app.config.development ? "development" : "production"}/serverdata/${global.app.config.mainServer}.json`,
+        `${global.app.config.development ? "development" : "production"}/offensedata/${global.app.config.mainServer}.json`
+    ]
     for (const file of shouldExist) {
         let filePath = path.join(process.cwd(), global.app.config.backupStoragePath, file)
         if (!fs.existsSync(filePath)) {
@@ -80,30 +104,16 @@ export async function setupFiles() {
             global.logger.debug("Created file: " + chalk.yellowBright(file), returnFileName())
         }
     }
+    dataLocations.userdata =    `userdata/${global.app.config.mainServer}.json`,
+    dataLocations.serverdata =  `serverdata/${global.app.config.mainServer}.json`,
+    dataLocations.offensedata = `offensedata/${global.app.config.mainServer}.json`
 }
 
 
 
 async function del(oneOrMany: "one" | "many", dataType: DataType, filter: object) {
-    let collection;
-    let filePathRelative; // from defined container folder (relative)
-    switch (dataType) {
-        case "user":
-            collection = global.app.config.development ? "DEVSRV_UD_" + global.app.config.mainServer : "userdata"
-            filePathRelative = global.app.config.development ? "development/userdata_" + global.app.config.mainServer + ".json" : "production/userdata.json"
-            break
-        case "server":
-            collection = global.app.config.development ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
-            filePathRelative = global.app.config.development ? "development/serverdata_" + global.app.config.mainServer + ".json" : "production/serverdata.json"
-            break
-        case "offense":
-            collection = global.app.config.development ? "DEVSRV_OD_" + global.app.config.mainServer : "offensedata"
-            filePathRelative = global.app.config.development ? "development/offensedata_" + global.app.config.mainServer + ".json" : "production/offensedata.json"
-            break
-        default:
-            global.logger.debugError("Invalid data type: " + dataType, returnFileName())
-            return false
-    }
+
+    const { collection, filePathRelative } = parseDataType(dataType)
 
     if (method == "mongo") {
         try {
@@ -140,25 +150,8 @@ async function del(oneOrMany: "one" | "many", dataType: DataType, filter: object
 
 
 async function get(oneOrMany: "one" | "many", dataType: DataType, filter: object) {
-    let collection;
-    let filePathRelative; // from defined container folder (relative)
-    switch (dataType) {
-        case "user":
-            collection = global.app.config.development ? "DEVSRV_UD_" + global.app.config.mainServer : "userdata"
-            filePathRelative = global.app.config.development ? "development/userdata_" + global.app.config.mainServer + ".json" : "production/userdata.json"
-            break
-        case "server":
-            collection = global.app.config.development ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
-            filePathRelative = global.app.config.development ? "development/serverdata_" + global.app.config.mainServer + ".json" : "production/serverdata.json"
-            break
-        case "offense":
-            collection = global.app.config.development ? "DEVSRV_OD_" + global.app.config.mainServer : "offensedata"
-            filePathRelative = global.app.config.development ? "development/offensedata_" + global.app.config.mainServer + ".json" : "production/offensedata.json"
-            break
-        default:
-            global.logger.debugError("Invalid data type: " + dataType, returnFileName())
-            return null
-    }
+
+    const { collection, filePathRelative } = parseDataType(dataType)
 
     if (method == "mongo") {
         try {
@@ -184,26 +177,9 @@ async function get(oneOrMany: "one" | "many", dataType: DataType, filter: object
 
 
 async function add(oneOrMany: "one" | "many", dataType: DataType, data: { [key: string]: any } | Array<{ [key: string]: any }>) {
-    let collection;
-    let filePathRelative; // from defined container folder (relative)
-    switch (dataType) {
-        case "user":
-            collection = global.app.config.development ? "DEVSRV_UD_" + global.app.config.mainServer : "userdata"
-            filePathRelative = global.app.config.development ? "development/userdata_" + global.app.config.mainServer + ".json" : "production/userdata.json"
-            break
-        case "server":
-            collection = global.app.config.development ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
-            filePathRelative = global.app.config.development ? "development/serverdata_" + global.app.config.mainServer + ".json" : "production/serverdata.json"
-            break
-        case "offense":
-            collection = global.app.config.development ? "DEVSRV_OD_" + global.app.config.mainServer : "offensedata"
-            filePathRelative = global.app.config.development ? "development/offensedata_" + global.app.config.mainServer + ".json" : "production/offensedata.json"
-            break
-        default:
-            global.logger.debugError("Invalid data type: " + dataType, returnFileName())
-            return false
-    }
 
+    const { collection, filePathRelative } = parseDataType(dataType)
+    
     if (method == "mongo") {
         try {
             const col = connectionClient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS").collection(collection)
@@ -248,25 +224,8 @@ async function add(oneOrMany: "one" | "many", dataType: DataType, data: { [key: 
 
 
 async function update(oneOrMany: "one" | "many", dataType: DataType, filter: object, data: object) {
-    let collection;
-    let filePathRelative; // from defined container folder (relative)
-    switch (dataType) {
-        case "user":
-            collection = global.app.config.development ? "DEVSRV_UD_" + global.app.config.mainServer : "userdata"
-            filePathRelative = global.app.config.development ? "development/userdata_" + global.app.config.mainServer + ".json" : "production/userdata.json"
-            break
-        case "server":
-            collection = global.app.config.development ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata"
-            filePathRelative = global.app.config.development ? "development/serverdata_" + global.app.config.mainServer + ".json" : "production/serverdata.json"
-            break
-        case "offense":
-            collection = global.app.config.development ? "DEVSRV_OD_" + global.app.config.mainServer : "offensedata"
-            filePathRelative = global.app.config.development ? "development/offensedata_" + global.app.config.mainServer + ".json" : "production/offensedata.json"
-            break
-        default:
-            global.logger.debugError("Invalid data type: " + dataType, returnFileName())
-            return false
-    }
+
+    const { collection, filePathRelative } = parseDataType(dataType)
 
     if (method == "mongo") {
         try {
@@ -310,24 +269,33 @@ export async function setupMongo() {
     if (method == "file") return false
 
     const requiredCollections = [
-        global.app.config.development ? "DEVSRV_UD_" + global.app.config.mainServer : "userdata",
-        global.app.config.development ? "DEVSRV_SD_" + global.app.config.mainServer : "serverdata",
-        global.app.config.development ? "DEVSRV_OD_" + global.app.config.mainServer : "offensedata",
+        "USERDATA_" + global.app.config.mainServer,
+        "SERVERDATA_" + global.app.config.mainServer,
+        "OFFENSEDATA_" + global.app.config.mainServer
     ]
 
     try {
+        const databases = (await connectionClient.db().admin().listDatabases()).databases.map((d) => d.name)
+        if (!databases.includes(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")) {
+            await connectionClient.db().admin().command({ create: global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS" })
+            global.logger.debug(`Successfully created a missing database in the MongoDB instance: ${chalk.yellow(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")}`,returnFileName());
+        }
         const database = connectionClient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
         const collections = (await database.listCollections().toArray()).map((c) => c.name);
         for (const collection of requiredCollections) {
             if (!collections.includes(collection)) {
                 await database.createCollection(collection)
-                global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(global.app.config.development ? "DEVSRV_OD_"+global.app.config.mainServer : "offensedata")}`,returnFileName());
+                global.logger.debug(`Successfully created a missing collection in the database: ${chalk.yellow(collection)}`,returnFileName());
             }
         }
     } catch (error) {
         global.logger.error(error.toString(), returnFileName())
         return false
     }
+
+    dataLocations.userdata =    "USERDATA_"    + global.app.config.mainServer
+    dataLocations.serverdata =  "SERVERDATA_"  + global.app.config.mainServer
+    dataLocations.offensedata = "OFFENSEDATA_" + global.app.config.mainServer
     
 }
 

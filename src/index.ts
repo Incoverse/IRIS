@@ -47,7 +47,7 @@ import { inspect } from "util";
 
 import performance from "./lib/performance.js";
 import { checkPermissions, getFullCMD } from "./lib/utilities/permissionsCheck.js";
-import storage, { checkMongoAvailability } from "./lib/utilities/storage.js";
+import storage, { checkMongoAvailability, dataLocations } from "./lib/utilities/storage.js";
 import { IRISEvent } from "./lib/base/IRISEvent.js";
 import { IRISCommand } from "./lib/base/IRISCommand.js";
 import { setupHandler, unloadHandler } from "./lib/utilities/misc.js";
@@ -1083,14 +1083,14 @@ global.identifier = total.toString(16);
       if (global.app.config.development) {
         if (storage.method == "file") {
           global.logger.log(`Storage folder: ${chalk.cyanBright("./" + relative(process.cwd(), join(process.cwd(), app.config.backupStoragePath, "developer"))+"/")}`, returnFileName());
-          global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} file: ${chalk.cyanBright("offensedata_" + mainServer.id + ".json")}`, returnFileName());
-          global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} file: ${chalk.cyanBright("serverdata_" + mainServer.id + ".json")}`, returnFileName());
-          global.logger.log(`Database ${chalk.yellowBright("USERDATA")} file: ${chalk.cyanBright("userdata_" + mainServer.id + ".json")}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} file: ${chalk.cyanBright(dataLocations.offensedata)}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} file: ${chalk.cyanBright(dataLocations.serverdata)}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("USERDATA")} file: ${chalk.cyanBright(dataLocations.userdata)}`, returnFileName());
         } else {
           global.logger.log(`Database name: ${chalk.cyanBright("IRIS_DEVELOPMENT")}`, returnFileName());
-          global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} collection: ${chalk.cyanBright("DEVSRV_OD_" + mainServer.id)}`, returnFileName());
-          global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} collection: ${chalk.cyanBright("DEVSRV_SD_" + mainServer.id)}`, returnFileName());
-          global.logger.log(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright("DEVSRV_UD_" + mainServer.id)}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("OFFENSEDATA")} collection: ${chalk.cyanBright(dataLocations.offensedata)}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("SERVERDATA")} collection: ${chalk.cyanBright(dataLocations.serverdata)}`, returnFileName());
+          global.logger.log(`Database ${chalk.yellowBright("USERDATA")} collection: ${chalk.cyanBright(dataLocations.userdata)}`, returnFileName());
         }
         global.logger.log(`Log name: ${chalk.cyanBright(global.logName)}`, returnFileName());
       }
