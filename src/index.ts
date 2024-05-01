@@ -436,12 +436,17 @@ global.identifier = total.toString(16);
       offenses: [],
     },
   };
-  global.dataForSetup = {
+  global.moduleInfo = {
     commands: [],
     events: []
   };
 
   global.mongoStatus = global.mongoStatuses.NOT_AVAILABLE
+
+  if (!process.env.DEVELOPMENT) {
+    global.logger.warn("DEVELOPMENT environment variable is not set. Defaulting to production mode.", "IRIS-ENV");
+  }
+
   global.app.config.development = process.env.DEVELOPMENT == "YES";
 
 
@@ -770,16 +775,16 @@ global.identifier = total.toString(16);
       const eventFiles = readdirSync(join(__dirname, "events")).filter((file: string) =>
         file.endsWith(".evt.js")
       );
-      global.dataForSetup.events = []
+      global.moduleInfo.events = []
       eventFiles.forEach((file: string) => {
-        return (import(`./events/${file}`)).then(a=>global.dataForSetup.events.push(a.default.name))
+        return (import(`./events/${file}`)).then(a=>global.moduleInfo.events.push(a.default.name))
       })
       performance.pause("eventLoader");
       performance.resume("commandRegistration");
 
-      global.dataForSetup.commands = []
+      global.moduleInfo.commands = []
       commandFiles.forEach((file: string) => {
-        return (import(`./commands/${file}`)).then(a=>global.dataForSetup.commands.push(a.default.name))
+        return (import(`./commands/${file}`)).then(a=>global.moduleInfo.commands.push(a.default.name))
       })
       // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
       for (const file of commandFiles) {
@@ -797,18 +802,18 @@ global.identifier = total.toString(16);
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.debugError(`Error while registering command: ${chalk.redBright(file)} (${chalk.redBright("Command cannot be both devOnly and mainOnly!")})`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
-          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           continue;
         }
         if (!global.app.config.development && command.commandSettings.devOnly) {
-          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.debug(`Command ${chalk.yellowBright(file)} is setup for development only and will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
           continue;
         }
         if (global.app.config.development && command.commandSettings.mainOnly) {
-          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.debug(`Command ${chalk.yellowBright(file)} is setup for production only and will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
@@ -824,7 +829,7 @@ global.identifier = total.toString(16);
           delete commands[commands.indexOf(command?.slashCommand?.toJSON() as any)]
           await duplicatedCmd.unload(client)
           delete global.requiredModules["cmd" + command.constructor.name]
-          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           continue;
         }
 
@@ -834,20 +839,20 @@ global.identifier = total.toString(16);
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script. Command will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
-          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           continue
         } else if (!setupResult) {
           //! Silent fail
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.debugWarn(`Command ${chalk.yellowBright(file)} failed to complete setup script silently. Command will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
-          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           continue
         } else if (setupResult == "timeout") {
           performance.pause(["fullRun", "commandRegistration"]);
           global.logger.error(`Command ${chalk.redBright(file)} failed to complete setup script within the ${chalk.yellowBright(timeout)} ms timeout. Command will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "commandRegistration"]);
-          global.dataForSetup.commands = global.dataForSetup.commands.filter((e) => e != command.constructor.name)
+          global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           continue
         }
 
@@ -879,12 +884,12 @@ global.identifier = total.toString(16);
         if (!(event.eventSettings.devOnly && event.eventSettings.mainOnly)) {
 
           if (!global.app.config.development && event.eventSettings.devOnly) {
-            global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+            global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
             global.logger.debug(`Event ${chalk.yellowBright(file)} is setup for development only and will not be loaded.`,returnFileName());
             continue;
           }
           if (global.app.config.development && event.eventSettings.mainOnly) {
-            global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+            global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
             global.logger.debug(`Event ${chalk.yellowBright(file)} is setup for production only and will not be loaded.`,returnFileName());
             continue;
           }
@@ -892,7 +897,7 @@ global.identifier = total.toString(16);
           performance.pause(["fullRun", "eventLoader"])
           global.logger.debugError(`Error while loading event: ${chalk.redBright(file)} (${chalk.redBright("Event cannot be both devOnly and mainOnly!")})`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
-          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
           continue;
         }
 
@@ -905,7 +910,7 @@ global.identifier = total.toString(16);
               performance.pause(["fullRun", "eventLoader"])
               global.logger.debugError(`Event ${chalk.redBright(file)} is missing a listenerKey. Event will not be loaded.`,returnFileName());
               performance.resume(["fullRun", "eventLoader"])
-              global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+              global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
               continue
             }
             break;
@@ -914,7 +919,7 @@ global.identifier = total.toString(16);
               performance.pause(["fullRun", "eventLoader"])
               global.logger.debugError(`Event ${chalk.redBright(file)} is missing a ms value. Event will not be loaded.`,returnFileName());
               performance.resume(["fullRun", "eventLoader"])
-              global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+              global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
               continue
             }
             break;
@@ -926,7 +931,7 @@ global.identifier = total.toString(16);
           global.logger.debugError(`Event ${chalk.bold(file)} collides with ${chalk.bold(global.requiredModules["event" + event.constructor.name].fileName)}. Event will not be loaded and duplicate event will be unloaded.`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
           delete global.requiredModules["event" + event.constructor.name]
-          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
           continue;
         }
 
@@ -936,20 +941,20 @@ global.identifier = total.toString(16);
           performance.pause(["fullRun", "eventLoader"])
           global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script. Event will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
-          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
           continue
         } else if (!setupRes) {
           //! Silent fail
           performance.pause(["fullRun", "eventLoader"])
           global.logger.debugWarn(`Event ${chalk.yellowBright(file)} failed to complete setup script silently. Event will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
-          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
           continue
         } else if (setupRes == "timeout") {
           performance.pause(["fullRun", "eventLoader"])
           global.logger.error(`Event ${chalk.redBright(file)} failed to complete setup script within the ${chalk.yellowBright(event.eventSettings.setupTimeoutMS ?? IRISEvent.defaultSetupTimeoutMS)} ms timeout. Event will not be loaded.`,returnFileName());
           performance.resume(["fullRun", "eventLoader"])
-          global.dataForSetup.events = global.dataForSetup.events.filter((e) => e != event.constructor.name)
+          global.moduleInfo.events = global.moduleInfo.events.filter((e) => e != event.constructor.name)
           continue
         }
 

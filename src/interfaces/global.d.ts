@@ -87,7 +87,7 @@ interface IRISGlobal extends NodeJS.Global {
     listenerFunction?: (...args: any[]) => any;
     listenerKey?: any;
   }>;
-  dataForSetup: {
+  moduleInfo: {
     events: string[]
     commands: string[]
   }

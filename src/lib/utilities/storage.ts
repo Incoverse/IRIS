@@ -275,11 +275,6 @@ export async function setupMongo() {
     ]
 
     try {
-        const databases = (await connectionClient.db().admin().listDatabases()).databases.map((d) => d.name)
-        if (!databases.includes(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")) {
-            await connectionClient.db().admin().command({ create: global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS" })
-            global.logger.debug(`Successfully created a missing database in the MongoDB instance: ${chalk.yellow(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS")}`,returnFileName());
-        }
         const database = connectionClient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS");
         const collections = (await database.listCollections().toArray()).map((c) => c.name);
         for (const collection of requiredCollections) {

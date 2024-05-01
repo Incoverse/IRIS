@@ -54,7 +54,7 @@ export default class Wordle extends IRISCommand {
 
 
     public async setup(client: Discord.Client) {
-      if (!global.dataForSetup.events.includes("WordleHandler")) {
+      if (!global.moduleInfo.events.includes("WordleHandler")) {
         global.logger.error(
           "The wordle command requires the WordleHandler event to be present!",
           this.fileName

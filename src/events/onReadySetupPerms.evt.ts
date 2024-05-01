@@ -29,7 +29,7 @@ export default class OnReadySetupPerms extends IRISEvent {
 
   public async setup(client:Discord.Client) {
     
-    this._loaded = global.dataForSetup.events.includes("OnReadySetupPermsToken");
+    this._loaded = global.moduleInfo.events.includes("OnReadySetupPermsToken");
     if (!this._loaded) return false
     if (!process.env.cID || !process.env.cSecret) {
       global.logger.warn("Client ID or Client Secret is not set in .env. IRIS will not be able to update command permissions until she is restarted.", this.fileName);

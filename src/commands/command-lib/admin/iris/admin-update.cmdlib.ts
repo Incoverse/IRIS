@@ -138,7 +138,7 @@ export async function runSubCommand(
                     })
                     global.status.updating = true
 
-                    if (global.dataForSetup.events.includes("OnReadyRealTimeUpdate")) {
+                    if (global.moduleInfo.events.includes("OnReadyRealTimeUpdate")) {
                         //! Tell ORRTU to shut down
                         global.communicationChannel.emit("ORRTU:shutdown")
                     }
