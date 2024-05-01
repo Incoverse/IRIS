@@ -66,15 +66,7 @@ declare const global: IRISGlobal;
 
 let client: Client = null;
 
-global.identifier = md5(os.hostname() + "-" + os.userInfo().username);
-
-const split = global.identifier.match(/\w{4}/g)
-let total = 0
-split.forEach((e) => {
-  total += parseInt(e, 16)
-});
-
-global.identifier = total.toString(16);
+global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(0,5);
 
 
 (async () => {

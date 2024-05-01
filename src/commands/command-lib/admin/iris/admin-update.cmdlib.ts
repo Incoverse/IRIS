@@ -52,8 +52,10 @@ export async function runSubCommand(
                 content: "IRIS is already up to date.",
             });
         } else {
-            const changes = (await execPromise(`${sudo} git rev-list --ancestry-path ${currentCommit}..${latestCommit} --format=%B`)).stdout.trim()
-            const commitMessagesArray = changes.split("\n").filter(a => a.trim() != "" && !a.trim().startsWith("commit")).reverse()
+            const changes = (await execPromise(`${sudo} git rev-list --ancestry-path ${currentCommit}..${latestCommit} --format=short`)).stdout.trim()
+            const cleanedCommits = changes.split("\n").filter(a => a.trim() != "" && !a.trim().startsWith("commit")).map(a => a.trim())
+            const commitMessagesArray = cleanedCommits.filter(a => !a.startsWith("Author")).reverse()
+            const commitAuthorsArray = cleanedCommits.filter(a => a.startsWith("Author")).map(a => a.replace("Author: ", "").trim()).reverse()
 
             // add (latest) to the first commit message, then send it to the user in an embed's description with pagination (10 messages per page max). Give the user a "Update", and "Cancel" button
             const embeds = []
@@ -64,7 +66,7 @@ export async function runSubCommand(
                 if (commitCount == 10 || commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
 
                     if (commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
-                        description += "- " + message + " - **(latest)**\n"
+                        description += "- " + message + " - " + commitAuthorsArray[commitMessagesArray.indexOf(message)]
                     }
 
                     const embed = new Discord.EmbedBuilder()
@@ -81,7 +83,7 @@ export async function runSubCommand(
                     commitCount = 0
                 }
 
-                description += "- " + message + "\n"
+                description += "- " + message + " - " + commitAuthorsArray[commitMessagesArray.indexOf(message)] + "\n"
                 commitCount++
             }
 
