@@ -83,10 +83,20 @@
       //* Production server permissions
       "main": [
         { "selector": "&Administrator", "canSee": true, "canUse": true },
-        { "selector": "&Moderator", "canSee": true, "canUse": true },
         { "selector": "&everyone", "canSee": false, "canUse": false }
       ],
       //* Development server permissions
+      "development": [
+        { "selector": "&Administrator", "canSee": true, "canUse": true },
+        { "selector": "&everyone", "canSee": false, "canUse": false }
+      ]
+    },
+    "mod": {
+      "main": [
+        { "selector": "&Administrator", "canSee": true, "canUse": true },
+        { "selector": "&Moderator", "canSee": true, "canUse": true },
+        { "selector": "&everyone", "canSee": false, "canUse": false }
+      ],
       "development": [
         { "selector": "&Administrator", "canSee": true, "canUse": true },
         { "selector": "&Moderator", "canSee": true, "canUse": true },

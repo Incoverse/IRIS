@@ -57,6 +57,24 @@ export default class Mod extends IRISCommand {
       )
       .addSubcommand((subcommand) =>
         subcommand
+          .setName("unpunish")
+          .setDescription("Revert a user's punishment.")
+          .addUserOption((option) =>
+              option
+                  .setName("user")
+                  .setDescription("User to punish")
+                  .setRequired(true)
+          )
+          .addStringOption((option) =>
+          option
+              .setName("rule")
+              .setDescription("The rule that the user violated.")
+              .setRequired(true)
+              .setAutocomplete(true)
+          )
+      )
+      .addSubcommand((subcommand) =>
+        subcommand
           .setName("review")
           .setDescription("Review a case that has been flagged for manual review.")
           .addUserOption((option) =>
@@ -81,6 +99,10 @@ export default class Mod extends IRISCommand {
       )
 
   public async runCommand(interaction: Discord.CommandInteraction) {
+
+        const subcommand = (interaction.options as CommandInteractionOptionResolver).getSubcommand();
+        if (subcommand != "punish") return await interaction.reply("This command is not yet implemented.");
+
         const rule = (interaction.options as CommandInteractionOptionResolver).getString("rule");
         const user = (interaction.options as CommandInteractionOptionResolver).getUser("user");
 
