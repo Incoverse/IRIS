@@ -154,7 +154,7 @@ export async function runSubCommand(
                         ]
                     })
 
-                    await execPromise(`${sudo} systemctl restart iris`)
+                    await execPromise(`${sudo} systemctl restart IRIS`)
                     collector.stop()
                 } else if (i.customId == "update:no") {
                     await i.update({
