@@ -17,7 +17,7 @@
 
 import { CommandInteraction, CommandInteractionOptionResolver, GuildMember, GuildMemberRoleManager, Role } from "discord.js";
 
-export async function getFullCMD(interaction: CommandInteraction) {
+export function getFullCMD(interaction: CommandInteraction, noOptions: boolean = false) {
     let fullCmd = interaction.commandName;
     // turn all passed in arguments into a single string as well
     if ((
@@ -31,9 +31,11 @@ export async function getFullCMD(interaction: CommandInteraction) {
       fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommand()}`;
     }
 
-    for (let option of interaction.options.data) {
-      if (!option.value) continue;
-      fullCmd += ` ${option.name}:${option.value}`;
+    if (!noOptions) { 
+      for (let option of interaction.options.data) {
+        if (!option.value) continue;
+        fullCmd += ` ${option.name}:${option.value}`;
+      }
     }
     return fullCmd.trim();
   }

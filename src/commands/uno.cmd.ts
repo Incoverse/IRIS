@@ -214,7 +214,6 @@ export default class Uno extends IRISCommand {
         })
         .then((result) => {
           if (result) {
-            delete result._id;
             settings = { ...settings, ...result.gameData.uno.settings };
           }
         });

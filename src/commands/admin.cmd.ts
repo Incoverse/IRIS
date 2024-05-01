@@ -21,12 +21,12 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 
 import * as restartMongoDB from "./command-lib/admin/system/admin-restartMongo.cmdlib.js";
-import * as checkCertificate from "./command-lib/admin/system/admin-checkcert.cmdlib.js";
 
 import * as restartIRIS from "./command-lib/admin/iris/admin-restart.cmdlib.js";
 import * as stopIRIS from "./command-lib/admin/iris/admin-stop.cmdlib.js";
 import * as logs from "./command-lib/admin/iris/admin-logs.cmdlib.js";
 import * as editMessage from "./command-lib/admin/iris/admin-editMessage.cmdlib.js"
+import * as update from "./command-lib/admin/iris/admin-update.cmdlib.js";
 
 import * as changeBirthday from "./command-lib/admin/edit/admin-changeBirthday.cmdlib.js";
 import * as changeTimezone from "./command-lib/admin/edit/admin-changeTimezone.cmdlib.js";
@@ -136,6 +136,11 @@ export default class Admin extends IRISCommand {
               .setRequired(true)
           )
       )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("update")
+          .setDescription("Update IRIS.")
+    )
   )
   .addSubcommandGroup((subcommandGroup) => //* ENTRY
     subcommandGroup
@@ -286,6 +291,11 @@ export default class Admin extends IRISCommand {
       )
   )
 
+  constructor(filename?: string) {
+
+    super(filename);
+  }
+
   public async autocomplete(interaction: Discord.AutocompleteInteraction) {
     const optionName = interaction.options.getFocused(true).name
     const focusedValue = interaction.options.getFocused();
@@ -320,27 +330,20 @@ export default class Admin extends IRISCommand {
           await changeBirthday.runSubCommand(interaction);
         }
       } else if (subcommandGroup == "system") {
-        if (subcommand == "checkcert") {
-          await checkCertificate.runSubCommand(interaction);
-        } else if (subcommand == "restartmongo") {
+        if (subcommand == "restartmongo") {
           await restartMongoDB.runSubCommand(interaction);
         }
       } else if (subcommandGroup == "iris") {
         if (subcommand == "restart") {
           await restartIRIS.runSubCommand(interaction);
         } else if (subcommand == "stop") {
-          await stopIRIS.runSubCommand(interaction);
-        } else if (subcommand == "setpresence") {
-          return await interaction.reply({
-            content: "This command is currently disabled.",
-            ephemeral: true,
-          });
-  
-          //await setPresence.runSubCommand(interaction);
+          await stopIRIS.runSubCommand(interaction);  
         } else if (subcommand == "logs") {
           await logs.runSubCommand(interaction);
         } else  if (subcommand == "editmessage") {
           await editMessage.runSubCommand(interaction);
+        } else if (subcommand == "update") {
+          await update.runSubCommand(interaction);
         }
       } else if (subcommandGroup == "rules") {
         if (subcommand == "show") {

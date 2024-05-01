@@ -30,7 +30,8 @@ import {
   PermissionsBitField,
   CommandInteractionOptionResolver,
   EmbedBuilder,
-  ActivityType
+  ActivityType,
+  Colors
 } from "discord.js";
 import { AppInterface } from "@src/interfaces/appInterface.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
@@ -252,6 +253,13 @@ global.identifier = total.toString(16);
     } 
   }
   let fullyReady = false;
+  if (!existsSync("./config.jsonc")) {
+    global.logger.error(
+      "Config file not found. Please see config.template.jsonc for an example configuration file with an explanation of each setting.",
+      "IRIS-ERR"
+    );
+    process.exit(1);
+  }
   const config = JsonCParser.parse(
     readFileSync("./config.jsonc", { encoding: "utf-8" })
   );
@@ -292,9 +300,9 @@ global.identifier = total.toString(16);
   let oldOff = global.communicationChannel.off
   //! Log every emit
   global.communicationChannel.emit = function(...args: any) {
-    const caller = typeof args[args.length-1] == "string" ? args[args.length-1] : "unknown"
     var emitArgs = arguments;
-    global.logger.debug(("Emitted '"+chalk.cyanBright.bold(emitArgs[0])+"' with data: " + chalk.yellowBright(JSON.stringify(emitArgs[1]))),caller)
+
+    global.logger.debug(("Emitted '"+chalk.cyanBright.bold(emitArgs[0])+"' with data: " + chalk.yellowBright(JSON.stringify(emitArgs[1]))),"IRIS-COMM")
     return oldEmit.apply(global.communicationChannel, arguments)
   }
   //! Log every on
@@ -317,7 +325,7 @@ global.identifier = total.toString(16);
   global.communicationChannel.off = function(...args: any) {
     let caller = args[2] || "FromONCE"
     const fromOnce = caller == "FromONCE"
-    if (caller == "FromONCE") {
+    if (fromOnce) {
       const errorStack = (new Error()).stack.split("\n")
       const handleOnceIndex = errorStack.findIndex((line) => line.includes("#handleOnce"))
       if (handleOnceIndex != -1) {
@@ -356,7 +364,7 @@ global.identifier = total.toString(16);
         status: "dnd",
       });
     }
-    global.logger.debugError((err && err.stack) ? err.stack : err, "IRIS-ERR");
+    global.logger.error((err && err.stack) ? err.stack : err, "IRIS-ERR");
   });
   let exiting = false
   const onExit = async (signal: string | number) => {
@@ -492,7 +500,11 @@ global.identifier = total.toString(16);
 
     client.on(Events.InteractionCreate, async (interaction: any) => {
       if (global.status.noInteract) return
+      if (!fullyReady) return
       if (interaction.isAutocomplete()) {
+        if (global.status.updating) return await interaction.respond([
+          "IRIS is currently updating, please wait a moment and try again."
+        ])
 
         const responsibleHandler = global.requiredModules[Object.keys(global.requiredModules).filter((a) => a.startsWith("cmd"))
         .find((a) => global.requiredModules[a].slashCommand.name == interaction.commandName)]
@@ -521,28 +533,48 @@ global.identifier = total.toString(16);
       if (interaction.isChatInputCommand()) {
       if (!fullyReady) {
         return await interaction.reply({
-          content:
-            "I'm still starting up, please wait a few seconds and try again.",
+          embeds: [
+            new EmbedBuilder().setTitle("IRIS is starting up...").setDescription(
+              "IRIS is currently starting up, please wait a moment and try again."
+            ).setColor(Colors.Red)
+          ],
+          ephemeral: true,
+        });
+      }
+      if (global.status.updating) {
+        return await interaction.reply({
+          embeds: [
+            new EmbedBuilder().setTitle("IRIS is updating...").setDescription(
+              "IRIS is currently updating, please wait a moment and try again."
+            ).setColor(Colors.Red)
+          ],
           ephemeral: true,
         });
       }
       if (global.mongoStatus == global.mongoStatuses.RESTARTING) {
         return await interaction.reply({  
-          content:
-            "The database is currently restarting, please wait a few seconds and try again.",
+          embeds: [
+            new EmbedBuilder().setTitle("IRIS' database is restarting...").setDescription(
+              "IRIS' database is currently restarting, please wait a moment and try again."
+            ).setColor(Colors.Red)
+          ],
           ephemeral: true,
         });
       }
       if (interaction.guild == null)
-        return await interaction.reply(
-          ":x: This command can only be used in a server."
-        );
+        return await interaction.reply({
+          embeds: [
+            new EmbedBuilder().setTitle("Command failed").setDescription(
+              "We're sorry, but IRIS is not currently available in DMs."
+            ).setColor(Colors.Red)
+          ],
+          ephemeral: true,
+        })
       if (interaction.guildId !== global.app.config.mainServer) return;
     }
 
       try {
-        const query = { id: interaction.user.id };
-        storage.findOne("user", query).then((result) => {
+        storage.findOne("user", { id: interaction.user.id }).then((result) => {
           const user = interaction.member;
           if (result == null) {
             const entry = {
@@ -569,22 +601,12 @@ global.identifier = total.toString(16);
                 last_active: new Date().toISOString(),
               },
             };
-            storage.updateOne("user", query, updateDoc)
+            storage.updateOne("user", { id: interaction.user.id }, updateDoc)
           }
         });
       } catch {}
       if (!interaction.isChatInputCommand()) return;
-      let fullCmd = interaction.commandName;
-      if ((
-        interaction.options as CommandInteractionOptionResolver
-      ).getSubcommandGroup(false)) {
-        fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommandGroup()}`;
-      }
-      if ((
-        interaction.options as CommandInteractionOptionResolver
-      ).getSubcommand(false)) {
-        fullCmd += ` ${(interaction.options as CommandInteractionOptionResolver).getSubcommand()}`;
-      }
+      let fullCmd = getFullCMD(interaction, true);
       
       if (interaction.isAutocomplete()) return;
 
@@ -607,7 +629,7 @@ global.identifier = total.toString(16);
                   if (res == false) return
                   if (!interaction.replied && !interaction.deferred) {
                     global.logger.debugWarn(
-                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+await getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(responsibleHandler.fileName)}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
+                      `${interaction.user.username} ran command '${chalk.yellowBright("/"+getFullCMD(interaction))}' which triggered handler '${chalk.yellowBright(responsibleHandler.fileName)}' but it appears that the command did not reply or defer the interaction. This is not recommended.`,
                       returnFileName()
                     );
                     await interaction.reply({

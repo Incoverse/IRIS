@@ -30,6 +30,7 @@ interface AppInterface {
   owners: Array<string>;
   config: {
     externalOwners: Array<string>;
+    lowPrivileged: boolean;
     mainServer: string;
     developmentServer: string;
     autoCompile: boolean;
@@ -42,7 +43,6 @@ interface AppInterface {
     permissions: Permissions;
 
     defaultEntry: {
-      _id?: string | OptionalId<Document> | null;
       id: string;
       discriminator?: string;
       last_active: string | null;

@@ -105,11 +105,7 @@ typings/
 # TernJS port file
 .tern-port
 
-local_config.json
 *.status
-# dont push config.jsonc, this will prevent any accidental config pushes by the dev team
-**/config.jsonc
-/data
 
 ## Do not push the IRIS.sock file
 IRIS.sock
@@ -121,4 +117,5 @@ storage/
 dist
 pre-dist
 
-## Do not include the running log by makeRunnable.js
+## Do not include the config file
+config.jsonc

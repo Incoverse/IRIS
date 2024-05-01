@@ -50,7 +50,8 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
     }
     protected _canBeReloaded: boolean = true
 
-    public async unload(client: Client) {
+    public async unload(client: Client, reason?: string) {
+        if (reason != "internal-kill") global.communicationChannel.off("ORRTU:shutdown", this.unload.bind(this, client, "internal-kill"), this.fileName)
         await this.killAFC()
         await this.closeCommandWatcher()
         await this.closeEventWatcher()
@@ -95,6 +96,14 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                 resolve(true)
             }
         })
+    }
+
+
+    public async setup(client: Client) {
+
+        global.communicationChannel.once("ORRTU:shutdown", this.unload.bind(this, client, "internal-kill"), this.fileName)
+        this._loaded = true
+        return true
     }
 
     public async runEvent(client: Client) {

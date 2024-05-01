@@ -121,7 +121,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
         }
     
         await storage.insertOne("user",entry);
-        delete entry._id;
+        delete entry["_id"];
         await interaction.reply({
           content:
             "Entry successfully created for **" +

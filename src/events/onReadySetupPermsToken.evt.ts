@@ -34,6 +34,15 @@ export default class OnReadySetupPermsToken extends IRISEvent {
   protected _priority: number = 6;
   protected _typeSettings: IRISEventTypeSettings = {};
 
+  public async setup(client: Discord.Client, reason: "reload" | "startup" | "duringRun"): Promise<boolean> {
+    if (!process.env.cID || !process.env.cSecret) {
+      global.logger.warn("Client ID or Client Secret is not set in .env. IRIS will not be able to update command permissions until she is restarted.", this.fileName);
+      return;
+    }
+    return true;
+      
+  }
+
   public async runEvent(client: Discord.Client): Promise<void> {
   try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 

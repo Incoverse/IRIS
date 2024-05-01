@@ -35,10 +35,13 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
     );
   } else {
     /* prettier-ignore */
-    global.logger.debug(`${chalk.yellow(interaction.user.username)} has restarted MongoDB.`, returnFileName());
+    global.logger.debug(`${chalk.yellow(interaction.user.username)} has requested a restart of MongoDB.`, returnFileName());
 
     interaction.deferReply();
-    await execPromise("sudo systemctl restart mongod");
+
+    const sudo = global.app.config.lowPrivileged ? "sudo" : "";
+
+    await execPromise(`${sudo} systemctl restart mongod`);
     await delay(1500)
     try {
       await execPromise(
@@ -51,7 +54,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
         "⚠️ MongoDB has been restarted, but is not running due to a failure."
       );
       return;
-      }
+    }
     /* prettier-ignore */
     global.logger.debug(chalk.greenBright("MongoDB successfully started back up!"), returnFileName());
     interaction.editReply(

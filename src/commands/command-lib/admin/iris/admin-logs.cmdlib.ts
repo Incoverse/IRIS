@@ -47,7 +47,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
         // add (latest) to the latest log
         const size = `${Math.round((statSync(`./logs/${log}`).size / 1024) * 100) / 100} KB`;
         return {
-            name: date.toUTCString() + (log == logs[0] ? " (latest)" : ``),
+            name: date.toUTCString() + (log == logs[0] ? " (this instance)" : ``),
             value: log + ` (${size})`
         }
     }))
@@ -59,7 +59,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
         const size = `${Math.round((statSync(`./logs/${log}`).size / 1024) * 100) / 100} KB`;
         const date = new Date(parseInt(log.replace("IRIS-", "").replace(".log", "")));
         return {
-            label: date.toUTCString() + (log == logs[0] ? " (latest)" : ``),
+            label: date.toUTCString() + (log == logs[0] ? " (this instance)" : ``),
             value: log,
             description: log + ` (${size})`
         }       

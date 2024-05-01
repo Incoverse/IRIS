@@ -36,14 +36,23 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
         " system when we're expecting LINUX."
     );
   } else {
-    const user = chalk.yellow(interaction.user.discriminator != "0" && interaction.user.discriminator ? interaction.user.tag: interaction.user.username)
+
+    if (global.app.config.development) {
+      return interaction.reply({
+        content: "IRIS cannot be restarted with this command in development mode.",
+      });
+    }
+
+    const sudo = global.app.config.lowPrivileged ? "sudo" : ""
+
+    const user = chalk.yellow(interaction.user.username)
     /* prettier-ignore */
     global.logger.debug(`${user} has restarted IRIS.`,returnFileName());
 
     await interaction.reply({
       content: "IRIS is now restarting...",
     });
-    execPromise("sudo systemctl restart IRIS");
+    execPromise(`${sudo} systemctl restart IRIS`);
   }
 }
 
