@@ -104,6 +104,7 @@ Follow these steps to get a copy of IRIS up and running on your machine!
    npm i -g typescript
    ```
 5. Create your MongoDB server.
+   > This step is optional but recommended. If you wish to use file storage instead, skip to step 8
    > If you wish to do it on your computer, follow [this guide (Windows)](https://www.prisma.io/dataguide/mongodb/setting-up-a-local-mongodb-database). For other operating systems, try googling about how to create a MongoDB server for that specific operating system. If done on the machine where IRIS will be running, your "mongoDBServer" in config.jsonc will be "localhost".
 6. Create the following databases on your MongoDB server: (MongoDB Compass is recommended to do this much simpler)
    - IRIS
@@ -133,8 +134,8 @@ Follow these steps to get a copy of IRIS up and running on your machine!
 
     ```
     TOKEN="<bot-token>"
-    DBUSERNAME="<MongoDB username>"
-    DBPASSWD="<MongoDB password>"
+    DBUSERNAME="<MongoDB username>" # Remove if using file storage
+    DBPASSWD="<MongoDB password>" # Remove if using file storage
     DEVELOPMENT="<YES/NO>"
     cID="<client-id>"
     cSecret="<client-secret>"
