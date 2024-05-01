@@ -28,8 +28,6 @@ const execPromise = promisify(exec);
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-let updateLink = ""
-
 export async function runSubCommand(
   interaction: Discord.CommandInteraction
 ) {
@@ -44,8 +42,6 @@ export async function runSubCommand(
     const user = interaction.user.discriminator != "0" && interaction.user.discriminator ? interaction.user.tag: interaction.user.username
     await interaction.deferReply();
     if (existsSync(join(process.cwd(), ".git")) && statSync(join(process.cwd(), ".git")).isDirectory()) {
-
-        
         const currentBranch = (await execPromise(`${sudo} git branch --show-current`)).stdout.trim()
         await execPromise(`${sudo} git fetch origin ${currentBranch}`)
         const latestCommit = (await execPromise(`${sudo} git log -1 origin/${currentBranch} --pretty=format:%h`)).stdout.trim()
@@ -201,6 +197,10 @@ export async function runSubCommand(
             
 
         }
+    } else {
+        return interaction.editReply({
+            content: "Unable to update IRIS. IRIS does not appear to be a git repository.\nFor updates to be available, make sure this version of IRIS is cloned from GitHub and has a .git folder.",
+        });
     }
 
 }
