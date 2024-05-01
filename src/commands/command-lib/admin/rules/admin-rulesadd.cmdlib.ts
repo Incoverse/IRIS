@@ -90,7 +90,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
   global.server.main.rules = alreadyExistingRules.sort((a, b) => a.index - b.index);
 
   try {
-    await storage.updateOne("server", { id: global.app.config.mainServer }, { $set: { rules: alreadyExistingRules } }).then(async () => {
+    await storage.updateOne("server", {}, { $set: { rules: alreadyExistingRules } }).then(async () => {
       await interaction.reply({
         content: `Rule **${ruleNr}. ${title}** has been added.`,
         ephemeral: true,

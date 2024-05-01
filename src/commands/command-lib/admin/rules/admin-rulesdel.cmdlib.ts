@@ -51,7 +51,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
 
   try {
 
-    await storage.updateOne("server",{ id: global.app.config.mainServer }, { $set: { rules: newRules } }).then(async () => {
+    await storage.updateOne("server", {}, { $set: { rules: newRules } }).then(async () => {
       
       await interaction.reply({
         content: `Rule ${rule.index} has been deleted.`,

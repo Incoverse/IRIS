@@ -89,11 +89,10 @@ export default class WordleHandler extends IRISEvent {
       global.games.wordle = { ...data, currentlyPlaying: {} };
 
 
-      const newGames = (await storage.findOne("server",{id:global.app.config.mainServer}))?.games?.filter((a) => a.type != "wordle") || [];
+      const newGames = (await storage.findOne("server",{}))?.games?.filter((a) => a.type != "wordle") || [];
       newGames.push({ type: "wordle", data });
-      await storage.updateOne("server", {
-        id: global.app.config.mainServer,
-      },{
+      await storage.updateOne("server", {},
+      {
         $set: {
           games: newGames,
         },

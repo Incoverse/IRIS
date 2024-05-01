@@ -96,7 +96,7 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
   global.server.main.rules = newRules;
 
   try {
-    await storage.updateOne("server",{ id: global.app.config.mainServer }, { $set: { rules: newRules } }).then(async () => {
+    await storage.updateOne("server", {}, { $set: { rules: newRules } }).then(async () => {
       await interaction.reply({
         content: `Rule ${rule.index} has been updated.`,
         ephemeral: true,
