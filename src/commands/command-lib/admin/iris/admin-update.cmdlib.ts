@@ -146,7 +146,7 @@ export async function runSubCommand(
                     await execPromise(`${sudo} git reset --hard`)
                     await execPromise(`${sudo} git pull`)
                     
-                    await i.update({
+                    await i.editReply({
                         embeds: [
                             new Discord.EmbedBuilder()
                             .setTitle("Update complete!")
