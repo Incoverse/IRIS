@@ -28,6 +28,30 @@ const execPromise = promisify(exec);
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
+function getRemoteURL(gitRemoteOutput: string): {
+    owner: string,
+    repo: string
+} {
+    // git@github.com:Incoverse/IRIS
+
+    if (gitRemoteOutput.includes("https://")) {
+        let url = gitRemoteOutput.replace(/http(s|):\/\//g, "").replace(/.*github.com\//, "").replace(/\.git$/gm, "")
+
+        return {
+            owner: url.split("/")[0],
+            repo: url.split("/")[1]
+        }
+    } else {
+        let url = gitRemoteOutput.replace(/.*github.com:/, "").replace(/\.git$/gm, "")
+
+        return {
+            owner: url.split("/")[0],
+            repo: url.split("/")[1]
+        }
+    }
+}
+
+
 export async function runSubCommand(
   interaction: Discord.CommandInteraction
 ) {
@@ -46,16 +70,19 @@ export async function runSubCommand(
         await execPromise(`${sudo} git fetch origin ${currentBranch}`)
         const latestCommit = (await execPromise(`${sudo} git log -1 origin/${currentBranch} --pretty=format:%h`)).stdout.trim()
         const currentCommit = (await execPromise(`${sudo} git log -1 --pretty=format:%h`)).stdout.trim()
+        const remoteURL = (await execPromise(`${sudo} git remote get-url origin`)).stdout.trim()
+        const {owner, repo} = getRemoteURL(remoteURL)
+
 
         if (latestCommit == currentCommit) {
             return interaction.editReply({
                 content: "IRIS is already up to date.",
             });
         } else {
-            const changes = (await execPromise(`${sudo} git rev-list --ancestry-path ${currentCommit}..${latestCommit} --format=short`)).stdout.trim()
-            const cleanedCommits = changes.split("\n").filter(a => a.trim() != "" && !a.trim().startsWith("commit")).map(a => a.trim())
-            const commitMessagesArray = cleanedCommits.filter(a => !a.startsWith("Author")).reverse()
-            const commitAuthorsArray = cleanedCommits.filter(a => a.startsWith("Author")).map(a => a.replace("Author: ", "").trim()).reverse()
+            const changes = (await execPromise(`${sudo} git rev-list --ancestry-path ${currentCommit}..${latestCommit} --format=%B`)).stdout.trim()
+            const cleanedCommits = changes.split("\n").filter(a => a.trim() != "" && !a.trim().startsWith("Merge: ")).map(a => a.trim())
+            const commitHashesArray = cleanedCommits.filter(a => a.startsWith("commit ")).map(a => a.replace("commit ", "").trim())
+            const commitMessagesArray = cleanedCommits.filter(a => !a.trim().startsWith("commit")).map(a => a.trim())
 
             // add (latest) to the first commit message, then send it to the user in an embed's description with pagination (10 messages per page max). Give the user a "Update", and "Cancel" button
             const embeds = []
@@ -63,19 +90,20 @@ export async function runSubCommand(
             let description = ""
             let commitCount = 0
             for (const message of commitMessagesArray) {
+                const shortHash = commitHashesArray[commitMessagesArray.indexOf(message)].substring(0,7)
                 if (commitCount == 10 || commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
 
                     if (commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
-                        description += "- " + message + " - " + commitAuthorsArray[commitMessagesArray.indexOf(message)]
+                        description += `- **[[${shortHash}](https://github.com/${owner}/${repo}/commit/${shortHash})]** - **${message}**`
                     }
 
                     const embed = new Discord.EmbedBuilder()
                     .setTitle("An update is available!")
-                    .setDescription((embeds.length == 0 ? "**Changes:**\n" : "") + description + "\n\n**Would you like to update IRIS?**")
+                    .setDescription("**Changes:**\n" + description + "\n\n**Would you like to update IRIS?**")
                     
-                    if (Math.floor(commitMessagesArray.length / 10) > 1) {
+                    if (Math.ceil(commitMessagesArray.length / 10) > 1) {
                         embed.setFooter({
-                            text: "Page "+embeds.length+1+" of " + Math.floor(commitMessagesArray.length / 10).toString()
+                            text: "Page "+(embeds.length+1)+" of " + Math.ceil(commitMessagesArray.length / 10).toString()
                         })
                     }
                     embeds.push(embed)
@@ -83,7 +111,7 @@ export async function runSubCommand(
                     commitCount = 0
                 }
 
-                description += "- " + message + " - " + commitAuthorsArray[commitMessagesArray.indexOf(message)] + "\n"
+                description += `- **[[${shortHash}](https://github.com/${owner}/${repo}/commit/${shortHash})]** - **${message}**\n`
                 commitCount++
             }
 
@@ -91,6 +119,7 @@ export async function runSubCommand(
             if (embeds.length > 1) {
                 buttonsRows.push(new Discord.ActionRowBuilder().addComponents(
                     new Discord.ButtonBuilder().setCustomId("update:prev").setLabel("Previous").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new Discord.ButtonBuilder().setCustomId("update:page-count").setLabel("1 of " + embeds.length).setStyle(ButtonStyle.Secondary).setDisabled(true),
                     new Discord.ButtonBuilder().setCustomId("update:next").setLabel("Next").setStyle(ButtonStyle.Secondary)
                 ))
             }
@@ -152,7 +181,7 @@ export async function runSubCommand(
                         embeds: [
                             new Discord.EmbedBuilder()
                             .setTitle("Update complete!")
-                            .setDescription("IRIS has been updated successfully. IRIS will now restart.")
+                            .setDescription(`${commitMessagesArray.length} change${commitMessagesArray.length == 1 ? " has" : "s have"} successfully been applied to IRIS. IRIS will now restart.`)
                         ]
                     })
 
@@ -170,8 +199,9 @@ export async function runSubCommand(
                     if (currentPage == 0) {
                         buttonsRows[0].components[0].setDisabled(true)
                     } else {
-                        buttonsRows[0].components[1].setDisabled(false)
+                        buttonsRows[0].components[2].setDisabled(false)
                     }
+                    buttonsRows[0].components[1].setLabel((currentPage+1) + " of " + embeds.length)
                     await i.update({
                         embeds: [embeds[currentPage]],
                         components: buttonsRows
@@ -179,10 +209,11 @@ export async function runSubCommand(
                 } else if (i.customId == "update:next") {
                     currentPage++
                     if (currentPage == embeds.length - 1) {
-                        buttonsRows[0].components[1].setDisabled(true)
+                        buttonsRows[0].components[2].setDisabled(true)
                     } else {
                         buttonsRows[0].components[0].setDisabled(false)
                     }
+                    buttonsRows[0].components[1].setLabel((currentPage+1) + " of " + embeds.length)
                     await i.update({
                         embeds: [embeds[currentPage]],
                         components: buttonsRows
