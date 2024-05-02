@@ -63,7 +63,6 @@ export async function runSubCommand(
 
     const sudo = global.app.config.lowPrivileged ? "sudo" : ""
 
-    const user = interaction.user.discriminator != "0" && interaction.user.discriminator ? interaction.user.tag: interaction.user.username
     await interaction.deferReply();
     if (existsSync(join(process.cwd(), ".git")) && statSync(join(process.cwd(), ".git")).isDirectory()) {
         const currentBranch = (await execPromise(`${sudo} git branch --show-current`)).stdout.trim()
