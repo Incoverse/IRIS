@@ -105,6 +105,7 @@ Follow these steps to get a copy of IRIS up and running on your machine!
    ```
 5. Create your MongoDB server.
    > This step is optional but recommended. If you wish to use file storage instead, skip to step 8
+   > 
    > If you wish to do it on your computer, follow [this guide (Windows)](https://www.prisma.io/dataguide/mongodb/setting-up-a-local-mongodb-database). For other operating systems, try googling about how to create a MongoDB server for that specific operating system. If done on the machine where IRIS will be running, your "mongoDBServer" in config.jsonc will be "localhost".
 6. Create the following databases on your MongoDB server: (MongoDB Compass is recommended to do this much simpler)
    - IRIS
