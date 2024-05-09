@@ -114,6 +114,17 @@ export default class OnReadySetupPermsToken extends IRISEvent {
       }
     );
 
+    if (!tokenResponseData.ok) {
+      if (request.headers.accept == "application/json") {
+        return response.json({
+          success: false,
+          error: "Failed to authorize IRIS: Invalid code.",
+        });
+      } else {
+        return response.status(500).send("Failed to authorize IRIS: Invalid code.");
+      }
+    }
+
     const oauthData: any = await tokenResponseData.json();
 
     // create a function that takes in the .env format and returns an object
@@ -153,7 +164,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
         }
       })
     } else {
-      await response.send("Thank you for authorizing IRIS, " + getUser.global_name + "!\nYou can close this tab now.");
+      await response.send("Thank you for authorizing IRIS, " + getUser.global_name + "!<br>You can close this tab now.");
     }
     authenticatedUser = await fetch(
       "https://discord.com/api/v9/oauth2/@me",
@@ -284,13 +295,12 @@ export default class OnReadySetupPermsToken extends IRISEvent {
   }
 }
   private async setupDiscordGranting(client: Discord.Client, server: Discord.Guild, owner: Discord.GuildMember) {
-    if (global.app.config.development) return
     async function onmessage(message:Message) {
       if (completed) return client.off(Events.MessageCreate, onmessage);
       if (message.author.id == owner.id && message.channel.type == ChannelType.DM) {
         if (message.content.toLowerCase() == "grant") {
             message.reply({
-              content: `Please grant IRIS access to the server, then when you get redirected to a localhost page, please send the following message to me \`\`grant-code <code>\`\`. You can find the code in the URL bar after \`\`?code=\`\`\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify)`
+              content: `Please grant IRIS access to the server, then when you get redirected to a localhost page, please send the following message: \`\`grant-code <code>\`\`. You can find the code in the URL bar after \`\`?code=\`\`\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify)`
             }) 
         } else if (message.content.toLowerCase().startsWith("grant-code ")) {
           const code = message.content.split(" ")[1];
@@ -301,13 +311,15 @@ export default class OnReadySetupPermsToken extends IRISEvent {
                 "Accept": "application/json",
               }
             }
-          ).catch(() => null).then((res) => res.json()).catch(() => false);
+          ).then((res) => res.json()).catch(() => null);
 
           if (success) {
-            message.reply("IRIS has successfully been authorized as user ``@" + success.authenticatedUser.username + "``. Continuing boot-up...");
+            message.reply("IRIS has successfully been authorized as user **@" + success.authenticatedUser.username + "**. Continuing boot-up...");
             client.off(Events.MessageCreate, onmessage);
           } else {
-            message.reply("Authorization failed. Please try again.");
+            if (success !== null) {
+              message.reply(success.error)
+            } else message.reply("Failed to authorize IRIS. Please try again.")
           }
         
         }
