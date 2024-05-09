@@ -22,6 +22,7 @@ import {
   Snowflake,
   Client,
   Events,
+  Partials,
   GatewayIntentBits,
   REST,
   Routes,
