@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import Discord, { ActivityType, ChannelType, Events, Message } from "discord.js";
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
 import chalk from "chalk";
 import { readFileSync, writeFileSync } from "fs";
@@ -147,6 +147,15 @@ export default class OnReadySetupPermsToken extends IRISEvent {
   });
 
   if (!process.env.ACCESS_TKN || !process.env.REFRESH_TKN) {
+    client.user.setPresence({
+      activities: [
+        {
+          name: "⚠️ Interaction required!",
+          type: ActivityType.Custom,
+          
+        },
+      ],
+    })
     server = app.listen(port, () => {
         global.logger.debug(`Express server for oauth2 is now running and listening on port ${chalk.whiteBright(port)}.`, this.fileName
         )
@@ -160,10 +169,19 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     global.logger.log("--------------------", this.fileName)
     global.logger.log("Please click the link below to grant IRIS the necessary permissions.", this.fileName)
     global.logger.log(chalk.yellowBright(`https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify`), this.fileName)
+    await this.setupDiscordGranting(client, guild, owner);
     await this.waitUntilComplete();
     global.logger.log("--------------------", this.fileName)
     global.logger.log(`Authorization was successfully completed by ${chalk.yellowBright(`@${authenticatedUser.user.username}`)}. Resuming boot-up...`, this.fileName)
-
+    client.user.setPresence({
+      activities: [
+        {
+          name: "Starting up...",
+          type: ActivityType.Custom,
+          
+        },
+      ],
+    })
   } else {
 
     let AccessSplit = process.env.ACCESS_TKN.split("-");
@@ -243,6 +261,34 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     }
   }
 }
+  private async setupDiscordGranting(client: Discord.Client, server: Discord.Guild, owner: Discord.GuildMember) {
+    if (global.app.config.development) return
+    async function onmessage(message:Message) {
+      if (message.author.id == owner.id && message.channel.type == ChannelType.DM) {
+        if (message.content.toLowerCase() == "grant") {
+            message.reply({
+              content: `Please grant IRIS access to the server, then when you get redirected to a localhost page, please send the following message to me \`\`grant-code <code>\`\`. You can find the code in the URL bar after \`\`?code=\`\`\n\n[Authorize IRIS to ${server.name}](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify)`
+            }) 
+        } else if (message.content.toLowerCase().startsWith("grant-code")) {
+          const code = message.content.split(" ")[1];
+          const msgResp = await message.reply("Thank you for granting access. IRIS will now attempt to authorize herself.");
+
+          const success = await fetch(
+            `http://localhost:7380/?code=${code}`
+          ).catch(() => null).then((res) => res.status == 200).catch(() => false);
+
+          if (success) {
+            msgResp.edit("Authorization was successful. IRIS will now resume boot-up.");
+            client.off(Events.MessageCreate, onmessage);
+          } else {
+            msgResp.edit("Authorization failed. Please try again.");
+          }
+        
+        }
+      }
+    }
+    client.on(Events.MessageCreate, onmessage);
+  }
 
   private envToObject(env: string) {
       const envArray = env.split("\n");
