@@ -26,6 +26,7 @@ export default class OnMessageEval extends IRISEvent {
   protected _typeSettings: IRISEventTypeSettings = {
     listenerKey: Discord.Events.MessageCreate,
   };
+  protected _priority: number = 999
 
   public async runEvent(message: Discord.Message): Promise<void> {
     if (message.guildId != global.app.config.mainServer) return;
