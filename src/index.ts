@@ -489,6 +489,10 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
         GatewayIntentBits.Guilds,
         GatewayIntentBits.MessageContent,
       ],
+      partials: [
+        Partials.Channel,
+        Partials.Message
+      ]
     });
 
     global.requiredModules = {};
