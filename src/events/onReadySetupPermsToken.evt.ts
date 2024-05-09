@@ -94,8 +94,8 @@ export default class OnReadySetupPermsToken extends IRISEvent {
   let authenticatedUser = null;
   let refreshTokenInterval = null;
     
-  app.get("/", async ({ query }, response) => {
-    const { code } = query;
+  app.get("/", async (request: Request, response: Response) => {
+    const { code } = request.query;
     const tokenResponseData = await fetch(
       "https://discord.com/api/oauth2/token",
       {
@@ -131,7 +131,30 @@ export default class OnReadySetupPermsToken extends IRISEvent {
 
     const newDotEnv = this.objectToEnv(parsedDotEnv);
     writeFileSync(".env", newDotEnv);
-    await response.send("Authorization completed. You can close this window now.");
+    // if accepts json, send json, else send text
+    const getUser = (await fetch(
+      "https://discord.com/api/v9/oauth2/@me",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${oauthData.access_token}`,
+        },
+      }
+    ).then((res) => res.json()).catch(() => null)).user;
+
+
+    if (request.headers.accept == "application/json") {
+      await response.json({
+        success: true,
+        authenticatedUser: {
+          id: getUser.id,
+          username: getUser.username,
+          global_name: getUser.global_name,
+        }
+      })
+    } else {
+      await response.send("Thank you for authorizing IRIS, " + getUser.global_name + "!\nYou can close this tab now.");
+    }
     authenticatedUser = await fetch(
       "https://discord.com/api/v9/oauth2/@me",
       {
@@ -243,7 +266,6 @@ export default class OnReadySetupPermsToken extends IRISEvent {
           const newDotEnv = this.objectToEnv(parsedDotEnv);
           writeFileSync(".env", newDotEnv);
 
-
           completed = true;
 
       } else {
@@ -264,30 +286,35 @@ export default class OnReadySetupPermsToken extends IRISEvent {
   private async setupDiscordGranting(client: Discord.Client, server: Discord.Guild, owner: Discord.GuildMember) {
     if (global.app.config.development) return
     async function onmessage(message:Message) {
+      if (completed) return client.off(Events.MessageCreate, onmessage);
       if (message.author.id == owner.id && message.channel.type == ChannelType.DM) {
         if (message.content.toLowerCase() == "grant") {
             message.reply({
-              content: `Please grant IRIS access to the server, then when you get redirected to a localhost page, please send the following message to me \`\`grant-code <code>\`\`. You can find the code in the URL bar after \`\`?code=\`\`\n\n[Authorize IRIS to ${server.name}](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify)`
+              content: `Please grant IRIS access to the server, then when you get redirected to a localhost page, please send the following message to me \`\`grant-code <code>\`\`. You can find the code in the URL bar after \`\`?code=\`\`\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify)`
             }) 
-        } else if (message.content.toLowerCase().startsWith("grant-code")) {
+        } else if (message.content.toLowerCase().startsWith("grant-code ")) {
           const code = message.content.split(" ")[1];
-          const msgResp = await message.reply("Thank you for granting access. IRIS will now attempt to authorize herself.");
 
           const success = await fetch(
-            `http://localhost:7380/?code=${code}`
-          ).catch(() => null).then((res) => res.status == 200).catch(() => false);
+            `http://localhost:7380/?code=${code}`, {
+              headers: {
+                "Accept": "application/json",
+              }
+            }
+          ).catch(() => null).then((res) => res.json()).catch(() => false);
 
           if (success) {
-            msgResp.edit("Authorization was successful. IRIS will now resume boot-up.");
+            message.reply("IRIS has successfully been authorized as user ``@" + success.authenticatedUser.username + "``. Continuing boot-up...");
             client.off(Events.MessageCreate, onmessage);
           } else {
-            msgResp.edit("Authorization failed. Please try again.");
+            message.reply("Authorization failed. Please try again.");
           }
         
         }
       }
     }
     client.on(Events.MessageCreate, onmessage);
+    global.logger.debug("Listening for messages from the owner of the server...", this.fileName);
   }
 
   private envToObject(env: string) {
