@@ -18,7 +18,6 @@
 import { InteractionResponse, Message, REST, SharedSlashCommandOptions, SlashCommandAttachmentOption, SlashCommandBuilder, SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandOptionsOnlyBuilder, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandUserOption } from "discord.js";
 import { EventEmitter } from "events";
 import { AppInterface } from "./appInterface.js";
-import { IRISSubcommand } from "@src/lib/base/IRISSubcommand.ts";
 
 interface IRISGlobal extends NodeJS.Global {
   identifier: any;
@@ -60,14 +59,14 @@ interface IRISGlobal extends NodeJS.Global {
       }[]
     }
   };
-  subcommands: Map<string, any>;
+
   mongoStatus: number;
   mongoStatuses: {
-    RUNNING: number,
-    RESTARTING: number,
-    STOPPED: number,
-    FAILED: number,
-    NOT_AVAILABLE: number,
+      RUNNING: number,
+      RESTARTING: number,
+      STOPPED: number,
+      FAILED: number,
+      NOT_AVAILABLE: number,
   }
   status: {
     [key: string]: boolean

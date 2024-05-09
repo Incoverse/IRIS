@@ -26,7 +26,6 @@ export default class OnMessageEval extends IRISEvent {
   protected _typeSettings: IRISEventTypeSettings = {
     listenerKey: Discord.Events.MessageCreate,
   };
-  protected _priority: number = 999
 
   public async runEvent(message: Discord.Message): Promise<void> {
     if (message.guildId != global.app.config.mainServer) return;
@@ -88,7 +87,7 @@ export default class OnMessageEval extends IRISEvent {
         } catch (err) {
             msg.edit(`IRIS ID: \`\`${global.identifier}\`\`\n***An error occurred during execution*** \`\`\`xl\n${err.stack ? err.stack : err}\n\`\`\``);
         }
-      }await
+      }
     }
   }
 

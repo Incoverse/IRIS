@@ -31,8 +31,7 @@ import {
   CommandInteractionOptionResolver,
   EmbedBuilder,
   ActivityType,
-  Colors,
-  basename
+  Colors
 } from "discord.js";
 import { AppInterface } from "@src/interfaces/appInterface.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
@@ -44,7 +43,7 @@ import { readFileSync, readdirSync, existsSync, createWriteStream, mkdirSync, un
 import dotenv from "dotenv";
 import moment from "moment-timezone";
 import { fileURLToPath } from "url";
-import { dirname, join, relative, resolve } from "path";
+import { dirname, join, relative } from "path";
 import { inspect } from "util";
 
 import performance from "./lib/performance.js";
@@ -55,7 +54,6 @@ import { IRISCommand } from "./lib/base/IRISCommand.js";
 import { setupHandler, unloadHandler } from "./lib/utilities/misc.js";
 import os from "os";
 import md5 from "md5";
-import { IRISSubcommand } from "./lib/base/IRISSubcommand.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -757,39 +755,6 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
       if (storage.method == "file" && !global.app.config.skipMongoFailWait) await sleep(3000);
 
 
-      function extendsIRISSubcommand(subcommand: any): subcommand is typeof IRISSubcommand {
-        return subcommand && subcommand.prototype instanceof IRISSubcommand;
-      };
-
-      performance.start("subcommandSaving")
-      if (!global.subcommands) {
-        global.subcommands = new Map()
-    
-        let folder = resolve("dist/commands/command-lib")
-        if (existsSync(folder)) {
-            let files = readdirSync(folder, {recursive: true})
-            for (let file of files) {
-                if (!(file as string).endsWith(".cmdlib.js") || file instanceof Buffer) continue
-                const subcommand = await import(join(folder, file))
-                if (!subcommand.default || !extendsIRISSubcommand(subcommand.default)) continue
-                if (!subcommand.default.parentCommand) {
-                  global.logger.warn(`Subcommand with class name ${chalk.yellowBright(subcommand.default.name)} (${chalk.yellowBright(basename(file))}) does not have a parent command defined. Skipping...`,returnFileName());
-                  global.logger.debugWarn(`You can define a parent command by adding a static property named 'parentCommand' to the class.`,returnFileName())
-                  continue
-                }
-
-                if (global.subcommands.has(subcommand.default.name + "@" + subcommand.default.parentCommand)) {
-                  global.logger.error(`Subcommand with class name '${chalk.redBright(subcommand.default.name)}' for command with class name '${chalk.redBright(subcommand.default.parentCommand)}' already exists. Conflict detected.`,returnFileName());
-                  throw new Error(`SUBCOMMAND_ALREADY_EXISTS`) //? trigger an uncaughtException, also triggering the shutdown process (onExit)
-                  continue
-                }
-                global.subcommands.set(subcommand.default.name + "@" + subcommand.default.parentCommand, subcommand.default)
-              }
-        }
-      }
-      performance.end("subcommandSaving", {silent: true})
-
-
       performance.start("commandRegistration");
       const commands: Array<string> = [];
       // Grab all the command files from the commands directory you created earlier
@@ -821,7 +786,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
 
 
         const commandClass = (await import(`./commands/${file}`)).default
-        const command: IRISCommand = new commandClass(client, file);
+        const command: IRISCommand = new commandClass(file);
         if (
           command.commandSettings.devOnly &&
           command.commandSettings.mainOnly
@@ -859,8 +824,6 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
           global.moduleInfo.commands = global.moduleInfo.commands.filter((e) => e != command.constructor.name)
           continue;
         }
-
-        await command.setupSlashCommands(client)
 
         let timeout = command.commandSettings.setupTimeoutMS ?? IRISCommand.defaultSetupTimeoutMS;
         let setupResult = await setupHandler(timeout, command, client, "startup")
