@@ -21,27 +21,56 @@ import { fileURLToPath } from "url";
 import chalk from "chalk";
 import { promisify } from "util";
 import { exec } from "child_process";
+import { IRISSubcommand } from "@src/lib/base/IRISSubcommand.js";
 const execPromise = promisify(exec);
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(
-  interaction: Discord.CommandInteraction
-) {
-  const user = interaction.user.discriminator != "0" && interaction.user.discriminator ? interaction.user.tag: interaction.user.username
-  /* prettier-ignore */
-  global.logger.debug(`${chalk.yellow(user)} has stopped IRIS.`,returnFileName());
+export default class StopIRIS extends IRISSubcommand {
 
-  await interaction.reply({
-    content: "IRIS is now stopping...",
-  });
-  if (global.app.config.development) {
-    process.exit(0);
-  } else {
-    execPromise("sudo systemctl stop IRIS");
+  static parentCommand = "Admin"
+
+  public async setup(parentCommand: any, client: Discord.Client<boolean>) {
+    (parentCommand.options as any)
+      .find((option: any) => option.name == "iris")
+      .addSubcommand((subcommand: Discord.SlashCommandBuilder) =>
+        subcommand
+          .setName("stop")
+          .setDescription("Forcefully stop IRIS.")
+      );
+
+    this._loaded = true;
+    return true;
+      
   }
+
+  public async runSubCommand(interaction: Discord.CommandInteraction): Promise<any> {
+
+    if (
+      (interaction.options as any).getSubcommandGroup() !== "iris" ||
+      (interaction.options as any).getSubcommand() !== "stop"
+    ) return
+
+    const sudo = global.app.config.lowPrivileged ? "sudo" : ""
+
+    const user = interaction.user.username
+    /* prettier-ignore */
+    global.logger.debug(`${chalk.yellow(user)} has stopped IRIS.`,returnFileName());
+  
+    await interaction.reply({
+      content: "IRIS is now stopping...",
+    });
+    if (global.app.config.development) {
+      process.exit(0);
+    } else {
+      execPromise(`${sudo} systemctl stop IRIS`);
+    }
+  
+  }
+
 }
+
 
 export const returnFileName = () =>
   __filename.split(process.platform == "linux" ? "/" : "\\")[

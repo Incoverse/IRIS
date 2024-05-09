@@ -15,17 +15,56 @@
   * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { CommandInteractionOptionResolver } from "discord.js";
+import Discord, { CommandInteractionOptionResolver, Team } from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
+import chalk from "chalk";
+import { promisify } from "util";
+import {exec} from "child_process";
 import moment from "moment-timezone";
 import storage from "@src/lib/utilities/storage.js";
+import { IRISSubcommand } from "@src/lib/base/IRISSubcommand.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(interaction: Discord.CommandInteraction) {
-    const user = (
+export default class EditBirthday extends IRISSubcommand {
+  static parentCommand: string = "Admin";
+
+  public async setup(parentSlashCommand: Discord.SlashCommandBuilder): Promise<boolean> {
+
+    (parentSlashCommand.options as any).find((option: any) => option.name == "edit")
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("birthday")
+        .setDescription("Edit/get a user's birthday")
+        .addUserOption((option) =>
+          option
+            .setName("user")
+            .setDescription("The user whose birthday you want to edit")
+            .setRequired(true)
+        )
+        .addStringOption((option) =>
+          option
+            .setName("birthday")
+            .setDescription(
+              "The new birthday of the user (Format: YYYY-MM-DD), or 'null' to remove the birthday"
+            )
+          )
+    )
+    this._loaded = true;
+    return true;
+  }
+
+  public async runSubCommand(interaction: Discord.CommandInteraction): Promise<any> {
+      if (
+        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(true) !== "edit" ||
+        (interaction.options as CommandInteractionOptionResolver).getSubcommand(true) !== "birthday"
+      ) return;
+
+
+
+      const user = (
         interaction.options as CommandInteractionOptionResolver
       ).getUser("user", true);
       let birthday = (
@@ -141,14 +180,16 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
           "**.",
         ephemeral: true,
       });
+
+
+    }
 }
+
 
 /* prettier-ignore */
 function getOrdinalNum(n) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }
 /* prettier-ignore */
 const DateFormatter = { monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], formatDate: function (e, t) { var r = this; return t = r.getProperDigits(t, /d+/gi, e.getDate()), t = (t = r.getProperDigits(t, /M+/g, e.getMonth() + 1)).replace(/y+/gi, (function (t) { var r = t.length, g = e.getFullYear(); return 2 == r ? (g + "").slice(-2) : 4 == r ? g : t })), t = r.getProperDigits(t, /H+/g, e.getHours()), t = r.getProperDigits(t, /h+/g, r.getHours12(e.getHours())), t = r.getProperDigits(t, /m+/g, e.getMinutes()), t = (t = r.getProperDigits(t, /s+/gi, e.getSeconds())).replace(/a/gi, (function (t) { var g = r.getAmPm(e.getHours()); return "A" === t ? g.toUpperCase() : g })), t = r.getFullOr3Letters(t, /d+/gi, r.dayNames, e.getDay()), t = r.getFullOr3Letters(t, /M+/g, r.monthNames, e.getMonth()) }, getProperDigits: function (e, t, r) { return e.replace(t, (function (e) { var t = e.length; return 1 == t ? r : 2 == t ? ("0" + r).slice(-2) : e })) }, getHours12: function (e) { return (e + 24) % 12 || 12 }, getAmPm: function (e) { return e >= 12 ? "pm" : "am" }, getFullOr3Letters: function (e, t, r, g) { return e.replace(t, (function (e) { var t = e.length; return 3 == t ? r[g].substr(0, 3) : 4 == t ? r[g] : e })) } };
-
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
 
 function howManyDaysSinceBirthday(birthday: string, timezone: string) {
   return Math.floor(

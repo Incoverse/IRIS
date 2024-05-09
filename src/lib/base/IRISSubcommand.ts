@@ -17,92 +17,55 @@
 
 import Discord from "discord.js";
 import path from "path";
-export type IRISSlashCommand = Discord.SlashCommandBuilder | Discord.SlashCommandSubcommandsOnlyBuilder | Discord.SlashCommandOptionsOnlyBuilder | Omit<Discord.SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup"> | Omit<Discord.SlashCommandSubcommandsOnlyBuilder, "addSubcommand" | "addSubcommandGroup"> | Omit<Discord.SlashCommandOptionsOnlyBuilder, "addSubcommand" | "addSubcommandGroup">;
 import crypto from "crypto";
-import { readFileSync, existsSync, readdirSync } from "fs";
-import { IRISSubcommand } from "./IRISSubcommand.js";
-import { IRISGlobal } from "@src/interfaces/global.js";
+import { readFileSync } from "fs";
 
-declare const global: IRISGlobal;
 
-export abstract class IRISCommand {
-    
+export abstract class IRISSubcommand {
+
     static defaultSetupTimeoutMS = 30000;
     static defaultUnloadTimeoutMS = 30000;
     
+    // static parentCommand: string; //! The parent command's class name (e.g "Admin" for admin.cmd.ts). This is required for subcommands
+
     
-    private            _subcommandHashes: Map<IRISSubcommand, string> = new Map(); 
-    protected          _subcommands: Map<string, IRISSubcommand> = new Map();
     private            _filename: string = "";
-    private            _fullPath: string = "";
     public             _loaded: boolean = false;
     protected          _cacheContainer: Map<Date, any> = new Map();
-    protected          _commandSettings: IRISEvCoSettings = {
-        devOnly: false,
-        mainOnly: false,
-        setupTimeoutMS: IRISCommand.defaultSetupTimeoutMS,
-        unloadTimeoutMS: IRISCommand.defaultUnloadTimeoutMS
+    protected          _commandSettings = {
+        setupTimeoutMS: IRISSubcommand.defaultSetupTimeoutMS,
+        unloadTimeoutMS: IRISSubcommand.defaultUnloadTimeoutMS
     }
-    protected abstract _slashCommand: IRISSlashCommand;
-    private            _hash: string = ""; //! Used to detect changes during reloads 
+    private _hash: string;
     
     
-    constructor(client: Discord.Client, filename?: string) {
-        this._fullPath = new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, "");
+    constructor(filename?: string) {
+        let fullPath = new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, "");
         if (filename) this._filename = filename;
         else {
             //! Find the class caller, get their filename, and set it as the filename
-            this._filename = path.basename(this._fullPath)
+            this._filename = path.basename(fullPath)
         }
 
 
-        this._hash = crypto.createHash("md5").update(readFileSync(this._fullPath)).digest("hex")
+        this._hash = crypto.createHash("md5").update(readFileSync(fullPath)).digest("hex")
+
     }
 
-    public readonly setupSlashCommands = async (client: Discord.Client) => {
-        let hashes = []
-        for (let subcommandKey of Array.from(global.subcommands.keys()).toSorted((a,b)=>{
-            if (a.split("@")[0].toLowerCase().includes("initiator")) return -1
-            if (b.split("@")[0].toLowerCase().includes("initiator")) return 1
-            return a.localeCompare(b)
-        })) {
-            
-            if (!subcommandKey.endsWith("@" + this.constructor.name)) continue;
-
-            let subcommand = global.subcommands.get(subcommandKey)
-            subcommand = new subcommand()
-
-            if (await subcommand.setup(this._slashCommand, client)) {
-                this._subcommands.set(subcommandKey, subcommand)
-            }
-            hashes.push(subcommand.hash)
-            
-        }
-
-        if (this._subcommands.size > 0) {
-            hashes.push(this._hash)
-            const sortedHashes = hashes.sort()
-
-            const hash = crypto.createHash("md5").update(sortedHashes.join("")).digest("hex")
-            this._hash = hash
-        }
-    }
-
-    public abstract runCommand(interaction: Discord.CommandInteraction): Promise<any>;
+    public abstract runSubCommand(interaction: Discord.CommandInteraction): Promise<any> 
     public async autocomplete(interaction: Discord.AutocompleteInteraction): Promise<any> {
-        return new Promise<void>(async (res) => res(await interaction.respond([])))
+        return 
     }
 
-    public get slashCommand() {return this._slashCommand}
 
-    public get commandSettings() {return this._commandSettings}
+    public get subCommandSettings() {return this._commandSettings}
 
 
-    public async setup(client: Discord.Client, reason: "reload"|"startup"|"duringRun"|null): Promise<boolean> {
+    public async setup(parentCommand, client: Discord.Client): Promise<boolean> {
         this._loaded = true;    
         return true;
     };
-    public async unload(client: Discord.Client, reason: "reload"|"shuttingDown"|null): Promise<boolean> {
+    public async unload(parentCommand, client: Discord.Client): Promise<boolean> {
         this._loaded = false;
         return true;
     }
@@ -167,7 +130,7 @@ export abstract class IRISCommand {
 
 
         return (
-            "C: " +
+            "S: " +
             this.constructor.name +
             " - " + this._filename
         )

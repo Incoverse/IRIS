@@ -23,7 +23,7 @@ import { IRISCommand } from "../base/IRISCommand.js";
 
 declare const global: IRISGlobal;
 
-export async function reloadCommands(client: Client, commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd")).map(cmdKey => global.requiredModules[cmdKey].getSlashCommand().toJSON()) ) {
+export async function reloadCommands(client: Client, commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd")).map(cmdKey => global.requiredModules[cmdKey].slashCommand.toJSON()) ) {
     return new Promise<boolean>(async (resolve, reject) => {
         try {
           await global.rest.put(

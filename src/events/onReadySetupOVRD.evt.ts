@@ -43,7 +43,7 @@ export default class OnReadySetupOVRD extends IRISEvent {
     try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 
 
-      global.overrides.reloadCommands = async() => (await reloadCommands(client))
+      global.overrides.reloadCommands = async(commands?) => await reloadCommands(client, commands)
 
       global.overrides.updateChoices = async (commandPath:string, option:string, update:(option: SlashCommandOptionsOnlyBuilder) => Promise<SlashCommandOptionsOnlyBuilder>) => {
         const commandSplit = commandPath.split(" ")
