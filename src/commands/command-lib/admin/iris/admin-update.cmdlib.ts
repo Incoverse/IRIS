@@ -79,40 +79,46 @@ export async function runSubCommand(
             });
         } else {
             const changes = (await execPromise(`${sudo} git rev-list --ancestry-path ${currentCommit}..${latestCommit} --format=%B`)).stdout.trim()
-            const cleanedCommits = changes.split("\n").filter(a => a.trim() != "" && !a.trim().startsWith("Merge: ")).map(a => a.trim())
-            const commitHashesArray = cleanedCommits.filter(a => a.startsWith("commit ")).map(a => a.replace("commit ", "").trim())
-            const commitMessagesArray = cleanedCommits.filter(a => !a.trim().startsWith("commit")).map(a => a.trim())
+            const cleanedCommits = changes.split("\n").filter(a =>!a.trim().startsWith("Merge: ")).map(a => a.trim())
 
+            const parsed = groupByCommit(cleanedCommits)
+
+            const commitHashesArray = Array.from(parsed.keys())
+            const commitMessagesArray = Array.from(parsed.values()).map(a => a.map(b=>b.trim()).filter(b=>b !== "").join("    "))
             // add (latest) to the first commit message, then send it to the user in an embed's description with pagination (10 messages per page max). Give the user a "Update", and "Cancel" button
             const embeds = []
     
             let description = ""
             let commitCount = 0
-            for (const message of commitMessagesArray) {
-                const shortHash = commitHashesArray[commitMessagesArray.indexOf(message)].substring(0,7)
-                if (commitCount == 10 || commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
-
-                    if (commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
-                        description += `- **[[${shortHash}](https://github.com/${owner}/${repo}/commit/${shortHash})]** - **${message}**`
-                    }
-
-                    const embed = new Discord.EmbedBuilder()
-                    .setTitle("An update is available!")
-                    .setDescription("**Changes:**\n" + description + "\n\n**Would you like to update IRIS?**")
-                    
-                    if (Math.ceil(commitMessagesArray.length / 10) > 1) {
-                        embed.setFooter({
-                            text: "Page "+(embeds.length+1)+" of " + Math.ceil(commitMessagesArray.length / 10).toString()
+                for (const message of commitMessagesArray) {
+                    const shortHash = commitHashesArray[commitMessagesArray.indexOf(message)].substring(0,7)
+                    if (commitCount == 10 || commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
+    
+                        if (commitMessagesArray.indexOf(message) == commitMessagesArray.length - 1) {
+                            description += `- **[[${shortHash}](https://github.com/${owner}/${repo}/commit/${shortHash})]** - **${message}**`
+                        }
+    
+                        const embed = new Discord.EmbedBuilder()
+                        .setTitle("An update is available!")
+                        .setDescription("**Changes:**\n" + description + "\n\n**Would you like to update IRIS?**")
+                        
+                        if (Math.ceil(commitMessagesArray.length / 10) > 1) {
+                            embed.setFooter({
+                                text: "Page "+(embeds.length+1)+" of " + Math.ceil(commitMessagesArray.length / 10).toString()
+                            })
+                        }
+                        embed.setAuthor({
+                            name: "Source: https://github.com/"+owner+"/"+repo,
+                            iconURL: "https://i.imgur.com/CmVOeCl.png"
                         })
+                        embeds.push(embed)
+                        description = ""
+                        commitCount = 0
                     }
-                    embeds.push(embed)
-                    description = ""
-                    commitCount = 0
+    
+                    description += `- **[[${shortHash}](https://github.com/${owner}/${repo}/commit/${shortHash})]** - **${message}**\n`
+                    commitCount++
                 }
-
-                description += `- **[[${shortHash}](https://github.com/${owner}/${repo}/commit/${shortHash})]** - **${message}**\n`
-                commitCount++
-            }
 
             const buttonsRows = []
             if (embeds.length > 1) {
@@ -241,3 +247,21 @@ export const returnFileName = () =>
   __filename.split(process.platform == "linux" ? "/" : "\\")[
     __filename.split(process.platform == "linux" ? "/" : "\\").length - 1
   ];
+
+function groupByCommit(messages: string[]): Map<string, string[]> {
+    const result = new Map<string, string[]>();
+    let currentCommit: string | undefined;
+
+    for (const message of messages) {
+        if (message.startsWith("commit ")) {
+        currentCommit = message.replace("commit ", "").trim();
+        result.set(currentCommit, []);
+        } else if (currentCommit) {
+        const messagesForCommit = result.get(currentCommit) || [];
+        messagesForCommit.push(message);
+        result.set(currentCommit, messagesForCommit);
+        }
+    }
+
+    return result;
+}
