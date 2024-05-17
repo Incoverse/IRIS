@@ -20,13 +20,15 @@ import { IRISCommand } from "@src/lib/base/IRISCommand.js";
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
 import { addCommand, reloadCommands, setupHandler, unloadHandler } from "@src/lib/utilities/misc.js";
 import chalk from "chalk";
-import { Client, Events, NewsChannel } from "discord.js";
+import { Client, Events } from "discord.js";
 import fs from "fs";
 import crypto from "crypto";
-import { resolveTsPaths } from "resolve-tspaths";
 import Watcher from "watcher";
 import path from "path";
 import treeKill from "tree-kill";
+
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
 
 import { removeCommand } from "@src/lib/utilities/misc.js";
 import { spawn, ChildProcessWithoutNullStreams } from "child_process"
@@ -202,9 +204,10 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                         global.logger.error(`Command ${chalk.redBright(removedHandler.constructor.name)} failed to unload within the ${chalk.yellowBright(removedHandler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
                         return
                     }
-                    const newHandler = new newHandlerClass() as IRISCommand
+                    const newHandler = new newHandlerClass(client) as IRISCommand
                     newHandler.cache = removedHandler.cache
                     await newHandler.validateCache()
+                    await newHandler.setupSlashCommands(client)
                     const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "reload")
                     if (setupResult == "timeout") {
                         global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
@@ -255,7 +258,7 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                         return
                     }
                     
-                    const newHandler = new newHandlerClass() as IRISCommand
+                    const newHandler = new newHandlerClass(client) as IRISCommand
                     const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "duringRun")
                     if (setupResult == "timeout") {
                         global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
@@ -287,7 +290,7 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                 const fileContents = fs.readFileSync(filePath).toString()
 
                 const fileHash = crypto.createHash("md5").update(fileContents).digest("hex")
-                const handlerHash = responsibleHandler.hash
+                const handlerHash = responsibleHandler.fileHash
 
                 if (fileHash == handlerHash) {
                     global.logger.debug(`Command ${chalk.greenBright(responsibleHandler.constructor.name)} was modified, but the hash is the same.`, this.fileName)
@@ -301,10 +304,13 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                     global.logger.error(`Command ${chalk.redBright(handler.constructor.name)} failed to unload within the ${chalk.yellowBright(handler.commandSettings.unloadTimeoutMS??IRISCommand.defaultUnloadTimeoutMS)} ms timeout.`, this.fileName)
                     return
                 }
-                const newHandlerClass = (await import(filePath + "?_="+antiCacheValue)).default
-                const newHandler = new newHandlerClass() as IRISCommand
+                console.log(filePath)
+                console.log(fs.existsSync(filePath))
+                const newHandlerClass = (await import(filePath)).default
+                const newHandler = new newHandlerClass(client) as IRISCommand
                 newHandler.cache = handler.cache
                 await newHandler.validateCache()
+                await newHandler.setupSlashCommands(client)
                 const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "reload")
                 if (setupResult == "timeout") {
                     global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
@@ -577,3 +583,8 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
     }
     
 }
+
+async function importFresh(modulePath) {
+    const cacheBustingModulePath = `${modulePath}?update=${Date.now()}`
+    return (await import(cacheBustingModulePath)).default
+  }

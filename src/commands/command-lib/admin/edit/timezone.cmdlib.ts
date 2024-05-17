@@ -15,17 +15,55 @@
   * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { CommandInteractionOptionResolver, Team } from "discord.js";
+import { CommandInteractionOptionResolver, Team } from "discord.js";
+import * as Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
+import chalk from "chalk";
+import { promisify } from "util";
+import {exec} from "child_process";
 import moment from "moment-timezone";
 import storage from "@src/lib/utilities/storage.js";
+import { IRISSubcommand } from "@src/lib/base/IRISSubcommand.js";
 
 declare const global: IRISGlobal;
 const __filename = fileURLToPath(import.meta.url);
 
-export async function runSubCommand(interaction: Discord.CommandInteraction) {
-    const user = (
+export default class EditTimezone extends IRISSubcommand {
+  static parentCommand: string = "Admin";
+
+  public async setup(parentSlashCommand: Discord.SlashCommandBuilder): Promise<boolean> {
+
+    (parentSlashCommand.options as any).find((option: any) => option.name == "edit")
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("timezone")
+        .setDescription("Edit/get a user's timezone")
+        .addUserOption((option) =>
+          option
+            .setName("user")
+            .setDescription("The user whose timezone you want to edit")
+            .setRequired(true)
+        )
+        .addStringOption((option) =>
+          option
+            .setName("timezone")
+            .setDescription(
+              "The new timezone of the user (Format: Region/City), or 'null' to remove the timezone"
+            )
+        )
+    )
+    this._loaded = true;
+    return true;
+  }
+
+  public async runSubCommand(interaction: Discord.CommandInteraction): Promise<any> {
+      if (
+        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(true) !== "edit" ||
+        (interaction.options as CommandInteractionOptionResolver).getSubcommand(true) !== "timezone"
+      ) return;
+
+      const user = (
         interaction.options as CommandInteractionOptionResolver
       ).getUser("user", true);
       let timezone = (
@@ -109,9 +147,10 @@ export async function runSubCommand(interaction: Discord.CommandInteraction) {
         });
         return;
       }
-}
 
-export const returnFileName = () => __filename.split(process.platform == "linux" ? "/" : "\\")[__filename.split(process.platform == "linux" ? "/" : "\\").length - 1];
+
+    }
+}
 function howManyDaysSinceBirthday(birthday: string, timezone: string) {
   return Math.floor(
     moment

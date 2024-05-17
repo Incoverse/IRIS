@@ -15,20 +15,26 @@
   * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import path from "path";
 export type IRISSlashCommand = Discord.SlashCommandBuilder | Discord.SlashCommandSubcommandsOnlyBuilder | Discord.SlashCommandOptionsOnlyBuilder | Omit<Discord.SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup"> | Omit<Discord.SlashCommandSubcommandsOnlyBuilder, "addSubcommand" | "addSubcommandGroup"> | Omit<Discord.SlashCommandOptionsOnlyBuilder, "addSubcommand" | "addSubcommandGroup">;
 import crypto from "crypto";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
+import { IRISSubcommand } from "./IRISSubcommand.js";
+import { IRISGlobal } from "@src/interfaces/global.js";
 
+declare const global: IRISGlobal;
 
 export abstract class IRISCommand {
-
+    
     static defaultSetupTimeoutMS = 30000;
     static defaultUnloadTimeoutMS = 30000;
-
     
+    
+    private            _subcommandHashes: Map<IRISSubcommand, string> = new Map(); 
+    protected          _subcommands: Map<string, IRISSubcommand> = new Map();
     private            _filename: string = "";
+    private            _fullPath: string = "";
     public             _loaded: boolean = false;
     protected          _cacheContainer: Map<Date, any> = new Map();
     protected          _commandSettings: IRISEvCoSettings = {
@@ -39,16 +45,48 @@ export abstract class IRISCommand {
     }
     protected abstract _slashCommand: IRISSlashCommand;
     private            _hash: string = ""; //! Used to detect changes during reloads 
+    private            _fileHash: string = ""; //! Used to detect changes during reloads
     
-    
-    constructor(filename?: string) {
+    constructor(client: Discord.Client, filename?: string) {
+        this._fullPath = new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, "");
         if (filename) this._filename = filename;
         else {
             //! Find the class caller, get their filename, and set it as the filename
-            this._filename = path.basename(new Error().stack.split("\n")[2].replace(/.*file:\/\//, "").replace(/:.*/g, "")).replace(/\?.*/, "")
+            this._filename = path.basename(this._fullPath)
         }
 
-        this._hash = crypto.createHash("md5").update(readFileSync(process.cwd() + "/dist/commands/" + this._filename)).digest("hex")
+
+        this._hash = crypto.createHash("md5").update(readFileSync(this._fullPath)).digest("hex")
+        this._fileHash = this._hash
+    }
+
+    public readonly setupSlashCommands = async (client: Discord.Client) => {
+        let hashes = []
+        for (let subcommandKey of Array.from(global.subcommands.keys()).toSorted((a,b)=>{
+            if (a.split("@")[0].toLowerCase().includes("initiator")) return -1
+            if (b.split("@")[0].toLowerCase().includes("initiator")) return 1
+            return a.localeCompare(b)
+        })) {
+            
+            if (!subcommandKey.endsWith("@" + this.constructor.name)) continue;
+
+            let subcommand = global.subcommands.get(subcommandKey)
+            subcommand = new subcommand()
+
+            if (await subcommand.setup(this._slashCommand, client)) {
+                this._subcommands.set(subcommandKey, subcommand)
+            }
+            hashes.push(subcommand.hash)
+            
+        }
+
+        if (this._subcommands.size > 0) {
+            hashes.push(this._hash)
+            const sortedHashes = hashes.sort()
+
+            const hash = crypto.createHash("md5").update(sortedHashes.join("")).digest("hex")
+            this._hash = hash
+        }
     }
 
     public abstract runCommand(interaction: Discord.CommandInteraction): Promise<any>;
@@ -103,7 +141,7 @@ export abstract class IRISCommand {
             'h': 60 * 60 * 1000,
             'd': 24 * 60 * 60 * 1000,
             'w': 7 * 24 * 60 * 60 * 1000,
-            'mo': 1000 * 60 * 60 * 24 * 31,
+            'mo': 31 * 24 * 60 * 60 * 1000,
             'y': 365 * 24 * 60 * 60 * 1000
         };
         
@@ -124,6 +162,9 @@ export abstract class IRISCommand {
 
     public get hash() {
         return this._hash
+    }
+    public get fileHash() {
+        return this._fileHash
     }
     
     public valueOf() {

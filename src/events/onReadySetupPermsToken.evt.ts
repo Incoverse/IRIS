@@ -15,7 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { ActivityType, ChannelType, Events, Message } from "discord.js";
+import { ActivityType, ChannelType, Events, Message } from "discord.js";
+import * as Discord from "discord.js";
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
 import chalk from "chalk";
 import { readFileSync, writeFileSync } from "fs";

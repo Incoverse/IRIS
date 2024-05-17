@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import moment from "moment-timezone";
 import chalk from "chalk";
 import storage from "@src/lib/utilities/storage.js";

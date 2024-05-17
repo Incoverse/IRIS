@@ -15,7 +15,7 @@
   * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import path from "path";
 import prettyMilliseconds from "pretty-ms";
 import crypto from "crypto";

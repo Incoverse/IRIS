@@ -16,7 +16,7 @@
  */
 
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { inspect } from "util";
 
 import { IRISGlobal } from "@src/interfaces/global.js";

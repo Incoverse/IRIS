@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import storage from "@src/lib/utilities/storage.js";
 import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
@@ -35,7 +35,7 @@ export default class LastActive extends IRISCommand {
     
     public async runCommand(interaction: Discord.CommandInteraction) {
         await interaction.deferReply();
-        const target = interaction.options.getUser("user");
+        const target = (interaction.options as Discord.CommandInteractionOptionResolver).getUser("user");
         try {
           let userInfo = await storage.findOne("user", { id: target.id });
           if (userInfo == null || userInfo.last_active == null) {

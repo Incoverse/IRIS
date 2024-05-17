@@ -16,7 +16,7 @@
  */
 
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import chalk from "chalk";
 import storage from "@src/lib/utilities/storage.js";
 import { IRISEventTypes, IRISEvent, IRISEventTypeSettings } from "@src/lib/base/IRISEvent.js";

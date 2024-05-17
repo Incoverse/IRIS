@@ -2,7 +2,7 @@
 ## Command Template
 ```ts
 import { IRISCommand } from "@src/lib/base/IRISCommand.js";
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 
 // Every variable/function that starts with "_" is meant for internal use, this is what you would edit when creating/updating commands.
 // The ones without "_" are used by other systems of IRIS

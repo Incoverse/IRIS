@@ -17,7 +17,7 @@
 
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { readFileSync } from "fs";
 declare const global: IRISGlobal;
 

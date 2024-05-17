@@ -15,7 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, {CommandInteractionOptionResolver, TextChannel} from "discord.js";
+import {CommandInteractionOptionResolver, TextChannel} from "discord.js";
+import * as Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
   

@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { existsSync, unlinkSync } from "fs";
 import chalk from "chalk";
 import { promisify } from "util";

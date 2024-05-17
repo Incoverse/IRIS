@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, {
+import {
   ActionRowBuilder,
   AttachmentBuilder,
   ButtonBuilder,
@@ -31,6 +31,7 @@ import Discord, {
   Team,
   ThreadChannel,
 } from "discord.js";
+import * as Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import UGE, {
   Game,

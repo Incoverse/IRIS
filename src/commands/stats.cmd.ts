@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { PathLike, readdirSync, readFileSync, statSync, existsSync } from "fs";
 import { join } from "path";

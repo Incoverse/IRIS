@@ -16,7 +16,8 @@
  */
 
 import { IRISEvent, IRISEventTypeSettings, IRISEventTypes } from "@src/lib/base/IRISEvent.js";
-import Discord, { TextChannel } from "discord.js";
+import { TextChannel } from "discord.js";
+import * as Discord from "discord.js";
 import chalk from "chalk";
 
 import { IRISGlobal } from "@src/interfaces/global.js";

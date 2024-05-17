@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import { IRISCommand, IRISSlashCommand } from "@src/lib/base/IRISCommand.js";
@@ -36,8 +36,8 @@ export default class Birthday extends IRISCommand {
   public async runCommand(interaction: Discord.CommandInteraction) {
     let isHidden = false;
     if (
-      interaction.options.getUser("user") == null ||
-      interaction.options.getUser("user").id == interaction.user.id
+      (interaction.options as Discord.CommandInteractionOptionResolver).getUser("user") == null ||
+      (interaction.options as Discord.CommandInteractionOptionResolver).getUser("user").id == interaction.user.id
     ) {
       if (
         global.birthdays.some((birthday) => birthday.id === interaction.user.id)
@@ -64,9 +64,9 @@ export default class Birthday extends IRISCommand {
           ephemeral: true,
         });
         return;
-      }
+      } 
     } else {
-      const user = interaction.options.getUser("user");
+      const user = (interaction.options as Discord.CommandInteractionOptionResolver).getUser("user");
       if (global.birthdays.some((birthday) => birthday.id === user.id)) {
         let date: any = global.birthdays.find(
           (birthday) => birthday.id === user.id
@@ -96,6 +96,7 @@ export default class Birthday extends IRISCommand {
     }
     return;
   }
+
 };
 /* prettier-ignore */
 function getOrdinalNum(n:number) { return n + (n > 0 ? ["th", "st", "nd", "rd"][n > 3 && n < 21 || n % 10 > 3 ? 0 : n % 10] : "") }

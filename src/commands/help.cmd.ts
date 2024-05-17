@@ -15,7 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Discord, { ButtonBuilder, ButtonStyle, ComponentBuilder, ComponentType } from "discord.js";
+import { ButtonBuilder, ButtonStyle, ComponentBuilder, ComponentType } from "discord.js";
+import * as Discord from "discord.js";
 import { IRISGlobal } from "@src/interfaces/global.js";
 import { fileURLToPath } from "url";
 import { PathLike, readdirSync, readFileSync, statSync } from "fs";
