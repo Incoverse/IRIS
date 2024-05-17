@@ -155,6 +155,8 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     ).then((res) => res.json()).catch(() => null)).user;
 
 
+    authenticatedUser = getUser;
+
     if (request.headers.accept == "application/json") {
       await response.json({
         success: true,
@@ -167,15 +169,6 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     } else {
       await response.send("Thank you for authorizing IRIS, " + getUser.global_name + "!<br>You can close this tab now.");
     }
-    authenticatedUser = await fetch(
-      "https://discord.com/api/v9/oauth2/@me",
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${oauthData.access_token}`,
-        },
-      }
-    ).then((res) => res.json()).catch(() => null);
     completed = true;
 
     server.close(() => global.logger.debug(`Express server for oauth2 is no longer listening on port ${chalk.whiteBright(port)}.`, this.fileName));
@@ -207,7 +200,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     await this.setupDiscordGranting(client, guild, owner);
     await this.waitUntilComplete();
     global.logger.log("--------------------", this.fileName)
-    global.logger.log(`Authorization was successfully completed by ${chalk.yellowBright(`@${authenticatedUser.user.username}`)}. Resuming boot-up...`, this.fileName)
+    global.logger.log(`Authorization was successfully completed by ${chalk.yellowBright(`@${authenticatedUser.username}`)}. Resuming boot-up...`, this.fileName)
     client.user.setPresence({
       activities: [
         {
