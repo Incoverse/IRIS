@@ -64,7 +64,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
         },
       }
     );
-    if (tokenResponseData.status == 200) {
+    if (tokenResponseData.ok) {
       const oauthData: any = await tokenResponseData.json();
       const parsedDotEnv = this.envToObject(readFileSync(".env", "utf-8"));
       parsedDotEnv["ACCESS_TKN"] = '"' + oauthData.access_token + '-' + (new Date().getTime() + (oauthData.expires_in * 1000)) + '"';
@@ -253,7 +253,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
               },
           }
       );
-      if (tokenResponseData.status == 200) {
+      if (tokenResponseData.ok) {
           const oauthData:any = await tokenResponseData.json();
           const parsedDotEnv = this.envToObject(readFileSync(".env", "utf-8"));
           parsedDotEnv["ACCESS_TKN"] = '"' + oauthData.access_token + '-' + (new Date().getTime() + (oauthData.expires_in * 1000)) + '"';
