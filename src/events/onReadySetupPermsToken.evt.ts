@@ -144,7 +144,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     const newDotEnv = this.objectToEnv(parsedDotEnv);
     writeFileSync(".env", newDotEnv);
     // if accepts json, send json, else send text
-    const getUser = (await fetch(
+    authenticatedUser = (await fetch(
       "https://discord.com/api/v9/oauth2/@me",
       {
         method: "GET",
@@ -154,20 +154,17 @@ export default class OnReadySetupPermsToken extends IRISEvent {
       }
     ).then((res) => res.json()).catch(() => null)).user;
 
-
-    authenticatedUser = getUser;
-
     if (request.headers.accept == "application/json") {
       await response.json({
         success: true,
         authenticatedUser: {
-          id: getUser.id,
-          username: getUser.username,
-          global_name: getUser.global_name,
+          id: authenticatedUser.id,
+          username: authenticatedUser.username,
+          global_name: authenticatedUser.global_name,
         }
       })
     } else {
-      await response.send("Thank you for authorizing IRIS, " + getUser.global_name + "!<br>You can close this tab now.");
+      await response.send("Thank you for authorizing IRIS, " + authenticatedUser.global_name + "!<br>You can close this tab now.");
     }
     completed = true;
 
