@@ -195,6 +195,8 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     global.logger.log("Please click the link below to grant IRIS the necessary permissions.", this.fileName)
     global.logger.log(chalk.yellowBright(`https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify`), this.fileName)
     await this.setupDiscordGranting(client, guild, owner);
+    global.logger.log("--------------------", this.fileName)
+    global.logger.log("The server owner may directly message the word 'grant' to IRIS to start the granting process through DMs.", this.fileName)
     await this.waitUntilComplete();
     global.logger.log("--------------------", this.fileName)
     global.logger.log(`Authorization was successfully completed by ${chalk.yellowBright(`@${authenticatedUser.username}`)}. Resuming boot-up...`, this.fileName)
@@ -291,7 +293,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
       if (message.author.id == owner.id && message.channel.type == ChannelType.DM) {
         if (message.content.toLowerCase() == "grant") {
             message.reply({
-              content: `Please grant IRIS access to the server, then when you get redirected to a localhost page, please send the following message: \`\`grant-code <code>\`\`. You can find the code in the URL bar after \`\`?code=\`\`\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify)`
+              content: `Please grant IRIS permissions to allow her to change her own command permissions with deeper detail.\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=https://www.inimicalpart.com/iris&response_type=code&scope=applications.commands.permissions.update+identify)`
             }) 
         } else if (message.content.toLowerCase().startsWith("grant-code ")) {
           const code = message.content.split(" ")[1];
