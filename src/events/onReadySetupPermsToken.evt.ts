@@ -97,6 +97,9 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     
   app.get("/", async (request: Request, response: Response) => {
     const { code } = request.query;
+
+    const throughDM = request.headers["x-via"] == "DM";
+
     const tokenResponseData = await fetch(
       "https://discord.com/api/oauth2/token",
       {
@@ -106,7 +109,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
           client_secret: process.env.cSecret,
           code,
           grant_type: "authorization_code",
-          redirect_uri: `http://localhost:7380`,
+          redirect_uri: throughDM ? "https://www.inimicalpart.com/iris" : `http://localhost:7380`,
           scope: "applications.commands.permissions.update",
         }).toString(),
         headers: {
@@ -293,7 +296,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
       if (message.author.id == owner.id && message.channel.type == ChannelType.DM) {
         if (message.content.toLowerCase() == "grant") {
             message.reply({
-              content: `Please grant IRIS permissions to allow her to change her own command permissions with deeper detail.\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=https://www.inimicalpart.com/iris&response_type=code&scope=applications.commands.permissions.update+identify)`
+              content: `Please grant IRIS permissions to change her own command permissions with more detail and deeper restrictions.\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=https://www.inimicalpart.com/iris&response_type=code&scope=applications.commands.permissions.update+identify)`
             }) 
         } else if (message.content.toLowerCase().startsWith("grant-code ")) {
           const code = message.content.split(" ")[1];
@@ -302,11 +305,11 @@ export default class OnReadySetupPermsToken extends IRISEvent {
             `http://localhost:7380/?code=${code}`, {
               headers: {
                 "Accept": "application/json",
+                "X-Via": "DM"
               }
             }
           ).then((res) => res.json()).catch(() => null);
-
-          if (success) {
+          if (success.success) {
             message.reply("IRIS has successfully been authorized as user **@" + success.authenticatedUser.username + "**. Continuing boot-up...");
             client.off(Events.MessageCreate, onmessage);
           } else {
