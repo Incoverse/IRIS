@@ -45,7 +45,7 @@ export default class LastActive extends IRISCommand {
           } else {
             await interaction.editReply({
               content:
-                target + " was last active ``" +
+                "<@" + target.id + "> was last active ``" +
                 timeAgo(new Date(userInfo.last_active)) +
                 "``",
               allowedMentions: { parse: [] },
@@ -89,16 +89,16 @@ function getFormattedDate(
   if (prefomattedDate) {
     // Today at 10:20
     // Yesterday at 10:20
-    return `${prefomattedDate} at ${hours}:${minutes}${AMPM} UTC`;
+    return `${prefomattedDate} at ${hours.toString().padStart(2,"0")}:${minutes.toString().padStart(2,"0")}${AMPM} UTC`;
   }
 
   if (hideYear) {
     // 10. January at 10:20
-    return `${month} ${day}, at ${hours}:${minutes}${AMPM} UTC`;
+    return `${month} ${day}, at ${hours.toString().padStart(2,"0")}:${minutes.toString().padStart(2,"0")}${AMPM} UTC`;
   }
 
   // 10. January 2017. at 10:20
-  return `${month} ${day}, ${year} at ${hours}:${minutes}${AMPM} UTC`;
+  return `${month} ${day}, ${year} at ${hours.toString().padStart(2,"0")}:${minutes.toString().padStart(2,"0")}${AMPM} UTC`;
 }
 
 function timeAgo(dateParam) {
