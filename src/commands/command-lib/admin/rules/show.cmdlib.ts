@@ -88,7 +88,7 @@ export default class RulesShow extends IRISSubcommand {
             .setTitle(`Rule ${rule.index}: ${rule.title}`)
       
       
-          let description = rule.description+ (showPunishments? "\n\n**Punishments:**\n":"");
+          let description = rule.description+ (showPunishments? "\n\n- **Punishments:**\n":"");
           for (const punishment of rule.punishments) {
             if (showPunishments) description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
           }
@@ -119,7 +119,7 @@ export default class RulesShow extends IRISSubcommand {
             }
 
       
-            description += `**${rule.index}. ${rule.title}**\n`;
+            description += `**${rule.index}. ${rule.title}**`;
             if (showPunishments) {
               for (const punishment of rule.punishments) {
                 description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
