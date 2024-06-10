@@ -36,42 +36,42 @@ export default class Help extends IRISCommand {
   public async runCommand(interaction: Discord.CommandInteraction) {
       const pages = [];
       let commands = Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help")).filter(a=>{
-        return global.requiredModules[a].getSlashCommand().options.filter((b)=>{
+        return global.requiredModules[a].slashCommand.options.filter((b)=>{
           return b instanceof Discord.SlashCommandSubcommandBuilder || b instanceof Discord.SlashCommandSubcommandGroupBuilder;
         }).length == 0;
       }).map((moduleKey) => {
         return {
-          name: global.requiredModules[moduleKey].getSlashCommand().name,
-          description: global.requiredModules[moduleKey].getSlashCommand().description
+          name: global.requiredModules[moduleKey].slashCommand.name,
+          description: global.requiredModules[moduleKey].slashCommand.description
         }
       }).filter(a => a != undefined);
 
       for (let command of Object.keys(global.requiredModules).filter(a => a.startsWith("cmd") && !a.includes("help"))) {
-        const hasPotentialSubCommands = global.requiredModules[command].getSlashCommand().options.filter((a)=>{
+        const hasPotentialSubCommands = global.requiredModules[command].slashCommand.options.filter((a)=>{
           return a instanceof Discord.SlashCommandSubcommandBuilder || a instanceof Discord.SlashCommandSubcommandGroupBuilder;
         }).length > 0;
         if (hasPotentialSubCommands) {
-          const groups = global.requiredModules[command].getSlashCommand().options.filter((a)=>{
+          const groups = global.requiredModules[command].slashCommand.options.filter((a)=>{
             return a instanceof Discord.SlashCommandSubcommandGroupBuilder;
           }
           ).map(a => a.name);
 
           if (groups.length == 0) {
-            const subcommands = global.requiredModules[command].getSlashCommand().options.filter((a)=>{
+            const subcommands = global.requiredModules[command].slashCommand.options.filter((a)=>{
               return a instanceof Discord.SlashCommandSubcommandBuilder;
             }).map(a => {return {name:a.name,description:a.description}});
             for (let subcommand of subcommands) {
               commands.push({
-                name: `${global.requiredModules[command].getSlashCommand().name} ${subcommand.name}`,
+                name: `${global.requiredModules[command].slashCommand.name} ${subcommand.name}`,
                 description: subcommand.description
               });
             }
           } else {
             for (let group in groups) {
-              const subcommands = global.requiredModules[command].getSlashCommand().options[group].options.map(a => {return {name:a.name,description:a.description}});
+              const subcommands = global.requiredModules[command].slashCommand.options[group].options.map(a => {return {name:a.name,description:a.description}});
               for (let subcommand of subcommands) {
                 commands.push({
-                  name: `${global.requiredModules[command].getSlashCommand().name} ${groups[group]} ${subcommand.name}`,
+                  name: `${global.requiredModules[command].slashCommand.name} ${groups[group]} ${subcommand.name}`,
                   description: subcommand.description
                 });
               }
