@@ -865,7 +865,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
           continue;
         }
 
-        await command.setupSlashCommands(client)
+        await command.setupSubCommands(client)
 
         let timeout = command.commandSettings.setupTimeoutMS ?? IRISCommand.defaultSetupTimeoutMS;
         let setupResult = await setupHandler(timeout, command, client, "startup")

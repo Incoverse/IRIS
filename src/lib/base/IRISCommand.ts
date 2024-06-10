@@ -60,7 +60,7 @@ export abstract class IRISCommand {
         this._fileHash = this._hash
     }
 
-    public readonly setupSlashCommands = async (client: Discord.Client) => {
+    public readonly setupSubCommands = async (client: Discord.Client) => {
         let hashes = []
         for (let subcommandKey of Array.from(global.subcommands.keys()).toSorted((a,b)=>{
             if (a.split("@")[0].toLowerCase().includes("initiator")) return -1
