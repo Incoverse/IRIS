@@ -64,6 +64,7 @@ export default class RulesShow extends IRISSubcommand {
         }
         let ruleName = (interaction.options as CommandInteractionOptionResolver).getString("rule", false) as string
         let showPunishments = (interaction.options as CommandInteractionOptionResolver).getBoolean("show-punishments", false);
+
         let rule = null;
       
         if (ruleName) {
@@ -116,10 +117,13 @@ export default class RulesShow extends IRISSubcommand {
               embeds.push(rulesEmbed);
               description = "";
             }
+
       
             description += `- **${rule.index}. ${rule.title}**\n`;
-            for (const punishment of rule.punishments) {
-              description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
+            if (showPunishments) {
+              for (const punishment of rule.punishments) {
+                description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
+              }
             }
           }
       
