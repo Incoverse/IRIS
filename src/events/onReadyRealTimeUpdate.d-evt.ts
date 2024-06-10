@@ -207,7 +207,7 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                     const newHandler = new newHandlerClass(client) as IRISCommand
                     newHandler.cache = removedHandler.cache
                     await newHandler.validateCache()
-                    await newHandler.setupSlashCommands(client)
+                    await newHandler.setupSubCommands(client)
                     const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "reload")
                     if (setupResult == "timeout") {
                         global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
@@ -310,7 +310,7 @@ export default class OnReadyRealTimeUpdate extends IRISEvent {
                 const newHandler = new newHandlerClass(client) as IRISCommand
                 newHandler.cache = handler.cache
                 await newHandler.validateCache()
-                await newHandler.setupSlashCommands(client)
+                await newHandler.setupSubCommands(client)
                 const setupResult = await setupHandler(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS, newHandler, client, "reload")
                 if (setupResult == "timeout") {
                     global.logger.error(`Command ${chalk.redBright(newHandler.constructor.name)} failed to setup within the ${chalk.yellowBright(newHandler.commandSettings.setupTimeoutMS??IRISCommand.defaultSetupTimeoutMS)} ms timeout.`, this.fileName)
