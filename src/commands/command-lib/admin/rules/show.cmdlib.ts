@@ -119,7 +119,7 @@ export default class RulesShow extends IRISSubcommand {
             }
 
       
-            description += `**${rule.index}. ${rule.title}**`;
+            description += `**${rule.index}. ${rule.title}**\n`;
             if (showPunishments) {
               for (const punishment of rule.punishments) {
                 description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
