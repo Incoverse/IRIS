@@ -28,6 +28,47 @@ export default class OnReadySetupPunishments extends IRISEvent {
   protected _priority: number = 5;
   protected _typeSettings: IRISEventTypeSettings = {};
 
+  private async _getOffenses(user_id:string): Promise<Array<any>> {
+    if (global.server.main.offenses[user_id]) return global.server.main.offenses[user_id];
+
+    const offenses = await storage.find("offense", { id: user_id });
+    if (offenses.length > 0) {
+      return offenses
+    }
+
+    return [];
+  }
+
+  private async ipcQueryHandler(data: any): Promise<void> {
+
+    if (data.type === "mod:offenses:get") {
+      global.communicationChannel.emit("ipc-query-"+data.nonce, {
+        type: data.type,
+        data: {
+          user_id: data.data.user_id,
+          offenses: await this._getOffenses(data.data.user_id),
+        },
+      });
+    }
+  }
+
+
+  public async setup(client: Discord.Client): Promise<boolean> {
+    global.communicationChannel.on("ipc-query", this.ipcQueryHandler.bind(this), this.fileName);
+
+    this._loaded = true;
+    return true;
+  }
+
+  public async unload(client: Discord.Client): Promise<boolean> {
+    global.communicationChannel.off("ipc-query", this.ipcQueryHandler.bind(this), this.fileName);
+
+    this._loaded = false;
+    return true;
+  }
+
+
+
   public async runEvent(client: Discord.Client): Promise<void> {
     try {if (!["Client.<anonymous>", "Timeout._onTimeout"].includes((new Error()).stack.split("\n")[2].trim().split(" ")[1])) global.logger.debug(`Running '${chalk.yellowBright(this._type)} (${chalk.redBright.bold("FORCED by \""+(new Error()).stack.split("\n")[2].trim().split(" ")[1]+"\"")})' event: ${chalk.blueBright(this.fileName)}`, "index.js"); } catch (e) {}
 

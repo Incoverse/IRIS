@@ -20,6 +20,10 @@ import * as Discord from "discord.js";
 import { inspect } from "util";
 
 import { IRISGlobal } from "@src/interfaces/global.js";
+import prettyMs from "pretty-ms";
+
+import os from "os";
+
 declare const global: IRISGlobal;
 export default class OnMessageEval extends IRISEvent {
   protected _type: IRISEventTypes = "discordEvent";
@@ -72,6 +76,37 @@ export default class OnMessageEval extends IRISEvent {
         let msg = await message.channel.send("IRIS ID: ``"+global.identifier+"``\nRunning....");
         let cleaned;
         try {
+
+          //! This function can be used in EVAL
+          function getSysInfo() {
+            function formatBytes(bytes: number): string {
+              const units = ["B", "KB", "MB", "GB", "TB"];
+              let index = 0;
+              while (bytes >= 1024 && index < units.length - 1) {
+                bytes /= 1024;
+                index++;
+              }
+              return `${bytes.toFixed(2)} ${units[index]}`;
+            }
+
+            return {
+              hostname: os.hostname(),
+              user: os.userInfo().username,
+              platform: process.platform,
+              arch: process.arch,
+              node_version: process.version,
+              node_uptime: prettyMs(process.uptime()*1000),
+              system_uptime: prettyMs(os.uptime()*1000),
+              mem: {
+                total: formatBytes(os.totalmem()),
+                free: formatBytes(os.freemem()),
+                used: formatBytes(os.totalmem() - os.freemem()),
+                percent: Math.round((os.totalmem() - os.freemem()) / os.totalmem() * 100) + "%",
+              },
+              cpu_cores: os.cpus().length,
+            };
+          }
+
           // Evaluate (execute) our input
           const evaled = eval("(async()=>{\n"+input+"\n})()");
           // Put our eval result through the function
@@ -88,6 +123,19 @@ export default class OnMessageEval extends IRISEvent {
         } catch (err) {
             msg.edit(`IRIS ID: \`\`${global.identifier}\`\`\n***An error occurred during execution*** \`\`\`xl\n${err.stack ? err.stack : err}\n\`\`\``);
         }
+      } else {
+        message.channel.send({
+          embeds: [
+            new Discord.EmbedBuilder()
+              .setTitle("Permission Denied")
+              .setDescription("You do not have permission to run this command.")
+              .setAuthor({
+                name: message.author.username,
+                iconURL: message.author.displayAvatarURL()
+              })
+              .setColor(Discord.Colors.Red)
+          ]
+        })
       }
     }
   }

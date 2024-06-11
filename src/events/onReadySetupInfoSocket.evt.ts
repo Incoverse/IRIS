@@ -51,6 +51,7 @@ export default class OnReadySetupInfoSocket extends IRISEvent {
                     iam = crypto.randomBytes(16).toString("hex")
                 }
                 socketTable.set(iam, {socket: socket, subscriptions: new Map()})
+                global.logger.debug(`New socket connected: ${iam}`, "index.js")
             })
 
             nodeIPC.server.on("subscribe", (data:{
@@ -65,24 +66,25 @@ export default class OnReadySetupInfoSocket extends IRISEvent {
 
             nodeIPC.server.on("query", (data:{
                 type:string,
-                timeout?:number
+                timeout?:number,
+                data:any
             }, socket) => {
 
                 const timeout = data.timeout || 5000
                 const nonce = crypto.randomBytes(16).toString("hex")
 
                 let timeoutTimeout = null;
-                function queryResponseHandler(response) {
+                function queryResponseHandler(type, response) {
                     clearTimeout(timeoutTimeout)
-                    nodeIPC.server.emit(socket, "query", response)
+                    nodeIPC.server.emit(socket, "query", {type, data: response})
                 }
 
                 timeoutTimeout = setTimeout(() => {
-                    nodeIPC.server.emit(socket, "query", {message: "Query timed out", code: "QUERY_TIMEOUT"})
-                    global.communicationChannel.off("ipc-query-"+nonce,queryResponseHandler, this.fileName)
+                    nodeIPC.server.emit(socket, "query", {type: data.type, message: "Query timed out", code: "QUERY_TIMEOUT"})
+                    global.communicationChannel.off("ipc-query-"+nonce, queryResponseHandler.bind(null, data.type), this.fileName)
                 }, timeout)
-                global.communicationChannel.once("ipc-query-"+nonce, queryResponseHandler, this.fileName)
-                global.communicationChannel.emit("ipc-query", {type: data.type, nonce: nonce}, this.fileName)
+                global.communicationChannel.once("ipc-query-"+nonce, queryResponseHandler.bind(null, data.type), this.fileName)
+                global.communicationChannel.emit("ipc-query", {type: data.type, nonce: nonce, data: data.data ?? null}, this.fileName)
 
             })
 
