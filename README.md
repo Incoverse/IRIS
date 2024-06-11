@@ -5,8 +5,6 @@
 -->
 
 
-
-<!-- PROJECT LOGO -->
 <br />
 <div align="center">
   <a href="https://github.com/Incoverse/IRIS">
@@ -198,7 +196,7 @@ Distributed under the GPL-3.0 license. See [LICENSE](https://github.com/Incovers
 <!-- CONTACT -->
 ## Contact
 
-For any questions or concerns, don't hesitate to contact Inimi ([@theinimi](https://discord.inimicalpart.com)) on Discord.
+For any questions or concerns, don't hesitate to contact Inimi **@theinimi** on Discord or via [email](mailto:me@inimicalpart.com).
 
 <hr>
 
