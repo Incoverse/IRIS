@@ -226,14 +226,30 @@ export async function saveUserEmail(user_id: string, email: string) {
 }
 
 
+export async function getFromAddress() {
+  if (!emailClient) {
+    if (global.app.config.appealSystem.emailEnabled) {
+      emailClient = new EmailClient(process.platform == "win32" ? "EmailSocket" : "/tmp/email.sock")
+      await Promise.race([
+        emailClient.waitForReady(),
+        new Promise((resolve, reject) => {
+          setTimeout(reject, 5000, "timeout")
+        })
+      ]).catch((err) => {
+        throw new Error("Email client not connected");
+      })      
+    } else throw new Error("Email client not enabled");
+  }
+  return emailClient.getAuthenticatedAs();
+}
 
 export async function sendEmail(to: string, subject: string, text: string) {
 
 
   
   if (!emailClient) {
-    if (global.app.config.appealSystem.emailSocketPath) {
-      emailClient = new EmailClient(global.app.config.appealSystem.emailSocketPath)
+    if (global.app.config.appealSystem.emailEnabled) {
+      emailClient = new EmailClient(process.platform == "win32" ? "EmailSocket" : "/tmp/email.sock")
       await Promise.race([
         emailClient.waitForReady(),
         new Promise((resolve, reject) => {
@@ -255,7 +271,7 @@ export async function sendEmail(to: string, subject: string, text: string) {
 
 
   return await emailClient.sendEmail({
-    fromAddress: global.app.config.appealSystem.fromAddress,
+    fromAddress: await getFromAddress(),
     toAddress: to,
     subject: subject,
     content: text

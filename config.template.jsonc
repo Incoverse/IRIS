@@ -77,14 +77,10 @@
     //* Example: "https://appeal.inimicalpart.com"
     "website": null,
     
-    //? This is the path to the email socket that IRIS will use to send appeals.
+    //? This tells IRIS whether or not an email system is set up at EmailService (named pipe) / /tmp/email.sock (socket file)
     //? This is primarily used during appeals, where if a user's appeal is updated, they will receive an email.
-    //? If you don't want to or can't use this feature, set this to null, and IRIS will not send emails.
-    "emailSocketPath": null,
-
-    //? This is the email address that IRIS will use to send emails to users.
-    //? If you don't want to or can't use this feature, set this to null, and IRIS will not send emails.
-    "fromAddress": null
+    //? If you don't want to or can't use this feature, set this to false, and IRIS will not send emails.
+    "emailEnabled": false
   },
 
   //? These permissions are for commands.

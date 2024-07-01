@@ -46,8 +46,7 @@ interface AppInterface {
     mongoDBServer: string;
     appealSystem: {
       website: null | string;
-      emailSocketPath: null | string;
-      fromAddress: null | string;
+      emailEnabled: null | boolean;
     };
     permissions: Permissions;
 

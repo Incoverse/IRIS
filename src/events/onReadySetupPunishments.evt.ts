@@ -333,7 +333,7 @@ export default class OnReadySetupPunishments extends IRISEvent {
       await storage.replaceOne("offense", { id: offense.id }, offense);
 
       if (offense.appeal.status == "AYR" && data.data.admin) {
-        if (global.app.config.appealSystem.emailSocketPath) {
+        if (global.app.config.appealSystem.emailEnabled) {
 
           const appealClosedSubject = "[#{offenseID}] - Appeal Updated"
           const appealClosedEmail = "<h1>Appeal Updated</h1><br/>Hello {name},<br/><br/>Your appeal of offense #{offenseID} has been updated.<br/><a href=\"{appealLink}\">Click here to view the appeal</a><br/><br/>- Staff Team at {serverName}"
@@ -547,7 +547,7 @@ export default class OnReadySetupPunishments extends IRISEvent {
 
       punishmentControl(client, newOffenses);
 
-      if (global.app.config.appealSystem.emailSocketPath) {
+      if (global.app.config.appealSystem.emailEnabled) {
 
         const appealClosedSubject = "[#{offenseID}] - Appeal Updated"
         const appealClosedEmail = "<h1>Appeal Updated</h1><br/>Hello {name},<br/><br/>Your appeal of offense #{offenseID} has been closed as {closeStatus}. For more information, check your appeal on the website.<br/><a href=\"{appealLink}\">Click here to view the appeal</a><br/><br/>- Staff Team at {serverName}"

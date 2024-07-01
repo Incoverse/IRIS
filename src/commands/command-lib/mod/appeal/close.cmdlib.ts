@@ -257,7 +257,7 @@ export default class AppealClose extends IRISSubcommand {
                 channel.delete("Appeal closed.")
             }, 10000)
 
-            if (global.app.config.appealSystem.emailSocketPath) {
+            if (global.app.config.appealSystem.emailEnabled) {
               storage.findOne("user", { id: offense.user_id }).then(async (user)=>{
                 const email = user.email;
                 if (email) {
