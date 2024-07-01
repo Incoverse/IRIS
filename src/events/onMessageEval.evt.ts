@@ -21,6 +21,11 @@ import { inspect } from "util";
 
 import { IRISGlobal } from "@src/interfaces/global.js";
 import prettyMs from "pretty-ms";
+import vsc_langdetect from "@vscode/vscode-languagedetection";
+const ModelOperations = vsc_langdetect.ModelOperations;
+const requiredLanguageConfidence = 0.2;
+const failedDetectionDefault = "ts";
+
 
 import os from "os";
 
@@ -113,29 +118,28 @@ export default class OnMessageEval extends IRISEvent {
           // we defined above
           cleaned = await clean(evaled);
 
-          // Reply in the channel with our result
-          const parts = cleaned.match(/(.|[\r\n]){1,1970}/g) ?? [];
+          //! Get the language of the response
+          let language: string | string[]  = "";
+          const modelOperations = new ModelOperations();
+          language = (await modelOperations.runModel(cleaned)).filter((lang) => lang.confidence >= requiredLanguageConfidence).sort((a, b) => b.confidence - a.confidence).map((lang) => lang.languageId);
+          
+          if (language.length > 0) {
+            language = language[0];
+          } else {
+            language = failedDetectionDefault;
+          }
 
-          msg.edit(`IRIS ID: \`\`${global.identifier}\`\`\n\`\`\`js\n${parts.shift()}\n\`\`\``);
+
+          // Reply in the channel with our result
+          const parts = cleaned.match(/(.|[\r\n]){1,1940}/g) ?? [];
+
+          msg.edit(`IRIS ID: \`\`${global.identifier}\`\`\n\`\`\`${language}\n${parts.shift()}\n\`\`\``);
           for (let msg of parts) {
-            message.channel.send(`\`\`\`js\n${msg}\n\`\`\``);
+            message.channel.send(`\`\`\`${language}\n${msg}\n\`\`\``);
           }
         } catch (err) {
             msg.edit(`IRIS ID: \`\`${global.identifier}\`\`\n***An error occurred during execution*** \`\`\`xl\n${err.stack ? err.stack : err}\n\`\`\``);
         }
-      } else {
-        message.channel.send({
-          embeds: [
-            new Discord.EmbedBuilder()
-              .setTitle("Permission Denied")
-              .setDescription("You do not have permission to run this command.")
-              .setAuthor({
-                name: message.author.username,
-                iconURL: message.author.displayAvatarURL()
-              })
-              .setColor(Discord.Colors.Red)
-          ]
-        })
       }
     }
   }

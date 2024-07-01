@@ -117,8 +117,8 @@ export default class RestartMongoDB extends IRISSubcommand {
 
   public async runSubCommand(interaction: Discord.CommandInteraction): Promise<any> {
       if (
-        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(true) !== "system" ||
-        (interaction.options as CommandInteractionOptionResolver).getSubcommand(true) !== "restart-database"
+        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(false) !== "system" ||
+        (interaction.options as CommandInteractionOptionResolver).getSubcommand(false) !== "restart-database"
       ) return;
 
         /* prettier-ignore */

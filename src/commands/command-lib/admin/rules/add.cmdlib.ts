@@ -47,6 +47,16 @@ export default class RulesAdd extends IRISSubcommand {
                 .setDescription("The punishment guidelines for the rule. e.g: 'warn,mute:1d,ban:3d,ban'")
                 .setRequired(true)
               )
+              .addBooleanOption((option) =>
+                option
+                  .setName("appealable")
+                  .setDescription("Whether the rule is appealable (default: true)")
+              )
+              .addStringOption((option) =>
+                option
+                  .setName("expiry")
+                  .setDescription("The time it takes for the rule to not count towards user's offense count (default: ∞)")
+              )
             .addIntegerOption((option) =>
               option
                 .setName("index")
@@ -71,6 +81,8 @@ export default class RulesAdd extends IRISSubcommand {
         const punishmentType = (interaction.options as CommandInteractionOptionResolver).getString("offenses", true); // warn,mute:1d,ban:3d,ban
         const title = (interaction.options as CommandInteractionOptionResolver).getString("title", true);
         const description = (interaction.options as CommandInteractionOptionResolver).getString("description", true);
+        const appealable = (interaction.options as CommandInteractionOptionResolver).getBoolean("appealable", false) ?? true;
+        const expiry = (interaction.options as CommandInteractionOptionResolver).getString("expiry", false) ?? null;
       
         const punishmentTypeArr = punishmentType.toLowerCase().split(",");
         const punishments = [];
@@ -124,11 +136,15 @@ export default class RulesAdd extends IRISSubcommand {
       
       
         alreadyExistingRules.push({
+          ...{
           index: ruleNr,
           title: title,
           description: description,
-          punishments: punishments
-        });
+          punishments: punishments,
+          can_appeal: appealable,
+        },
+        ...(expiry ? { expiry: expiry } : {})
+      });
       
         global.server.main.rules = alreadyExistingRules.sort((a, b) => a.index - b.index);
       

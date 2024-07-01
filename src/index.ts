@@ -160,7 +160,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
     },
     debug: async (message: any, sender: string) => {
       return new Promise((resolve) => {
-        if (config.debugging) {
+        if (config.debugging.debugMessages) {
           if (typeof message !== "string") message = inspect(message, { depth: 1 });
           console.log(
             chalk.white.bold(
@@ -189,7 +189,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
     },
     debugError: async (message: any, sender: string) => {
       return new Promise((resolve) => {
-        if (config.debugging) {
+        if (config.debugging.debugMessages) {
           message = (message && message.stack) ? message.stack : message
           if (typeof message !== "string") message = inspect(message, { depth: 1 });
           console.error(
@@ -219,7 +219,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
     },
     debugWarn: async (message: any, sender: string) => {
       return new Promise((resolve) => {
-        if (config.debugging) {
+        if (config.debugging.debugMessages) {
           if (typeof message !== "string") message = inspect(message, { depth: 1 });
           console.log(
             chalk.white.bold(
@@ -297,14 +297,14 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
   global.communicationChannel.emit = function(...args: any) {
     var emitArgs = arguments;
 
-    global.logger.debug(("Emitted '"+chalk.cyanBright.bold(emitArgs[0])+"' with data: " + chalk.yellowBright(JSON.stringify(emitArgs[1]))),"IRIS-COMM")
+    if (global.app.config.debugging.internalCommunication) global.logger.log(("Emitted '"+chalk.cyanBright.bold(emitArgs[0])+"' with data: " + chalk.yellowBright(JSON.stringify(emitArgs[1]))),"IRIS-COMM")
     return oldEmit.apply(global.communicationChannel, arguments)
   }
   //! Log every on
   global.communicationChannel.on = function(...args: any) {
     const caller = args[2] || "unknown"
     var onArgs = arguments;
-    if (!(new Error("")).stack.includes("once")) global.logger.debug("Listening for '"+chalk.cyanBright.bold(onArgs[0])+"'",caller)
+    if (!(new Error("")).stack.includes("once")) if (global.app.config.debugging.internalCommunication) global.logger.log("Listening for '"+chalk.cyanBright.bold(onArgs[0])+"'",caller)
     return oldOn.apply(global.communicationChannel, arguments)
   }
   global.communicationChannel.addListener = global.communicationChannel.on
@@ -313,7 +313,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
   global.communicationChannel.once = function(...args: any) {
     const caller = args[2] || "unknown"
     var onceArgs = arguments;
-    global.logger.debug("Listening once for '"+chalk.cyanBright.bold(onceArgs[0])+"'",caller)
+    if (global.app.config.debugging.internalCommunication) global.logger.log("Listening once for '"+chalk.cyanBright.bold(onceArgs[0])+"'",caller)
     return oldOnce.apply(global.communicationChannel, arguments)
   }
   //! Log every off
@@ -330,7 +330,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
     }
 
     var offArgs = arguments;
-    global.logger.debug("No longer listening"+(fromOnce?" (once)":"")+" for '"+chalk.cyanBright.bold(offArgs[0])+"'",caller)
+    if (global.app.config.debugging.internalCommunication) global.logger.log("No longer listening"+(fromOnce?" (once)":"")+" for '"+chalk.cyanBright.bold(offArgs[0])+"'",caller)
     return oldOff.apply(global.communicationChannel, arguments)
   }
   global.communicationChannel.removeListener = global.communicationChannel.off
@@ -345,6 +345,8 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
     PermissionsBitField.Flags.SendMessages,
     PermissionsBitField.Flags.UseExternalEmojis,
     PermissionsBitField.Flags.ViewChannel,
+    PermissionsBitField.Flags.ManageChannels,
+    PermissionsBitField.Flags.ManageWebhooks
   ]
   process.on('uncaughtException', function(err) {
     console.error(err)
@@ -421,6 +423,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
     FAILED: 3,
     NOT_AVAILABLE: 4,
   };
+  global.punishmentTimers = {}
   global.reload = {
     commands: []
   };
@@ -428,7 +431,6 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
   global.server = {
     main: {
       rules: [],
-      offenses: [],
     },
   };
   global.moduleInfo = {
@@ -694,7 +696,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
 
     client.on(Events.ClientReady, async () => {
       const finalLogInTime = performance.end("logInTime", {
-        silent: !global.app.config.debugging,
+        silent: !global.app.config.debugging.performances,
       })
       client.user.setPresence({
         activities: [
@@ -737,9 +739,10 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
         }
       }
       const finalPermissionCheckTime = performance.end("permissionCheck", { //1.234ms 
-        silent: !global.app.config.debugging,
+        silent: !global.app.config.debugging.performances,
       })
       
+
       global.logger.log("------------------------", returnFileName());
       if (!hasAllPerms) {
         global.logger.error(
@@ -748,6 +751,16 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
         );
         process.exit(1);
       }
+
+      global.communicationChannel.on("ipc-query", async (data: any) => {
+        if (data.type == "server:info") {
+          global.communicationChannel.emit("ipc-query-"+data.nonce, {
+              name: client.guilds.cache.get(global.app.config.mainServer).name,
+              id: global.app.config.mainServer,
+              icon: client.guilds.cache.get(global.app.config.mainServer).iconURL(),
+          })
+        }
+      })
 
       if (global.mongoConnectionString.match(/^(mongodb(?:\+srv)?(\:)?(?:\/{2}){1})(?:\w+\:\w+\@)?(\w+?(?:\.\w+?)*)(?::(\d+))?((?:\/\w+?)?)(?:\/)(?:\?\w+?\=\w+(?:\&\w+?\=\w+)*)?$/gm)) { //! Partial credits: https://regex101.com/library/jxxyRm
 
@@ -895,7 +908,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
         ] = command;
         commands.push(command?.slashCommand?.toJSON() as any);
       }
-      const finalCommandRegistrationTime = performance.end("commandRegistration", {silent: !global.app.config.debugging})
+      const finalCommandRegistrationTime = performance.end("commandRegistration", {silent: !global.app.config.debugging.performances})
       global.reload.commands = commands;
       await client.application.fetch();
       if (client.application.owner instanceof Team) {
@@ -997,7 +1010,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
           "event" + event.constructor.name
         ] = event;
       }
-      const finalEventLoaderTime = performance.end("eventLoader", {silent: !global.app.config.debugging})
+      const finalEventLoaderTime = performance.end("eventLoader", {silent: !global.app.config.debugging.performances})
       global.logger.debug("------------------------", returnFileName());
       global.rest = new REST({
         version: "9",
@@ -1121,8 +1134,8 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
           }
         }
       }
-      const finalEventRegistrationTime = performance.end("eventRegistration", {silent: !global.app.config.debugging});
-      const finalTotalTime = performance.end("fullRun", {silent: !global.app.config.debugging})
+      const finalEventRegistrationTime = performance.end("eventRegistration", {silent: !global.app.config.debugging.performances});
+      const finalTotalTime = performance.end("fullRun", {silent: !global.app.config.debugging.performances})
       global.logger.log("", returnFileName());
       global.logger.log(`All commands and events have been registered. ${chalk.yellowBright(eventFiles.length)} event(s), ${chalk.yellowBright(commands.length)} command(s).`, returnFileName());
       global.logger.debug("------------------------", returnFileName());

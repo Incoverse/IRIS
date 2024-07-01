@@ -35,11 +35,20 @@ interface AppInterface {
     developmentServer: string;
     autoCompile: boolean;
     showErrors: boolean;
-    debugging: boolean;
+    debugging: {
+      debugMessages: boolean;
+      internalCommunication: boolean;
+      performances: boolean;
+    };
     skipMongoFailWait: boolean;
     backupStoragePath: string;
     development: boolean;
     mongoDBServer: string;
+    appealSystem: {
+      website: null | string;
+      emailSocketPath: null | string;
+      fromAddress: null | string;
+    };
     permissions: Permissions;
 
     defaultEntry: {

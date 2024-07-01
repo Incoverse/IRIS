@@ -59,8 +59,8 @@ export default class EditBirthday extends IRISSubcommand {
 
   public async runSubCommand(interaction: Discord.CommandInteraction): Promise<any> {
       if (
-        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(true) !== "edit" ||
-        (interaction.options as CommandInteractionOptionResolver).getSubcommand(true) !== "birthday"
+        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(false) !== "edit" ||
+        (interaction.options as CommandInteractionOptionResolver).getSubcommand(false) !== "birthday"
       ) return;
 
 

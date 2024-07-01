@@ -19,6 +19,7 @@ import { InteractionResponse, Message, REST, SharedSlashCommandOptions, SlashCom
 import { EventEmitter } from "events";
 import { AppInterface } from "./appInterface.js";
 import { IRISSubcommand } from "@src/lib/base/IRISSubcommand.ts";
+import { CronJob } from "cron";
 
 interface IRISGlobal extends NodeJS.Global {
   identifier: any;
@@ -43,21 +44,12 @@ interface IRISGlobal extends NodeJS.Global {
         description: string | null,
         punishments: {
           index: number,
-          type: string,
+          type: "WARNING" | "TIMEOUT" | "KICK" | "TEMPORARY_BANISHMENT" | "PERMANENT_BANISHMENT",
           time: string | null,
-        }[]
+        }[],
+        can_appeal: boolean,
+        expiry: string | null,
       }[];
-      offenses: {
-        [key: string]: {
-          violation: string,
-          punishment_type: string,
-          active: boolean,
-          violated_at: string,
-          ends_at: string | null,
-          expires_at: string | null,
-          offense_count: number,
-        }[]
-      }[]
     }
   };
   subcommands: Map<string, any>;
@@ -91,7 +83,13 @@ interface IRISGlobal extends NodeJS.Global {
   moduleInfo: {
     events: string[]
     commands: string[]
-  }
+  },
+  punishmentTimers: {
+    [key: string]: {
+      unmute: null | CronJob,
+      unban: null | CronJob,
+    }
+  },
   rest: REST;
   requiredModules: {
     [key: string]: any;

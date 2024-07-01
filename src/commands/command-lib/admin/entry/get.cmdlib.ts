@@ -53,8 +53,8 @@ export default class GetEntry extends IRISSubcommand {
 
   public async runSubCommand(interaction: Discord.CommandInteraction): Promise<any> {
       if (
-        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(true) !== "entry" ||
-        (interaction.options as CommandInteractionOptionResolver).getSubcommand(true) !== "get"
+        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(false) !== "entry" ||
+        (interaction.options as CommandInteractionOptionResolver).getSubcommand(false) !== "get"
       ) return;
   
   

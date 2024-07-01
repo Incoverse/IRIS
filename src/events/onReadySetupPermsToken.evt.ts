@@ -30,6 +30,8 @@ const port = 7380;
 let server = null;
 let completed = false;
 let expires_in = Number.MAX_SAFE_INTEGER
+let authenticatedUser = null;
+
 export default class OnReadySetupPermsToken extends IRISEvent {
   protected _type: IRISEventTypes = "onStart";
   protected _priority: number = 6;
@@ -74,7 +76,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
       expires_in = oauthData.expires_in
 
       if (refreshTokenInterval) clearInterval(refreshTokenInterval);
-      refreshTokenInterval = setInterval(refreshToken, (expires_in - 30) * 1000);
+      refreshTokenInterval = setInterval(refreshToken.bind(this), (expires_in - 30) * 1000);
 
       const newDotEnv = this.objectToEnv(parsedDotEnv);
       writeFileSync(".env", newDotEnv);
@@ -92,7 +94,6 @@ export default class OnReadySetupPermsToken extends IRISEvent {
   }
   
 
-  let authenticatedUser = null;
   let refreshTokenInterval = null;
     
   app.get("/", async (request: Request, response: Response) => {
@@ -142,7 +143,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     expires_in = oauthData.expires_in
     
     if (refreshTokenInterval) clearInterval(refreshTokenInterval);
-    refreshTokenInterval = setInterval(refreshToken, (expires_in - 30) * 1000);
+    refreshTokenInterval = setInterval(refreshToken.bind(this), (expires_in - 30) * 1000);
 
     const newDotEnv = this.objectToEnv(parsedDotEnv);
     writeFileSync(".env", newDotEnv);
@@ -156,6 +157,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
         },
       }
     ).then((res) => res.json()).catch(() => null)).user;
+
 
     if (request.headers.accept == "application/json") {
       await response.json({
@@ -235,7 +237,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
         process.env.ACCESS_TKN = AccessSplit.slice(0, AccessSplit.length - 1).join("-");
 
         if (refreshTokenInterval) clearInterval(refreshTokenInterval);
-        refreshTokenInterval = setInterval(refreshToken, (expiresAt.getTime() - new Date().getTime() - 30 * 1000));
+        refreshTokenInterval = setInterval(refreshToken.bind(this), (expiresAt.getTime() - new Date().getTime() - 30 * 1000));
         
         completed = true
       } else global.logger.debug("Token has expired. Trying to refresh...", this.fileName)
@@ -268,7 +270,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
           expires_in = oauthData.expires_in
 
           if (refreshTokenInterval) clearInterval(refreshTokenInterval);
-          refreshTokenInterval = setInterval(refreshToken, (expires_in - 30) * 1000);
+          refreshTokenInterval = setInterval(refreshToken.bind(this), (expires_in - 30) * 1000);
 
           const newDotEnv = this.objectToEnv(parsedDotEnv);
           writeFileSync(".env", newDotEnv);
@@ -295,6 +297,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
       if (completed) return client.off(Events.MessageCreate, onmessage);
       if (message.author.id == owner.id && message.channel.type == ChannelType.DM) {
         if (message.content.toLowerCase() == "grant") {
+            global.logger.debug("OAuth2 granting process initiated through DMs", this.fileName)
             message.reply({
               content: `Please grant IRIS permissions to change her own command permissions with more detail and deeper restrictions.\n\n[Authorize IRIS to **${server.name}**](https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=https://www.inimicalpart.com/iris&response_type=code&scope=applications.commands.permissions.update+identify)`
             }) 
@@ -310,9 +313,11 @@ export default class OnReadySetupPermsToken extends IRISEvent {
             }
           ).then((res) => res.json()).catch(() => null);
           if (success.success) {
+            global.logger.debug("Valid OAuth2 code received through DMs, boot-up continuing...", this.fileName)
             message.reply("IRIS has successfully been authorized as user **@" + success.authenticatedUser.username + "**. Continuing boot-up...");
             client.off(Events.MessageCreate, onmessage);
           } else {
+            global.logger.debug("Invalid OAuth2 code received through DMs", this.fileName)
             if (success !== null) {
               message.reply(success.error)
             } else message.reply("Failed to authorize IRIS. Please try again.")

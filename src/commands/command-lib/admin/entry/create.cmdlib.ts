@@ -61,8 +61,8 @@ export default class CreateEntry extends IRISSubcommand {
 
   public async runSubCommand(interaction: Discord.CommandInteraction): Promise<any> {
       if (
-        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(true) !== "entry" ||
-        (interaction.options as CommandInteractionOptionResolver).getSubcommand(true) !== "create"
+        (interaction.options as CommandInteractionOptionResolver).getSubcommandGroup(false) !== "entry" ||
+        (interaction.options as CommandInteractionOptionResolver).getSubcommand(false) !== "create"
       ) return;
   
       const user = (

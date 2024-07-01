@@ -48,14 +48,6 @@ export default class Admin extends IRISCommand {
   }
 
   public async runCommand(interaction: Discord.CommandInteraction) {
-    
-    for (let subcommand of Array.from(this._subcommands.values())) {
-      await subcommand.runSubCommand(interaction);
-    } 
+    await Promise.all(Array.from(this._subcommands.values()).map((subcommand) => subcommand.runSubCommand(interaction)))
   }
-
-  
-
-
-
 }

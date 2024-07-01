@@ -42,7 +42,7 @@ export default class OnReadySetupInfoSocket extends IRISEvent {
         nodeIPC.config.id = ipcID;
         nodeIPC.config.silent = true;
         
-        const socketPath = process.platform == "linux" ? process.cwd() + "/IRIS.sock" : "IRIS";
+        const socketPath = process.platform == "win32" ? "IRIS" : "/tmp/IRIS.sock";
 
         nodeIPC.serve(socketPath, () => {
             nodeIPC.server.on("connect", (socket) => {
@@ -51,20 +51,23 @@ export default class OnReadySetupInfoSocket extends IRISEvent {
                     iam = crypto.randomBytes(16).toString("hex")
                 }
                 socketTable.set(iam, {socket: socket, subscriptions: new Map()})
-                global.logger.debug(`New socket connected: ${iam}`, "index.js")
+                global.logger.debug(`New IPC socket connected: ${iam}`, "index.js")
             })
 
             nodeIPC.server.on("subscribe", (data:{
+                verifiableNonce: string;
                 event:string
             }, socket) => {
+                const verifiableNonce = data.verifiableNonce || null
                 function parseSubscription(rcvd_data:any) {
-                    nodeIPC.server.emit(socket, data.event, rcvd_data)
+                    nodeIPC.server.emit(socket, data.event, {response: rcvd_data, ...(verifiableNonce ? {verifiableNonce} : {})})
                 }
                 global.communicationChannel.on(data.event, parseSubscription, this.fileName)
                 socketTable.get(socketToIAM(socket)).subscriptions.set(data.event, parseSubscription)
             })
 
             nodeIPC.server.on("query", (data:{
+                verifiableNonce?: string;
                 type:string,
                 timeout?:number,
                 data:any
@@ -72,15 +75,17 @@ export default class OnReadySetupInfoSocket extends IRISEvent {
 
                 const timeout = data.timeout || 5000
                 const nonce = crypto.randomBytes(16).toString("hex")
+                const verifiableNonce = data.verifiableNonce || null
 
                 let timeoutTimeout = null;
                 function queryResponseHandler(type, response) {
                     clearTimeout(timeoutTimeout)
-                    nodeIPC.server.emit(socket, "query", {type, data: response})
+                    if (response.error) nodeIPC.server.emit(socket, "query", {type, data:null, error:response.error})
+                    nodeIPC.server.emit(socket, "query", {type, data: response, ...(verifiableNonce ? {verifiableNonce} : {})})
                 }
 
                 timeoutTimeout = setTimeout(() => {
-                    nodeIPC.server.emit(socket, "query", {type: data.type, message: "Query timed out", code: "QUERY_TIMEOUT"})
+                    nodeIPC.server.emit(socket, "query", {type: data.type, message: "Query timed out", code: "QUERY_TIMEOUT", ...(verifiableNonce ? {verifiableNonce} : {})})
                     global.communicationChannel.off("ipc-query-"+nonce, queryResponseHandler.bind(null, data.type), this.fileName)
                 }, timeout)
                 global.communicationChannel.once("ipc-query-"+nonce, queryResponseHandler.bind(null, data.type), this.fileName)
@@ -90,11 +95,13 @@ export default class OnReadySetupInfoSocket extends IRISEvent {
 
 
             nodeIPC.server.on("unsubscribe", (data:{
+                verifiableNonce: string;
                 event:string
             }, socket) => {
+                const verifiableNonce = data.verifiableNonce || null
                 let iam = socketToIAM(socket)
                 if (!socketTable.get(iam).subscriptions.has(data.event)) {
-                    nodeIPC.server.emit(socket, "unsubscribe", {message: "No subscription found", code: "NO_SUBSCRIPTION_FOUND"})
+                    nodeIPC.server.emit(socket, "unsubscribe", {message: "No subscription found", code: "NO_SUBSCRIPTION_FOUND", ...(verifiableNonce ? {verifiableNonce} : {})})
                     return
                 }
                 global.communicationChannel.off(data.event, socketTable.get(iam).subscriptions.get(data.event), this.fileName)

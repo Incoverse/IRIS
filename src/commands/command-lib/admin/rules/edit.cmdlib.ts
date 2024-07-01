@@ -51,6 +51,16 @@ export default class RulesEdit extends IRISSubcommand {
               .setName("offenses")
               .setDescription("The new punishment guidelines for the rule. e.g: 'warn,mute:1d,ban:3d,ban'")
           )
+          .addBooleanOption((option) =>
+            option
+              .setName("appealable")
+              .setDescription("Whether the rule is appealable")
+          )
+          .addStringOption((option) =>
+            option
+              .setName("expiry")
+              .setDescription("The time it takes for the rule to not count towards user's offense count")
+          )
       )
 
 
@@ -72,8 +82,10 @@ export default class RulesEdit extends IRISSubcommand {
         let newTitle = (interaction.options as CommandInteractionOptionResolver).getString("title", false);
         let newDescription = (interaction.options as CommandInteractionOptionResolver).getString("description", false);
         let newPunishments = (interaction.options as CommandInteractionOptionResolver).getString("offenses", false);
+        let newAppealable = (interaction.options as CommandInteractionOptionResolver).getBoolean("appealable", false);
+        let newExpiry = (interaction.options as CommandInteractionOptionResolver).getString("expiry", false);
       
-        if (!newTitle && !newDescription && !newPunishments) {
+        if (!newTitle && !newDescription && !newPunishments && (!newAppealable && newAppealable != false) && !newExpiry) {
           await interaction.reply({
             content: "You must provide at least one new value to update.",
             ephemeral: true,
@@ -133,6 +145,13 @@ export default class RulesEdit extends IRISSubcommand {
               })
           }
           rule.punishments = punishments;
+        }
+        if (newAppealable) {
+          rule.appealable = newAppealable;
+        }
+        if (newExpiry) {
+          if (newExpiry == "null" || newExpiry == "never" || newExpiry == "permanent") newExpiry = null;
+          rule.expiry = newExpiry;
         }
       
         global.server.main.rules = newRules;

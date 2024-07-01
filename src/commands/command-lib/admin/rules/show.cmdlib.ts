@@ -40,6 +40,11 @@ export default class RulesShow extends IRISSubcommand {
                 .setName("show-punishments")
                 .setDescription("Whether to show the punishments for each rule")
             )
+            .addBooleanOption((option) =>
+              option
+                .setName("show-additional")
+                .setDescription("Whether to show the additional information for each rule (e.g. appealable, expiry)")
+            )
         )
 
 
@@ -63,7 +68,8 @@ export default class RulesShow extends IRISSubcommand {
           "PERMANENT_BANISHMENT": "Permanent ban"
         }
         let ruleName = (interaction.options as CommandInteractionOptionResolver).getString("rule", false) as string
-        let showPunishments = (interaction.options as CommandInteractionOptionResolver).getBoolean("show-punishments", false);
+        let showPunishments = (interaction.options as CommandInteractionOptionResolver).getBoolean("show-punishments", false) ?? false;
+        let showAdditional = (interaction.options as CommandInteractionOptionResolver).getBoolean("show-additional", false) ?? false;
 
         let rule = null;
       
@@ -82,15 +88,32 @@ export default class RulesShow extends IRISSubcommand {
         }
       
         if (!showPunishments && showPunishments != false) showPunishments = false;
+        if (!showAdditional && showAdditional != false) showAdditional = false;
+
+        if (showPunishments && showAdditional && !rule) {
+          return await interaction.reply({
+            content: "You cannot show both punishments and additional information for all rules at the same time.",
+            ephemeral: true,
+          });
+        }
       
         if (rule) {
           const ruleEmbed = new EmbedBuilder()
             .setTitle(`Rule ${rule.index}: ${rule.title}`)
       
-      
-          let description = rule.description+ (showPunishments? "\n\n- **Punishments:**\n":"");
-          for (const punishment of rule.punishments) {
-            if (showPunishments) description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
+          let description = rule.description
+          
+          if (showPunishments) {
+            description += "\n\n- **Punishments:**\n"
+            for (const punishment of rule.punishments) {
+              if (showPunishments) description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
+            }
+          }
+
+          if (showAdditional) {
+            description += (!showPunishments ? "\n\n" : "") + "- **Other:**\n"
+            description += ` - Can be appealed: ${rule.can_appeal ? "Yes" : "No"}\n`
+            if (rule.expiry) description += ` - Expires in ${rule.expiry} since violation\n`
           }
       
           ruleEmbed.setDescription(description.trim());
@@ -122,8 +145,13 @@ export default class RulesShow extends IRISSubcommand {
             description += `${rule.index}. **${rule.title}**\n`;
             if (showPunishments) {
               for (const punishment of rule.punishments) {
-                description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
+                if (showPunishments) description += ` - ${getOrdinalNum(punishment.index)} offense: *${punishmentTypeMap[punishment.type]}${punishment.time ? ` (${formatDuration(parseDuration(punishment.time))})` : ""}*\n`;
               }
+            }
+  
+            if (showAdditional) {
+              description += ` - Can be appealed: ${rule.appealable ? "Yes" : "No"}\n`
+              if (rule.expiry) description += ` - Expires in ${rule.expiry} since violation\n`
             }
           }
       

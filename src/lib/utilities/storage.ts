@@ -265,6 +265,36 @@ async function update(oneOrMany: "one" | "many", dataType: DataType, filter: obj
     }
 }
 
+async function replace(dataType: DataType, filter: object, data: object) {
+    const { collection, filePathRelative } = parseDataType(dataType)
+
+    if (method == "mongo") {
+        try {
+            const col = connectionClient.db(global.app.config.development ? "IRIS_DEVELOPMENT" : "IRIS").collection(collection)
+            return await col.replaceOne(filter, data)
+        } catch (error) {
+            global.logger.error(error.toString(), returnFileName())
+            return false
+        }
+    } else {
+        let filePath = path.join(process.cwd(), global.app.config.backupStoragePath, filePathRelative)
+
+        try {
+            let alreadyExistingData = JSON.parse(fs.readFileSync(filePath, "utf-8")) ?? []
+            let query = new Query(filter as any)
+            let toUpdate = alreadyExistingData.find((doc) => query.test(doc))
+            if (!toUpdate) return false
+            delete (data as any)._id
+            alreadyExistingData.map((doc) => doc._id == toUpdate._id ? data : doc)
+            fs.writeFileSync(filePath, JSON.stringify(alreadyExistingData))
+            return true
+        } catch (error) {
+            global.logger.error(error.toString(), returnFileName())
+            return false
+        }
+    }
+}
+
 export async function setupMongo() {
     if (method == "file") return false
 
@@ -311,6 +341,8 @@ export const deleteMany: (dataType: DataType, filter: object) => Promise<any> = 
 export const updateOne:  (dataType: DataType, filter: object, data: object) => Promise<any> = update.bind(null, "one")
 export const updateMany: (dataType: DataType, filter: object, data: object) => Promise<any> = update.bind(null, "many")
 
+export const replaceOne: (dataType: DataType, filter: object, data: object) => Promise<any> = replace
+
 
 export default {
     get method() {
@@ -325,6 +357,8 @@ export default {
     deleteMany,
     updateOne,
     updateMany,
+
+    replaceOne,
     
     cleanup,
     checkMongoAvailability,

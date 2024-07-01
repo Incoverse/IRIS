@@ -34,7 +34,14 @@
   //! For development purposes, it is recommended to keep this on.
   "showErrors": true,
   //? This option shows messages like "registered command xyz", "running event xyz", etc. recommended to be on for satisfication purposes.
-  "debugging": true,
+  "debugging": {
+    //? This option shows debug messages in the console coming frmo global.logger.debug* functions.
+    "debugMessages": true,
+    //? This option shows internal communication messages between different parts of IRIS.
+    "internalCommunication": true,
+    //? This option shows performance information in the console. (When performance timers are started and stopped)
+    "performanceInfo": true
+  },
 
   //? This option allows you to skip the 3 second wait that IRIS gives after it fails to connect to the MongoDB server (or if it wasn't provided in the first place).
   "skipMongoFailWait": true,
@@ -58,6 +65,27 @@
   //! Check this guide out on how to make a local MongoDB server: https://www.prisma.io/dataguide/mongodb/setting-up-a-local-mongodb-database
   //! You can also specify a port by adding ":<port>" after the server name (e.g "inimicalpart.com:27017"). The default port is 27017.
   "mongoDBServer": "myserver.com",
+
+  //? The appeal system is a system that allows users to appeal violations of the rules that were set by moderators.
+  //? A moderator needs to tell IRIS that a user broke the rules by using the "/mod punish rule:<rule>" command.
+  //? IRIS will automatically check if the user has broken the rule before and will adjust the punishment accordingly.
+  //! For the appeal system to work, you will need the website-part of the appeal system set-up. (website)
+  "appealSystem": {
+    //? This is the path to the website that IRIS will send users to after an offense is logged.
+    //? This is primarily used during appeals, where if a user's appeal is updated, they will receive an email.
+    //? If you don't want to or can't use this feature, set this to null, and IRIS will not send users to a website, and the appeal system will not work.
+    //* Example: "https://appeal.inimicalpart.com"
+    "website": null,
+    
+    //? This is the path to the email socket that IRIS will use to send appeals.
+    //? This is primarily used during appeals, where if a user's appeal is updated, they will receive an email.
+    //? If you don't want to or can't use this feature, set this to null, and IRIS will not send emails.
+    "emailSocketPath": null,
+
+    //? This is the email address that IRIS will use to send emails to users.
+    //? If you don't want to or can't use this feature, set this to null, and IRIS will not send emails.
+    "fromAddress": null
+  },
 
   //? These permissions are for commands.
   //? @userid
@@ -130,7 +158,7 @@
       "validGuesses": "https://gist.githubusercontent.com/cfreshman/cdcdf777450c5b5301e439061d29694c/raw/b8375870720504ecf89c1970ea4532454f12de94/wordle-allowed-guesses.txt",
       "validWords": "https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/1792f853e1cd0249f7588c724e00d46dbc4894eb/wordle-answers-alphabetical.txt",
       //? These are the emojis that IRIS will use for wordle. For these default emojis to work, you need to be in two servers which I, the creator of IRIS, own.
-      //? If you want to use these emojis, please email me at me@inimicalpart.com with an invitation link to your bot. I will add them to both servers. If you want to leave said servers, you can email me again and I will remove them. You can also use the 'guild.leave()' method in the Discord.js library to leave the servers.
+      //? If you want to use these emojis, please email me at me@inimicalpart.com with an invitation link to your bot. I will add them to both servers. If you want to leave said servers, you can email me again and I will remove them. You can also use the 'Guild#leave()' method in the Discord.js library to leave the servers.
       //? Else, you can replace these emojis with your own. The images for these emojis can be found in the "./resources/wordle" folder.
       "emojis": {
         "blank": {
