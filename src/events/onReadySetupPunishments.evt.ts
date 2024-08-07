@@ -363,6 +363,7 @@ export default class OnReadySetupPunishments extends IRISEvent {
         status: offense.status,
         transcript: (data.data.admin ? offense?.appeal?.transcript : (hideSensitiveData(offense))?.appeal?.transcript) ?? [],
         appeal_status: offense?.appeal?.status,
+        users: await getInvolvedUsers(client, offense.id, data.type === "mod:appeal:message:create"),
       });
       
       
