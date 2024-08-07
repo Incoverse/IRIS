@@ -100,7 +100,7 @@ export default class OnReadySetupPunishments extends IRISEvent {
         return;
       }
 
-      if (!offense.status || offense.status !== "ACTIVE") {
+      if (!offense.status || offense.status !== "ACTIVE" || offense?.appeal?.status == "DENIED") {
         global.communicationChannel.emit("ipc-query-"+data.nonce, {
           error: "INVALID_ACTION",
           message: "This action is invalid for this offense.",
