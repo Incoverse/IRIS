@@ -36,7 +36,7 @@ import {
   basename,
 } from "discord.js";
 import { AppInterface } from "@src/interfaces/appInterface.js";
-import { IRISGlobal } from "@src/interfaces/global.js";
+import { IRISGlobal, LoggedEventEmitter } from "@src/interfaces/global.js";
 import prettyMilliseconds from "pretty-ms";
 import chalk from "chalk";
 import { EventEmitter } from "events";
@@ -285,7 +285,7 @@ global.identifier = md5(os.userInfo().username + "@" + os.hostname()).substring(
 
   global.eventInfo = new Map();
   global.birthdays = [];
-  global.communicationChannel = new EventEmitter();
+  global.communicationChannel = new EventEmitter() as LoggedEventEmitter;
 
   
 

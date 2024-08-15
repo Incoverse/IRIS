@@ -67,6 +67,8 @@ export default class OnMessageEval extends IRISEvent {
           text = text.replaceAll(process.env.cSecret, "[REDACTED]");
           if (process.env.ACCESS_TKN) text = text.replaceAll(process.env.ACCESS_TKN, "[REDACTED]");
           if (process.env.REFRESH_TKN) text = text.replaceAll(process.env.REFRESH_TKN, "[REDACTED]");
+          if (process.env.vKey) text = text.replaceAll(process.env.vKey, "[REDACTED]");
+          if (process.env.ASID) text = text.replaceAll(process.env.ASID, "[REDACTED]");
 
           // Send off the cleaned up result
           return text;

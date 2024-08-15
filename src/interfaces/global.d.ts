@@ -20,8 +20,10 @@ import { EventEmitter } from "events";
 import { AppInterface } from "./appInterface.js";
 import { IRISSubcommand } from "@src/lib/base/IRISSubcommand.ts";
 import { CronJob } from "cron";
+import ICOMAppealSystem from "@src/lib/utilities/appeal.ts";
 
 interface IRISGlobal extends NodeJS.Global {
+  global: EventEmitter;
   identifier: any;
   app: AppInterface;
   reload: {
@@ -61,6 +63,7 @@ interface IRISGlobal extends NodeJS.Global {
     FAILED: number,
     NOT_AVAILABLE: number,
   }
+  appealSystem: ICOMAppealSystem;
   status: {
     [key: string]: boolean
   }
