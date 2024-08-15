@@ -73,7 +73,7 @@ export default class OffenseTranscript extends IRISSubcommand {
         })
 
         return interaction.reply({
-            content: `You can find the transcript for offense #${offenseID} here:\n${global.app.config.appealSystem.website}/admin/user/${offense.user_id}/offenses/${offenseID}`,
+            content: `You can find the transcript for offense #${offenseID} here:\n${global.app.config.appealSystem.website}/servers/${global.app.config.mainServer}/admin/user/${offense.user_id}/offenses/${offenseID}`,
         })
 
     }
