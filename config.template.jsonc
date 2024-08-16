@@ -154,7 +154,7 @@
       "validGuesses": "https://gist.githubusercontent.com/cfreshman/cdcdf777450c5b5301e439061d29694c/raw/b8375870720504ecf89c1970ea4532454f12de94/wordle-allowed-guesses.txt",
       "validWords": "https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/1792f853e1cd0249f7588c724e00d46dbc4894eb/wordle-answers-alphabetical.txt",
       //? These are the emojis that IRIS will use for wordle. For these default emojis to work, you need to be in two servers which I, the creator of IRIS, own.
-      //? If you want to use these emojis, please email me at me@inimicalpart.com with an invitation link to your bot. I will add them to both servers. If you want to leave said servers, you can email me again and I will remove them. You can also use the 'Guild#leave()' method in the Discord.js library to leave the servers.
+      //? If you want to use these emojis, please email me at contact@inimicalpart.com with an invitation link to your bot. I will add them to both servers. If you want to leave said servers, you can email me again and I will remove them. You can also use the 'Guild#leave()' method in the Discord.js library to leave the servers.
       //? Else, you can replace these emojis with your own. The images for these emojis can be found in the "./resources/wordle" folder.
       "emojis": {
         "blank": {
