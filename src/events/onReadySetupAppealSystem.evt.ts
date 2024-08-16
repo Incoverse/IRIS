@@ -368,7 +368,7 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
       return {
         name: client.user.displayName,
         id: client.user.id,
-        avatarURL: client.user.displayAvatarURL({extension: "png"}),
+        icon: client.user.displayAvatarURL({extension: "png"}),
       }
     }
 
@@ -694,7 +694,17 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
       const allOffenses: Offense[] = await storage.find("offense", {});
       
       // get the user_id from each offense as well as when the offense was created, and the offense status. but group them by user_id
-      let users = allOffenses.reduce((acc, offense: Offense) => {
+      let preusers: {
+        [key: string]: {
+          id: string,
+          status: string,
+          violated_at: string,
+          appealStatus: string | null,
+          appealed_at: string | null,
+          rule_index: number,
+          violation: string,
+        }[]
+      } = allOffenses.reduce((acc, offense: Offense) => {
         if (!acc[offense.user_id]) acc[offense.user_id] = [];
         acc[offense.user_id].push({
           id: offense.id,
@@ -708,10 +718,10 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
         return acc;
       }, {});
       
-      users = await Promise.all(Object.keys(users).map(async (user_id) => {
+      let users = await Promise.all(Object.keys(preusers).map(async (user_id) => {
         return {
           user: await getUser(client, user_id),
-          offenses: users[user_id]
+          offenses: preusers[user_id]
         }
       }))
       

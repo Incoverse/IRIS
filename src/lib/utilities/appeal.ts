@@ -193,24 +193,24 @@ export default class ICOMAppealSystem {
         return { success: true };
     }
 
-    public onBotInfoQuery: ((this: ICOMAppealSystem) => any) | null;
-    public onServerInfoQuery: ((this: ICOMAppealSystem) => any) | null;
-    public onOffensesQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => any) | null;
-    public onSaveEmailRequest: ((this: ICOMAppealSystem, data: {user_id: string, email: string}) => any) | null;
-    public onOffenseQuery: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, admin?: boolean}) => any) | null; //! ADMIN REQUIRED (admin)
-    public onGetInvolvedUsersQuery: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, admin?: boolean}) => any) | null; //! ADMIN REQUIRED (admin)
-    public onCreateAppealRequest: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, message: string}) => any) | null;
-    public onGetAppealQuery: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string}) => any) | null;
-    public onSendMessageRequest: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, message: string, admin?: boolean, send_as?: string, anonymous?: boolean}) => any) | null; //! ADMIN REQUIRED (admin, send_as)
-    public onCheckAdminQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => any) | null;
-    public onGetUsersWithOffensesQuery: ((this: ICOMAppealSystem) => any) | null; //! ADMIN REQUIRED
-    public onGetUserQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => any) | null; //! ADMIN REQUIRED
-    public onGetUsersOffensesQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => any) | null; //! ADMIN REQUIRED
-    public onToggleAppealmentRequest: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string}) => any) | null; //! ADMIN REQUIRED
-    public onRevokeOffenseRequest: ((this: ICOMAppealSystem, data: {closer_id: string, offense_id: string}) => any) | null; //! ADMIN REQUIRED
-    public onApproveAppealRequest: ((this: ICOMAppealSystem, data: {closer_id: string, offense_id: string}) => any) | null; //! ADMIN REQUIRED
-    public onDenyAppealRequest: ((this: ICOMAppealSystem, data: {closer_id: string, offense_id: string}) => any) | null; //! ADMIN REQUIRED
-    public onCheckMemberQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => any) | null; //! Check if a user is or has been a member of the guild
+    public onBotInfoQuery: ((this: ICOMAppealSystem) => Promise<{id: string; name: string; icon: string;}>) | null;
+    public onServerInfoQuery: ((this: ICOMAppealSystem) => Promise<{name: string, id: string, iconURL: string}>) | null;
+    public onOffensesQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => Promise<{user_id: string, offenses: Array<Offense>}>) | null;
+    public onSaveEmailRequest: ((this: ICOMAppealSystem, data: {user_id: string, email: string}) => Promise<{ email?: string, error?: string }>) | null;
+    public onOffenseQuery: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, admin?: boolean}) => Promise<{error?: string, message?: string, offense?: Offense}>) | null; //! ADMIN REQUIRED (admin)
+    public onGetInvolvedUsersQuery: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, admin?: boolean}) => Promise<{id?: string, users?: string[], error?: string, message?: string }>) | null; //! ADMIN REQUIRED (admin)
+    public onCreateAppealRequest: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, message: string}) => Promise<{status?: "APPEALED", transcript?: {type: "message" | "status";message?: string;status?: "OPEN" | "APPROVED" | "DENIED";timestamp: string;user_id: string;anonymous?: boolean;}[]; appeal_status?: "DENIED" | "OPEN" | "APPROVED" | "AYR", error?: string, message?: string}>) | null;
+    public onGetAppealQuery: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string}) => Promise<{status?: "APPEALED" | "DENIED" | "ACTIVE" | "REVOKED", transcript?: { type: "message" | "status"; message?: string; status?: "OPEN" | "APPROVED" | "DENIED"; timestamp: string; user_id: string; anonymous?: boolean;}[], appeal_status?: "OPEN" | "APPROVED" | "DENIED" | "AYR", error?: string, message?: string}>) | null;
+    public onSendMessageRequest: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string, message: string, admin?: boolean, send_as?: string, anonymous?: boolean}) => Promise<{status?: "APPEALED" | "DENIED" | "ACTIVE" | "REVOKED", transcript?: { type: "message" | "status"; message?: string; status?: "OPEN" | "APPROVED" | "DENIED"; timestamp: string; user_id: string; anonymous?: boolean;}[], appeal_status?: "OPEN" | "APPROVED" | "DENIED" | "AYR", users?: string[], error?: string, message?: string}>) | null; //! ADMIN REQUIRED (admin, send_as)
+    public onCheckAdminQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => Promise<boolean>) | null;
+    public onGetUsersWithOffensesQuery: ((this: ICOMAppealSystem) => Promise<{users: {user: {id: string;name: string;username: string;image: string;};offenses: {id: string;status: string;violated_at: string;appealStatus: string | null;appealed_at: string | null;rule_index: number;violation: string;}[];}[]}>) | null; //! ADMIN REQUIRED
+    public onGetUserQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => Promise<{user?: {id: string;name: string;username: string;image: string;}, error?: string; message?: string;}>) | null; //! ADMIN REQUIRED
+    public onGetUsersOffensesQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => Promise<{offenses: Offense[]}>) | null; //! ADMIN REQUIRED
+    public onToggleAppealmentRequest: ((this: ICOMAppealSystem, data: {user_id: string, offense_id: string}) => Promise<{can_appeal?: boolean, error?: string, message?: string}>) | null; //! ADMIN REQUIRED
+    public onRevokeOffenseRequest: ((this: ICOMAppealSystem, data: {closer_id: string, offense_id: string}) => Promise<{offenses?: Offense[], error?: string, message?: string}>) | null; //! ADMIN REQUIRED
+    public onApproveAppealRequest: ((this: ICOMAppealSystem, data: {closer_id: string, offense_id: string}) => Promise<{offenses?: Offense[], error?: string, message?: string}>) | null; //! ADMIN REQUIRED
+    public onDenyAppealRequest: ((this: ICOMAppealSystem, data: {closer_id: string, offense_id: string}) => Promise<{offenses?: Offense[], error?: string, message?: string}>) | null; //! ADMIN REQUIRED
+    public onCheckMemberQuery: ((this: ICOMAppealSystem, data: {user_id: string}) => Promise<boolean>) | null; //! Check if a user is or has been a member of the guild
 
 
 
