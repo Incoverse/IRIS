@@ -77,7 +77,7 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
       }
 
 
-      if (global.appealSystem.checks.messageValidity(message)) {
+      if (!global.appealSystem.checks.messageValidity(message)) {
         return {
           error: "INVALID_MESSAGE",
           message: "The message is invalid."
@@ -250,7 +250,7 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
         const guild = client.guilds.cache.get(global.app.config.mainServer) ?? await client.guilds.fetch(global.app.config.mainServer);
         const offenseUser = client.users.cache.get(offense.user_id) ?? await client.users.fetch(offense.user_id)
         const closerUser = client.users.cache.get(closer_id) ?? await client.users.fetch(closer_id)
-        let modLogChannel = guild.channels.cache.find((channel) => ["mod-log","mod-logs"].includes(channel.name) && channel.type == Discord.ChannelType.GuildText)
+        let modLogChannel = guild.channels.cache.find((channel) => channel.name.includes("mod-log") || channel.name.includes("mod-logs") && channel.type == Discord.ChannelType.GuildText)
         if (modLogChannel) {
            modLogChannel.fetch().then((channel) => {
           (channel as Discord.TextChannel).send({
@@ -479,7 +479,7 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
 
       const guild = client.guilds.cache.get(global.app.config.mainServer);
 
-      let modLogChannel = guild.channels.cache.find((channel) => ["mod-log","mod-logs"].includes(channel.name) && channel.type == Discord.ChannelType.GuildText)
+      let modLogChannel = guild.channels.cache.find((channel) => channel.name.includes("mod-log") || channel.name.includes("mod-logs") && channel.type == Discord.ChannelType.GuildText)
       if (modLogChannel) {
         modLogChannel = await modLogChannel.fetch();
         (modLogChannel as Discord.TextChannel).send({
@@ -564,7 +564,7 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
         const guild = client.guilds.cache.get(global.app.config.mainServer) ?? await client.guilds.fetch(global.app.config.mainServer);
         const offenseUser = client.users.cache.get(offense.user_id) ?? await client.users.fetch(offense.user_id)
         const closerUser = client.users.cache.get(closer_id) ?? await client.users.fetch(closer_id)
-        let modLogChannel = guild.channels.cache.find((channel) => ["mod-log","mod-logs"].includes(channel.name) && channel.type == Discord.ChannelType.GuildText)
+        let modLogChannel = guild.channels.cache.find((channel) => channel.name.includes("mod-log") || channel.name.includes("mod-logs") && channel.type == Discord.ChannelType.GuildText)
         if (modLogChannel) {
            modLogChannel.fetch().then((channel) => {
           (channel as Discord.TextChannel).send({

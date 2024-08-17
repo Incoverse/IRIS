@@ -87,7 +87,7 @@ export default class Punish extends IRISSubcommand {
        }
 
       await interaction.deferReply({ephemeral: true});
-      let modLogChannel = interaction.guild.channels.cache.find((channel) => ["mod-log","mod-logs"].includes(channel.name) && channel.type == Discord.ChannelType.GuildText)
+      let modLogChannel = interaction.guild.channels.cache.find((channel) => channel.name.includes("mod-log") || channel.name.includes("mod-logs") && channel.type == Discord.ChannelType.GuildText)
       if (modLogChannel) {
         modLogChannel = await modLogChannel.fetch()
       }
