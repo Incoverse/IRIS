@@ -103,8 +103,10 @@ export async function unloadHandler(timeout: number, handler: IRISEvent | IRISCo
   return await Promise.race([
       new Promise((resolve) => {
           handler.unload(client, reason).then((...args)=>{
-              handler._loaded = false
-              resolve(args)
+              if (args[0] == true) {
+                handler._loaded = false
+              }
+              resolve(args[0])
           })
       }),
       new Promise((resolve) => {
@@ -117,8 +119,10 @@ export async function setupHandler(timeout: number, handler: IRISEvent | IRISCom
   return await Promise.race([
       new Promise((resolve) => {
           handler.setup(client, reason).then((...args)=>{
+            if (args[0] == true) {
               handler._loaded = true
-              resolve(args)
+            }
+            resolve(args[0])
           })
       }),
       new Promise((resolve) => {

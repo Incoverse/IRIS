@@ -51,7 +51,12 @@ export default class Wordle extends IRISCommand {
       subcommand.setName("start").setDescription("Start a new game.")
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName("stats").setDescription("Get your wordle stats.")
+      subcommand.setName("stats").setDescription("Get your or someone else's wordle stats.")
+        .addUserOption((option) =>
+          option
+            .setName("user")
+            .setDescription("The user to get stats for.")
+        )
     )
 
 
@@ -439,16 +444,21 @@ export default class Wordle extends IRISCommand {
           ephemeral: true,
         });
         //Generate an embed that will contain the following: Games played, games won, longest streak, current streak, average time (average from last12 and then prettify with prettyMilliseconds), average guesses. Add emojis before the name and use fields.
+        
+        let user = (interaction.options as CommandInteractionOptionResolver).getUser("user") ?? interaction.user;
+        
         try {
           // make sure that if the user hasnt played wordle before, it says so
           let userData: any = await storage.findOne(
             "user",
-            { id: interaction.user.id }
+            { id: user.id }
           );
           if (!userData?.gameData?.wordle) {
             await interaction.editReply({
               content:
-                "You have not played wordle before! Try playing a game first!",
+              user.id == interaction.user.id ?
+                "You have not played wordle before! Try playing a game first!" :
+                "This user has not played wordle before!",
             });
             return;
           }
@@ -468,8 +478,15 @@ export default class Wordle extends IRISCommand {
           }
           avgTime /= userData.gameData.wordle.last12.length;
           avgGuesses /= userData.gameData.wordle.last12.length;
+
+          let msUntilReset = new Date(wordle.expires).getTime() - Date.now();
+
           let embed = new EmbedBuilder()
             .setTitle("Wordle Stats")
+            .setAuthor({
+              name: user.username,
+              iconURL: user.displayAvatarURL(),
+            })
             .setColor("Green")
             .addFields(
               {
@@ -484,7 +501,7 @@ export default class Wordle extends IRISCommand {
               },
               {
                 name: ":fire: Current Streak",
-                value: userData.gameData.wordle.streak.toString(),
+                value: userData.gameData.wordle.streak.toString() + (msUntilReset < 4*60*60*1000 && userData.gameData.wordle.streak > 0 &&  userData.gameData.wordle.lastPlayed != global.games.wordle.id ? " :hourglass:" : ""),
                 inline: true,
               },
   
@@ -502,6 +519,11 @@ export default class Wordle extends IRISCommand {
               {
                 name: ":fire: Longest Streak",
                 value: userData.gameData.wordle.longestStreak.toString(),
+                inline: true,
+              },
+              {
+                name: ":date: Played Today",
+                value: userData.gameData.wordle.lastPlayed == global.games.wordle.id ? ":white_check_mark:" : ":x:",
                 inline: true,
               }
             );

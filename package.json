@@ -36,21 +36,17 @@
     "express": "^4.18.2",
     "join-images": "^1.1.5",
     "jsonc-parser": "^3.2.0",
-    "language-detect": "^1.1.0",
     "md5": "^2.3.0",
     "mingo": "^6.4.13",
-    "moment": "^2.29.4",
     "moment-timezone": "^0.5.41",
     "mongodb": "^6.7.0",
     "node-ipc": "10.1.0",
     "pretty-ms": "^9.0.0",
     "public-ip": "^6.0.2",
     "resolve-tspaths": "^0.8.18",
-    "tree-kill": "^1.2.2",
     "tsc-watch": "^6.2.0",
     "uno-game-engine": "^3.2.1",
-    "uuid4": "^2.0.3",
-    "watcher": "^2.3.0"
+    "uuid4": "^2.0.3"
   },
   "devDependencies": {
     "@types/md5": "^2.3.5",
