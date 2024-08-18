@@ -501,7 +501,7 @@ export default class Wordle extends IRISCommand {
               },
               {
                 name: ":fire: Current Streak",
-                value: userData.gameData.wordle.streak.toString() + (msUntilReset < 4*60*60*1000 && userData.gameData.wordle.streak > 0 &&  userData.gameData.wordle.lastPlayed != global.games.wordle.id ? " :hourglass:" : ""),
+                value: userData.gameData.wordle.streak.toString() + (msUntilReset < 4*60*60*1000 && userData.gameData.wordle.streak > 0 &&  userData.gameData.wordle.lastPlayed.id != global.games.wordle.id ? " :hourglass:" : ""),
                 inline: true,
               },
   
@@ -523,7 +523,7 @@ export default class Wordle extends IRISCommand {
               },
               {
                 name: ":date: Played Today",
-                value: userData.gameData.wordle.lastPlayed == global.games.wordle.id ? ":white_check_mark:" : ":x:",
+                value: userData.gameData.wordle.lastPlayed.id == global.games.wordle.id ? ":white_check_mark:" : ":x:",
                 inline: true,
               }
             );

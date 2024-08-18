@@ -110,6 +110,11 @@ export default class OnMessageEval extends IRISEvent {
                 used: formatBytes(os.totalmem() - os.freemem()),
                 percent: Math.round((os.totalmem() - os.freemem()) / os.totalmem() * 100) + "%",
               },
+              iris: {
+                version: global.app.version,
+                edition: edition,
+                identifier: global.identifier
+              },
               cpu_cores: os.cpus().length,
             };
           }
