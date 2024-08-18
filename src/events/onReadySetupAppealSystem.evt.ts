@@ -36,7 +36,7 @@ export default class OnReadySetupAppealSystem extends IRISEvent {
 
   public async unload(client: Discord.Client, reason: "reload" | "shuttingDown" | null) {
     if (global.appealSystem?.ready) {
-      global.appealSystem.ws.close(1001, "IRIS is shutting down.");
+      global.appealSystem.ws.close(1000, "IRIS is shutting down.");
     }
     this._loaded = false;
     return true;
