@@ -13,7 +13,7 @@ export default class ICOMAppealSystem {
     private debug: boolean;
     private verificationKey: string;
 
-    private ready = false;
+    public ready = false;
 
     constructor(UUID: string, verificationKey: string, debug = false) {
         this.UUID = UUID;
