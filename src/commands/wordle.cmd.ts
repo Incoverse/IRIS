@@ -220,7 +220,8 @@ export default class Wordle extends IRISCommand {
             (6 -
               global.games.wordle.currentlyPlaying[interaction.user.id].guesses
                 .length) +
-            "** guesses remaining!\n" +
+            "** guess" + (global.games.wordle.currentlyPlaying[interaction.user.id].guesses
+                .length == 1 ? "" : "es") + " remaining!\n" +
             generateBoard(),
           ephemeral: true,
         });
@@ -383,7 +384,8 @@ export default class Wordle extends IRISCommand {
               (6 -
                 global.games.wordle.currentlyPlaying[interaction.user.id].guesses
                   .length) +
-              "** guesses remaining!\n\n" +
+              "** guess" + (global.games.wordle.currentlyPlaying[interaction.user.id].guesses
+                .length == 1 ? "" : "es") + " remaining!\n\n" +
               generateBoard(),
             ephemeral: true,
           });
@@ -510,7 +512,7 @@ export default class Wordle extends IRISCommand {
                 value: userData.gameData.wordle.gamesWon.toString(),
                 inline: true,
               },
-  
+              
               {
                 name: ":question: Average Guesses",
                 value: parseFloat(avgGuesses.toFixed(2)).toString() ?? "N/A",
@@ -526,7 +528,9 @@ export default class Wordle extends IRISCommand {
                 value: userData.gameData.wordle.lastPlayed.id == global.games.wordle.id ? ":white_check_mark:" : ":x:",
                 inline: true,
               }
-            );
+            ).setFooter({
+              text: "Your streak resets if you miss a daily wordle, or if you fail to solve the wordle.",
+            })
           await interaction.editReply({
             embeds: [embed],
           });

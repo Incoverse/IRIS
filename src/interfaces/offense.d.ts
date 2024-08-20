@@ -21,6 +21,12 @@ interface Offense {
             }
         }
     } | null,
+    evidence: {
+        type: "link" | "image",
+        url: string,
+        timestamp: string,
+        user_id: string
+    }[],
     can_appeal: boolean,
     violated_at: string
     ends_at: string | null,
