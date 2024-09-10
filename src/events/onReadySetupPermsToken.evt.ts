@@ -192,6 +192,9 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     });
     const guild = await client.guilds.fetch(global.app.config.mainServer);
     const owner = await guild.fetchOwner();
+    
+    const manageGuild = Array.from((await guild.members.fetch()).values()).filter((member) => member.permissions.has("ManageGuild") || member.permissions.has("Administrator"));
+
     global.logger.log("--------------------", this.fileName)
     global.logger.log("IRIS requires you to grant her access to change her slash command permissions more accurately.", this.fileName)
     global.logger.log(`${chalk.yellow.bold("Note:")} The owner of the server (${chalk.yellowBright(`@${owner.user.username}`)}), or someone very high up in the ranks should authorize this.`, this.fileName)
@@ -199,7 +202,7 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     global.logger.log("--------------------", this.fileName)
     global.logger.log("Please click the link below to grant IRIS the necessary permissions.", this.fileName)
     global.logger.log(chalk.yellowBright(`https://discord.com/oauth2/authorize?client_id=${process.env.cID}&redirect_uri=http://localhost:7380&response_type=code&scope=applications.commands.permissions.update+identify`), this.fileName)
-    await this.setupDiscordGranting(client, guild, owner);
+    await this.setupDiscordGranting(client, guild, owner, manageGuild);
     global.logger.log("--------------------", this.fileName)
     global.logger.log("The server owner may directly message the word 'grant' to IRIS to start the granting process through DMs.", this.fileName)
     await this.waitUntilComplete();
@@ -292,10 +295,10 @@ export default class OnReadySetupPermsToken extends IRISEvent {
     }
   }
 }
-  private async setupDiscordGranting(client: Discord.Client, server: Discord.Guild, owner: Discord.GuildMember) {
+  private async setupDiscordGranting(client: Discord.Client, server: Discord.Guild, owner: Discord.GuildMember, otherAllowed: Discord.GuildMember[]) {
     async function onmessage(message:Message) {
       if (completed) return client.off(Events.MessageCreate, onmessage);
-      if (message.author.id == owner.id && message.channel.type == ChannelType.DM) {
+      if (message.channel.type == ChannelType.DM && (message.author.id == owner.id || otherAllowed.map((mem) => mem.id).includes(message.author.id))) {
         if (message.content.toLowerCase() == "grant") {
             global.logger.debug("OAuth2 granting process initiated through DMs", this.fileName)
             message.reply({
